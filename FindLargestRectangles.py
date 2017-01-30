@@ -2,18 +2,32 @@ def FindLargestRectangles(template, crit=[0,0,1], minSize=[1,1], skip=8):
 	'''
 	Find largest rectangles within a template.
 	Input:
-		template 	<numpy.matrix, dtype=bool> - boolean region defining area of interest.
-		minSize 	<tuple> - [height, width] defining minimum size of a rectangle.
+		template 	
+			<numpy.matrix, dtype=bool>
+			boolean region defining area of interest.
+		minSize 	
+			<tuple>
+			[height, width] defining minimum size of a rectangle.
 			Default: [1,1]
-		crit 		<tuple> - optimization criteria to define how we weight a rectangle's dimensions. 
+		crit 		
+			<tuple>
+			optimization criteria to define how we weight a rectangle's dimensions. 
+			maximizes like this: [height, width, area]
 			Examples: 
+				Let S[r,c] = side length of largest square w/ raster origin at (r,c)
+				For each pixel in S, maximization criterion is proportional to:
+					(crit[0]+crit[1]+crit[2]*S(r,c))*S[r,c],
+				So:
 				[1 1 0] maximizes perimeter
 				[0 0 1] maximizes area
 			Default: [0 0 1]
-		skip 	<int> - number of lines to skip when searching for the largest rectangle.
+		skip
+			<int>
+			number of lines to skip when searching for the largest rectangle.
 			Examples:
 				skip == 1  -> search every line (slow execution, finds largest rectangles)
 				skip == 16 -> search every 16th line (fast execution, doesn't always find largest rectangles)
+			Default: 8
 	Output:
 		C - value of crit calculated for each pixel
 		maxH, maxW - for each pixel in template[nR,nC], return height and width of largest rectangle found there
@@ -216,8 +230,16 @@ def FindLargestSquares(template):
 	# Use boolean template to create a float matrix for tracking square sizes
 	S = np.multiply(np.ones((nR, nC)), template)
 	
-	for r in range(nR-1:-1:-1):
-		for c in range(nC-1:-1:-1):
+	# Start with this pixel:
+	'''
+	0 0 0 0
+	0 0 0 0 
+	0 0 1 0 
+	0 0 0 0 
+	'''
+	# Move left then up.
+	for r in range(nR-2:-1:-1):
+		for c in range(nC-2:-1:-1):
 			if S[r,c]:
 				a = S[r  , c+1]
 				b = S[r+1, c  ]
