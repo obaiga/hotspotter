@@ -9,7 +9,7 @@ E: 2/20/17
 '''
 import numpy as np
 import math
-import scipi.io as sio
+import scipy.io as sio
 
 ''' Parameters '''
 templateName = 'template0.mat'
