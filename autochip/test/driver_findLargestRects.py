@@ -17,5 +17,5 @@ templateName = 'template0.mat'
 ''' Initialization '''
 
 
-matContents = sio.loadmat('template0.mat')	# Load up the template generated in ML
+matContents = sio.loadmat(templateName)	# Load up the template generated in ML
 template = matContents['template'] 			# get the actual template
