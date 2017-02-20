@@ -10,12 +10,17 @@ E: 2/20/17
 import numpy as np
 import math
 import scipy.io as sio
+import sys
+# BEWARE the hardcoded path
+sys.path.append('~/Documents/hotspotter/autochip/')
+from findLargestRects import findLargestRects as flr
+
 
 ''' Parameters '''
 templateName = 'template0.mat'
 
 ''' Initialization '''
-
-
 matContents = sio.loadmat(templateName)	# Load up the template generated in ML
-template = matContents['template'] 			# get the actual template
+template = matContents['template'] 		# get the actual template
+
+largestRect = flr.findLargestRects(template)
