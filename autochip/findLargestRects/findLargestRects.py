@@ -8,7 +8,7 @@ E: 2/2/17
 '''
 
 
-if __name__ == "__main"":
+if __name__ == "__main__":
 	import sys
 	findLargestRects('~/Documents/hotspotter/autochip/test/'+ sys.argv[1])
 	
@@ -75,6 +75,8 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 	# Import necessary modules 
 	import numpy as np
 	import math
+	'''Pyython Debug'''
+	import pdb
 	#import scipy.io as sio
 	
 	# get height, width of template
@@ -89,7 +91,7 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 		
 	# If we haven't run FINDLARGESTSQUARES yet, do it. 
 	if template.max() - template.min() == 1:
-		S = FindLargestSquares(template)
+		S = findLargestSquares(template)
 	else: 	# o.t.w. just use our "template"
 		S = template
 	
@@ -219,10 +221,25 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 	# /for r
 	del w_h	# Delete it for memory
 	
+	'''pdb'''
+	#pdb.set_trace()
+	
 	# Make a copy for playing around with
 	critVals_atLeastMin = critVals
 	# If any values in tempCrit are less than minimum sizes, set them to 0
-	critVals_atLeastMin[(maxH < minHeight) or (maxW < minWidth)] = 0
+	'''
+	2/23/17 21:57
+	This line seems to be an issue:
+		critVals_atLeastMin[(maxH < minHeight) or (maxW < minWidth)] = 0
+	The error thrown when using it is:
+		"ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()"
+	2/23/17 22:36
+		Seems to be working ok after playing around with it
+
+	'''
+	# If height or width is too small, don't even consider it
+	critVals_atLeastMin[maxH < minHeight] = 0
+	critVals_atLeastMin[maxW < minWidth] = 0
 	
 	# If there is at least one rectangle larger than min, get it
 	if critVals_atLeastMin.any():
@@ -237,12 +254,13 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 	rectMask = np.zeros((nR,nC))	
 	# Define largest rectangle with mask
 	rectMask[row : (row+maxH[row,col]), col : (col+maxW[row,col])] = 1;
-	return('critVals', critVals, 'maxH', maxH, 'maxW', maxW, 'rectMask', rectMask)
+	# Added bounds output for integration
+	return('bounds', (col, row, maxW[row, col], maxH[row, col]),'critVals', critVals, 'maxH', maxH, 'maxW', maxW, 'rectMask', rectMask)
 #/FindLargestRectangles
 
 
 ''' Definition helper function FINDLARGESTSQUARES '''	
-def FindLargestSquares(template):
+def findLargestSquares(template):
 	import numpy as np
 	import math
 
@@ -250,6 +268,7 @@ def FindLargestSquares(template):
 	nR,nC = template.shape;
 	# Use boolean template to create a float matrix for tracking square sizes
 	S = np.multiply(np.ones((nR, nC)), template)
+
 	
 	# Start with this pixel:
 	'''
@@ -269,6 +288,8 @@ def FindLargestSquares(template):
 			#/if S
 		#/for c
 	#/for r
+	# Cast as an int for space and ability to index
+	S = S.astype(int)	# Added 2/23/17
 	return S
 #/FindLargestSquares		
 	
