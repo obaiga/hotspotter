@@ -1,3 +1,19 @@
+''' 
+findLargestRects.py
+
+Original Author: Unknown
+Translated from MATLAB to Python by Joshua Beard
+C: 1/28/17
+E: 2/2/17
+'''
+
+
+if __name__ == "__main"":
+	import sys
+	findLargestRects('~/Documents/hotspotter/autochip/test/'+ sys.argv[1])
+	
+
+
 def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 	'''
 	Find largest rectangles within a template.
@@ -53,6 +69,7 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 	'''
 	
 	''' Initialization '''
+
 	
 	# Don't need to write nargin clause because of default variable definitions
 	# Import necessary modules 
