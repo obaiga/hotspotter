@@ -4,7 +4,7 @@ findLargestRects.py
 Original Author: Unknown
 Translated from MATLAB to Python by Joshua Beard
 C: 1/28/17
-E: 2/24/17
+E: 2/26/17
 '''
 
 
@@ -14,7 +14,7 @@ if __name__ == "__main__":
 	
 
 
-def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
+def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=1):
 	'''
 	Find largest rectangles within a template.
 	Input:
@@ -57,6 +57,7 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 	
 	EDITS:
 		1/28/17 started writing [jb]
+		2/26/17 Need to use MATRIX.copy() to get copy by values, not reference!
 			
 	NOTES:
 		Two ways to implement matrices in python:
@@ -64,8 +65,11 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 			2. A = matrix('1,2,3;4,5,6')
 	
 	TODOS:
-		1/28/17 Return things DONE
-		2/24/17 Figure out why maxW and maxH return 349 as largest side length (this is the max for S)
+		DONE 1/28/17 Return things
+		DONE 2/24/17 Figure out why maxW and maxH return 349 as largest side length (this is the max for S)
+		DONE 2/26/17 Currently only returns squares. I believe it has something to do with copying
+			Turns out it was an indentation problem
+			
 		
 	
 	'''
@@ -78,9 +82,9 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 	import numpy as np
 	import math
 	#import scipy.io as sio
-	'''Python Debug'''
+	'''Python Debug
 	import pdb
-	pdb.set_trace()
+	pdb.set_trace()'''
 
 	
 	# get height, width of template
@@ -103,8 +107,8 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 	n = S.max()
 	
 	# Duplicate template for messing around with it
-	maxW = S
-	maxH = S
+	maxW = S.copy()
+	maxH = S.copy()
 	
 	# Synthesize criteria-weighted values for each of the largest squares
 	critVals = np.multiply((crit[0] + crit[1] + crit[2]*S), S)
@@ -131,8 +135,8 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 		
 		# Go through all pixels in a column in reverse raster (generates raster)
 		for c_j in range(nC-1,-1,-1):
-			''' DEBUG
-			if maxW[r_i,c_j] >= 349:
+			''' DEBUG when using template0.pickle
+			if r_i == 2 and c_j == 1:
 				pdb.set_trace()'''
 			# Grab side length
 			s = S[r_i,c_j]
@@ -143,19 +147,21 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 				
 				# Go through all possible height/width combos
 				# Highest values are most likely to be best choices (for time)
-				for height in range(s,-1,-1):
+				for height in range(s,0,-1):
 					# Look up width that corresponds to given height
-					width = h2w[height-1]
+					#width = h2w[height-1]
+					width = h2w[height]
 					# Width is either that value(+1) or precalculated width
 					width = max(width+1, s)
 					# Update height-width lookup list with (maybe) new width
-					h2w[height-1] = width
+					#h2w[height-1] = width
+					h2w[height] = width
 					# Calculate crit-weighted value for this rectangle
 					thisCrit = crit[0]*height + crit[1]*width + crit[2]*width*height
 					# If thisCrit is larger than maxCrit...
-			        if thisCrit > maxCrit:
-						''' DEBUG'''
-						#pdb.set_trace()
+					if thisCrit > maxCrit:
+						''' DEBUG
+						pdb.set_trace()'''
 			        	# ...update maxCrit and max width and height matrices
 						maxCrit = thisCrit
 						maxW[r_i,c_j] = width
@@ -206,17 +212,19 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 				
 				# Go through all possible width-height combos
 				# Highest values are most likely to be best choices (for time)
-				for width in range(s,-1,-1):
+				for width in range(s,0,-1):
 					# Look up height that corresponds to given width
-					height = w2h[width-1]
+					height = w2h[width]
+					#height = w2h[width-1]
 					# Heigth is either that value(+1) or precalculated height
 					height = max(height+1, s)
 					# Update width-height lookup list with (maybe) new width
-					w2h[width-1] = height
+					w2h[width] = height
+					#w2h[width-1] = height
 					# Calculate crit-weighted value for this rectangle
 					thisCrit = crit[0]*height + crit[1]*width + crit[2]*width*height
 					# If thisCrit is larger than maxCrit...
-			        if thisCrit > maxCrit:
+					if thisCrit > maxCrit:
 						#pdb.set_trace()
 						# ...update maxCrit and max width and height matrices
 						maxCrit = thisCrit
@@ -263,9 +271,10 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=8):
 	
 	# Convert linear index to subscript
 	row, col = np.unravel_index(pos, (nR, nC))
+
 	
-	'''pdb'''
-	pdb.set_trace()
+	'''pdb
+	pdb.set_trace()'''
 	
 	# Initialize mask as zeros
 	rectMask = np.zeros((nR,nC))	
