@@ -51,7 +51,7 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=1):
 		
 	Author: Unknown (MATLAB)
 	Translated from MATLAB to Python by Joshua Beard
-	Contributors: Joshua Beard and Taz Bales-Heisterkamp
+	Contributors: Taz Bales-Heisterkamp
 	C: 1/28/17
 	E: 1/28/17
 	

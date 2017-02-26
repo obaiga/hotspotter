@@ -20,7 +20,8 @@ import sys
 # BEWARE the hardcoded path
 hsPath = '/home/joshuabeard/Documents/hotspotter'
 testPath = '/home/joshuabeard/Documents/hotspotter/autochip/test'
-templateName = 'template0.mat'
+templateName = 'template1.mat'
+#template = pickle.load(open("template0.pickle", "rb")) # If using simple template for testing
 
 ''' More imports after defining parameters '''
 sys.path.append(hsPath)
