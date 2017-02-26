@@ -1,21 +1,159 @@
-''' 
-findLargestRects.py
-
-Original Author: Unknown
-Translated from MATLAB to Python by Joshua Beard
-C: 1/28/17
-E: 2/26/17
-'''
-
-
 if __name__ == "__main__":
 	import sys
-	findLargestRects('~/Documents/hotspotter/autochip/test/'+ sys.argv[1])
-	
+	autochip('~/Documents/hotspotter/autochip/test/'+sys.argv[1])
 
+
+def autochip(template, exclFac = 1, skip = 8, stopCrit = .75, crit = [0,0,1], minSize = [1,1]):
+	'''
+	Find largest rectangles within a template.
+	Input:
+		template
+			<numpy.matrix, dtype=bool>
+			boolean region defining area of interest. MATLAB .mat file, converted to numpy.matrix 	
+		exclFac
+			<int>
+			Measure of how much of each chip we ignore on consecutive searches
+			0 corresponds with ignoring just the point at the center of mass
+		skip
+			<int>
+			number of lines we skip when searching for largest rectangles
+		stopCrit
+			<number>
+			stopping criteria for terminating autochipping
+			If stopCrit < 1, corresponds to paercentage of template chipped
+			If stopCrit > 1, corresponds with number of chips
+			If stopCrit == 1, only pulls one chip
+		crit
+			<list, dtype>
+			maximization criteria for finding largest rectangles
+		minSize
+			<list>
+			minimum size of rectangle. 
+			If minSize >= 1, corresponds to pixels
+			If minSize < 1, corresponds to fraction of image size
+			
+	Output:
+		Set of chips defined by (x, y, w, h) in raster order
+		
+	Author: Joshua Beard
+	Contributor: Taz Bales-Heisterkamp
+	C: 2/18/17
+
+	
+	EDITS:
+
+			
+	NOTES:
+		Two ways to implement matrices in python:
+			1. A = matrix([[1,2,3],[4,5,6]])
+			2. A = matrix('1,2,3;4,5,6')
+	
+	TODOS:
+		DONE	2/26/17	Bring everything into a loop to generalize
+		2/26/17 get rid of COL, ROW, WIDTH, HEIGHT for memory and speed?
+	
+	'''
+	
+	''' Initialization '''
+	#import numpy as np
+	import math
+	
+	templateMod = template.copy()	# Get a template to mess around with
+	chipBounds = [];				# Initialize chip bounds
+	
+	''' DEBUG 
+	import pdb'''
+	
+	''' Work '''
+	stopCrit = abs(stopCrit)	# Make sure we don't try to mess with negatives
+	# If we're running until we capture a certain percentage
+	if stopCrit < 1:	
+		#pdb.set_trace()
+		templateCoverage = template.sum()*1.0	# Use this for finding our stop criteria
+		# run until we've covered X% of the template
+		while templateMod.sum()/templateCoverage > (1-stopCrit):
+			
+			# Get the bounds of the next chip
+			R = findLargestRects(templateMod, crit, minSize, skip)
+			chipBounds.append([R['bounds']])	# Get first chip bounds as tuple, store in list
+			
+			# Get bounds for new rectangle
+			col = R['bounds'][0]
+			row = R['bounds'][1]
+			width = R['bounds'][2]
+			height = R['bounds'][3]
+	
+			# Get bounds for rectangle to remove from future searches
+			if exclFac > 0:	# If we want to remove a rectangle
+				rmWidth = int(math.floor(width/exclFac))
+				rmHeight = int(math.floor(height/exclFac))
+				if exclFac == 1:
+					rmRow = row
+					rmCol = col
+				else:
+					rmRow = int(row+(math.floor(rmHeight/2)))
+					rmCol = int(col+(math.floor(rmWidth/2)))
+			else:			# If we want to remove a point
+				rmWidth = 0
+				rmHeight = 0
+				rmRow = int(row+math.floor(height/2))
+				rmCol = int(col+math.floor(width/2))
+
+			''' DB 
+			pdb.set_trace()'''
+			# Cut out some part of template for next search
+			templateMod[rmRow:rmRow+rmHeight+1,rmCol:rmCol+rmWidth+1] = 0;
+		# /while
+	
+	# If we're running until we get a certain number of chips
+	elif stopCrit > 1:
+		for q in range(0,int(round(stopCrit))):
+			# Get the bounds of the next chip
+			R = findLargestRects(templateMod, crit, minSize, skip)
+			chipBounds.append([R['bounds']])	# Get first chip bounds as tuple, store in list
+			
+			# Get bounds for new rectangle
+			col = R['bounds'][0]
+			row = R['bounds'][1]
+			width = R['bounds'][2]
+			height = R['bounds'][3]
+	
+			# Get bounds for rectangle to remove from future searches
+			if exclFac > 0:	# If we want to remove a rectangle
+				rmWidth = int(math.floor(width/exclFac))
+				rmHeight = int(math.floor(height/exclFac))
+				if exclFac == 1:
+					rmRow = row
+					rmCol = col
+				else:
+					rmRow = int(row+(math.floor(rmHeight/2)))
+					rmCol = int(col+(math.floor(rmWidth/2)))
+			else:	# If we want to remove a point
+				rmWidth = 0
+				rmHeight = 0
+				rmRow = int(row+math.floor(height/2))
+				rmCol = int(col+math.floor(width/2))
+
+			''' DB 
+			pdb.set_trace()'''
+			# Cut out some part of template for next search
+			templateMod[rmRow:rmRow+rmHeight+1,rmCol:rmCol+rmWidth+1] = 0;
+		# /for
+
+	# If we're just grabbing one chip
+	else:
+		R = findLargestRects(templateMod, crit, minSize, skip)
+		chipBounds.append([R['bounds']])	# Get first chip bounds as tuple, store in list
+
+
+	return chipBounds
+		
 
 def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=1):
 	'''
+	RETURNS: 
+		R = {'bounds':(col, row, maxW[row, col], maxH[row, col]), 'critVals': critVals, 'maxW':maxW, 'maxH':maxH}
+	
 	Find largest rectangles within a template.
 	Input:
 		template 	
@@ -45,6 +183,7 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=1):
 				skip == 16 -> search every 16th line (fast execution, doesn't always find largest rectangles)
 			Default: 8
 	Output:
+		R
 		critVals - value of crit calculated for each pixel
 		maxH, maxW - for each pixel in template[nR,nC], return height and width of largest rectangle found there
 		rectMask - mask of the largest rectangle in the image
@@ -52,8 +191,7 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=1):
 	Author: Unknown (MATLAB)
 	Translated from MATLAB to Python by Joshua Beard
 	Contributors: Taz Bales-Heisterkamp
-	C: 1/28/17
-	E: 1/28/17
+	1/28/17
 	
 	EDITS:
 		1/28/17 started writing [jb]
