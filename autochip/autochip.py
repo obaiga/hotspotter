@@ -507,7 +507,7 @@ def getTemplate(pathTo,matFileName):
 ''' MAIN '''	
 if __name__ == "__main__":
 	import sys
-	if len(sys.arv) == 2:
+	if len(sys.argv) == 2:
 		chippedImages = doAutochipping(sys.argv[1])
 		print chippedImages
 	else:# len(sys.argv) == 3:
