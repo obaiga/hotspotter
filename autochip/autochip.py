@@ -1,5 +1,33 @@
 
+''' Do autochipping '''
+def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .75, skip = 8, crit = [0,0,1], minSize = [1,1]):
+	'''
+	Driver for autochipping. Designed to be plug-n-play with HotSpotter GUI
+	Author: Joshua Beard
 
+	C: 2/27/17
+
+	EDITS:
+
+			
+	NOTES:
+
+	TODOS:
+
+	'''
+	''' Initialization '''
+	import os
+	chippedImages = {};
+	for fileName in os.listdir(directoryToTemplates):
+		if fileName.endswith('.mat'):
+			# get template and autochip
+			template = getTemplate(directoryToTemplates, fileName)
+			chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
+			chippedImages[fileName[0:len(fileName)-4]] = chips
+	return chippedImages
+#/doAutochipping
+
+''' autochip '''
 def autochip(template, exclFac = 1, skip = 8, stopCrit = .75, crit = [0,0,1], minSize = [1,1]):
 	'''
 	Find largest rectangles within a template.
