@@ -1,8 +1,33 @@
-if __name__ == "__main__":
-	import sys
-	autochip('~/Documents/hotspotter/autochip/test/'+sys.argv[1])
 
+''' Do autochipping '''
+def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .75, skip = 8, crit = [0,0,1], minSize = [1,1]):
+	'''
+	Driver for autochipping. Designed to be plug-n-play with HotSpotter GUI
+	Author: Joshua Beard
 
+	C: 2/27/17
+
+	EDITS:
+
+			
+	NOTES:
+
+	TODOS:
+
+	'''
+	''' Initialization '''
+	import os
+	chippedImages = {};
+	for fileName in os.listdir(directoryToTemplates):
+		if fileName.endswith('.mat'):
+			# get template and autochip
+			template = getTemplate(directoryToTemplates, fileName)
+			chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
+			chippedImages[fileName[0:len(fileName)-4]] = chips
+	return chippedImages
+#/doAutochipping
+
+''' autochip '''
 def autochip(template, exclFac = 1, skip = 8, stopCrit = .75, crit = [0,0,1], minSize = [1,1]):
 	'''
 	Find largest rectangles within a template.
@@ -147,8 +172,9 @@ def autochip(template, exclFac = 1, skip = 8, stopCrit = .75, crit = [0,0,1], mi
 
 
 	return chipBounds
-		
+#/autochip
 
+''' Helper function FINDLARGESTRECTS '''
 def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=1):
 	'''
 	RETURNS: 
@@ -424,8 +450,7 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=1):
 	return R
 #/FindLargestRectangles
 
-
-''' Definition helper function FINDLARGESTSQUARES '''	
+''' Helper function FINDLARGESTSQUARES '''	
 def findLargestSquares(template):
 	import numpy as np
 	import math
@@ -459,9 +484,38 @@ def findLargestSquares(template):
 	return S
 #/FindLargestSquares		
 	
+''' Helper function GETTEMPLATE '''
+import scipy.io as sio
+import os
+
+def getTemplate(pathTo,matFileName):
+	if os.sep == '\\':				# Windows
+		if pathTo.endswith('\\'):	# separator is present
+			m = sio.loadmat(pathTo+matFileName)
+		else:						# separator is absent
+			m = sio.loadmat(pathTo+'\\'+matFileName)
+	else:							# Unix
+		if pathTo.endswith('/'):	# separator is present
+			m = sio.loadmat(pathTo+matFileName)
+		else:						# separator is absent
+			m = sio.loadmat(pathTo+'/'+matFileName)
+	#/if os.sep
 	
-	
-	
+	return m['template']
+#/ getTemplate
+
+''' MAIN '''	
+if __name__ == "__main__":
+	import sys
+	if len(sys.argv) == 2:
+		chippedImages = doAutochipping(sys.argv[1])
+		print chippedImages
+	else:# len(sys.argv) == 3:
+		template = getTemplate(sys.argv[1], sys.argv[2])
+		C = autochip(template)
+		print C
+
+
 	
 	
 	
