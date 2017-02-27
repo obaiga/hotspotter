@@ -1,7 +1,7 @@
 from __future__ import division, print_function
 from hscom import __common__
 (print, print_, print_on, print_off,
- rrr, profile) = __common__.init(__name__, '[front]')
+ rrr, profile, printDBG) = __common__.init(__name__, '[front]', DEBUG=False)
 # Python
 import sys
 # Qt
@@ -26,6 +26,10 @@ NOSTEAL_OVERRIDE = False  # Hard disable switch for stream stealer
 # Decorators / Helpers
 #=================
 
+try:
+    _fromUtf8 = QtCore.QString.fromUtf8
+except AttributeError:
+    _fromUtf8 = lambda s: s
 
 def clicked(func):
     def clicked_wrapper(front, item, *args, **kwargs):
@@ -48,6 +52,36 @@ def csv_sanatize(str_):
 #=================
 # Stream Stealer
 #=================
+import logging
+
+
+class GUILoggingSender(QtCore.QObject):
+    write_ = QtCore.pyqtSignal(str)
+
+    def __init__(self, front):
+        super(GUILoggingSender, self).__init__()
+        self.write_.connect(front.gui_write)
+
+    def write_gui(self, msg):
+        self.write_.emit(str(msg))
+
+
+class GUILoggingHandler(logging.StreamHandler):
+    """
+    A handler class which sends messages to to a connected QSlot
+    """
+    def __init__(self, front):
+        super(GUILoggingHandler, self).__init__()
+        self.sender = GUILoggingSender(front)
+
+    def emit(self, record):
+        try:
+            msg = self.format(record) + '\n'
+            self.sender.write_.emit(msg)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            self.handleError(record)
 
 
 class StreamStealer(QtCore.QObject):
@@ -80,7 +114,9 @@ class StreamStealer(QtCore.QObject):
 
         # Remember which stream you've stolen
         self.iostream = sys.stdout
+        self.iostream2 = sys.stderr
         # Redirect standard out to the StreamStealer object
+        sys.stderr = self
         sys.stdout = self
         #steam_holder.stdout
 
@@ -97,9 +133,12 @@ class StreamStealer(QtCore.QObject):
 
 
 def _steal_stdout(front):
+    from hscom import params
     #front.ui.outputEdit.setPlainText(sys.stdout)
-    nosteal = front.back.hs.args.nosteal
-    noshare = front.back.hs.args.noshare
+    nosteal = params.args.nosteal
+    noshare = params.args.noshare
+    if '--cmd' in sys.argv:
+        nosteal = noshare = True
     #from IPython.utils import io
     #with io.capture_output() as captured:
         #%run my_script.py
@@ -109,7 +148,11 @@ def _steal_stdout(front):
     print('[front] stealing standard out')
     if front.ostream is None:
         # Connect a StreamStealer object to the GUI output window
-        front.ostream = StreamStealer(front, share=not noshare)
+        if '--nologging' in sys.argv:
+            front.ostream = StreamStealer(front, share=not noshare)
+        else:
+            front.gui_logging_handler = GUILoggingHandler(front)
+            __common__.add_logging_handler(front.gui_logging_handler)
     else:
         print('[front] stream already stolen')
 
@@ -119,6 +162,7 @@ def _return_stdout(front):
     print('[front] returning standard out')
     if front.ostream is not None:
         sys.stdout = front.ostream.iostream
+        sys.stderr = front.ostream.iostream2
         front.ostream = None
         return True
     else:
@@ -147,15 +191,6 @@ def connect_file_signals(front):
     ui.actionImport_Img_dir.triggered.connect(back.import_images_from_dir)
     ui.actionQuit.triggered.connect(back.quit)
 
-#function for new functionalities -MD
-def connect_button_signals(front):
-    ui = front.ui
-    back= front.back
-    ui.pushButton.clicked.connect(back.import_images_from_dir)
-    ui.pushButton_2.clicked.connect(back.save_database)
-    #ui.AutoChip.clicked.connect(back.AutoChip)
-    ui.pushButton_3.clicked.connect(back.save_database)
-    #ui.AutoQuery.clicked.connect(back.AutoQuery)
 
 def connect_action_signals(front):
     ui = front.ui
@@ -166,6 +201,7 @@ def connect_action_signals(front):
     ui.actionReselect_Ori.triggered.connect(back.reselect_ori)
     ui.actionReselect_ROI.triggered.connect(back.reselect_roi)
     ui.actionDelete_Chip.triggered.connect(back.delete_chip)
+    ui.actionDelete_Image.triggered.connect(back.delete_image)
     ui.actionNext.triggered.connect(back.select_next)
 
 
@@ -181,7 +217,7 @@ def connect_help_signals(front):
     ui = front.ui
     back = front.back
     msg_event = lambda title, msg: lambda: guitools.msgbox(title, msg)
-    #ui.actionView_Docs.triggered.connect(back.view_docs)
+    ui.actionView_Docs.triggered.connect(back.view_docs)
     ui.actionView_DBDir.triggered.connect(back.view_database_dir)
     ui.actionView_Computed_Dir.triggered.connect(back.view_computed_dir)
     ui.actionView_Global_Dir.triggered.connect(back.view_global_dir)
@@ -192,6 +228,7 @@ def connect_help_signals(front):
     ui.actionDelete_Precomputed_Results.triggered.connect(back.delete_queryresults_dir)
     ui.actionDev_Mode_IPython.triggered.connect(back.dev_mode)
     ui.actionDeveloper_Reload.triggered.connect(back.dev_reload)
+    #Taken care of by add_action ui.actionDetect_Duplicate_Images.triggered.connect(back.detect_dupimg)
     #ui.actionWriteLogs.triggered.connect(back.write_logs)
 
 
@@ -224,6 +261,53 @@ def connect_experimental_signals(front):
     #action = menu.exec_(front.ui.gxs_TBL.mapToGlobal(pos))
     #front.print('action = %r ' % action)
 
+def new_menu_action(front, menu_name, name, text=None, shortcut=None, slot_fn=None):
+    # Dynamically add new menu actions programatically
+    action_name = name
+    action_text = text
+    action_shortcut = shortcut
+    ui = front.ui
+    if hasattr(ui, action_name):
+        raise Exception('menu action already defined')
+    action = QtGui.QAction(front)
+    setattr(ui, action_name, action)
+    action.setShortcutContext(QtCore.Qt.ApplicationShortcut)
+    action.setObjectName(_fromUtf8(action_name))
+    menu = getattr(ui, menu_name)
+    menu.addAction(action)
+    if action_text is None:
+        action_text = action_name
+    # TODO: Have ui.retranslate call this
+    def retranslate_fn():
+        printDBG('retranslating %s' % name)
+        action.setText(QtGui.QApplication.translate("mainSkel", action_text, None, QtGui.QApplication.UnicodeUTF8))
+        if action_shortcut is not None:
+            action.setShortcut(QtGui.QApplication.translate("mainSkel", action_shortcut, None, QtGui.QApplication.UnicodeUTF8))
+    def connect_fn():
+        printDBG('connecting %s' % name)
+        action.triggered.connect(slot_fn)
+    connect_fn.func_name = name + '_' + connect_fn.func_name
+    retranslate_fn.func_name = name + '_' + retranslate_fn.func_name
+    front.connect_fns.append(connect_fn)
+    front.retranslatable_fns.append(retranslate_fn)
+    retranslate_fn()
+
+
+def set_tabwidget_text(front, tblname, text):
+    printDBG('[front] set_tabwidget_text(%s, %s)' % (tblname, text))
+    tablename2_tabwidget = {
+        'gxs': front.ui.image_view,
+        'cxs': front.ui.chip_view,
+        'nxs': front.ui.name_view,
+        'res': front.ui.result_view,
+    }
+    ui = front.ui
+    tab_widget = tablename2_tabwidget[tblname]
+    tab_index = ui.tablesTabWidget.indexOf(tab_widget)
+    tab_text = QtGui.QApplication.translate("mainSkel", text, None,
+                                            QtGui.QApplication.UnicodeUTF8)
+    ui.tablesTabWidget.setTabText(tab_index, tab_text)
+
 
 class MainWindowFrontend(QtGui.QMainWindow):
     printSignal     = pyqtSignal(str)
@@ -233,6 +317,7 @@ class MainWindowFrontend(QtGui.QMainWindow):
     selectResSignal = pyqtSignal(int)
     selectNameSignal = pyqtSignal(str)
     changeCidSignal = pyqtSignal(int, str, str)
+    aliasNameSignal = pyqtSignal(int, str, str)
     changeGxSignal  = pyqtSignal(int, str, bool)
     querySignal = pyqtSignal()
 
@@ -241,10 +326,16 @@ class MainWindowFrontend(QtGui.QMainWindow):
         #print('[*front] creating frontend')
         front.prev_tbl_item = None
         front.ostream = None
+        front.gui_logging_handler = None
         front.back = back
         front.ui = init_ui(front)
+        # Programatially Defined Actions
+        front.retranslatable_fns = []
+        front.connect_fns = []
+        new_menu_action(front, 'menuHelp', 'actionDetect_Duplicate_Images',
+                        text='Detect Duplicate Images', slot_fn=back.detect_dupimg)
         # Progress bar is not hooked up yet
-        #front.ui.progressBar.setVisible(False)
+        front.ui.progressBar.setVisible(False)
         front.connect_signals()
         front.steal_stdout()
 
@@ -282,6 +373,7 @@ class MainWindowFrontend(QtGui.QMainWindow):
         front.selectResSignal.connect(back.select_res_cid)
         front.selectNameSignal.connect(back.select_name)
         front.changeCidSignal.connect(back.change_chip_property)
+        front.aliasNameSignal.connect(back.alias_name)
         front.changeGxSignal.connect(back.change_image_property)
         front.querySignal.connect(back.query)
 
@@ -290,9 +382,10 @@ class MainWindowFrontend(QtGui.QMainWindow):
         connect_action_signals(front)
         connect_option_signals(front)
         connect_batch_signals(front)
-        connect_button_signals(front) #-MD
         #connect_experimental_signals(front)
         connect_help_signals(front)
+        for func in front.connect_fns:
+            func()
         #
         # Gui Components
         # Tables Widgets
@@ -303,6 +396,7 @@ class MainWindowFrontend(QtGui.QMainWindow):
         ui.res_TBL.itemClicked.connect(front.res_tbl_clicked)
         ui.res_TBL.itemChanged.connect(front.res_tbl_changed)
         ui.nxs_TBL.itemClicked.connect(front.name_tbl_clicked)
+        ui.nxs_TBL.itemChanged.connect(front.name_tbl_changed)
         # Tab Widget
         ui.tablesTabWidget.currentChanged.connect(front.change_view)
         ui.cxs_TBL.sortByColumn(0, Qt.AscendingOrder)
@@ -336,101 +430,126 @@ class MainWindowFrontend(QtGui.QMainWindow):
         ui.actionScale_all_ROIS.setEnabled(False)
         ui.actionWriteLogs.setEnabled(False)
         ui.actionAbout.setEnabled(False)
-        ui.actionView_Docs.setEnabled(False)
+        #ui.actionView_Docs.setEnabled(False)
 
-    def _populate_table(front, tbl, col_headers, col_editable, row_list, row2_datatup):
-        #front.printDBG('_populate_table()')
-        hheader = tbl.horizontalHeader()
+    @slot_(str, list, list, list, list)
+    @blocking
+    def populate_tbl(front, tblname, col_fancyheaders, col_editable,
+                     row_list, datatup_list):
+        #front.printDBG('populate_tbl(%s)' % table_name)
+        tblname = str(tblname)
+        fancytab_dict = {
+            'gxs': 'Image Table',
+            'cxs': 'Chip Table',
+            'nxs': 'Name Table',
+            'res': 'Query Results Table',
+        }
+        tbl_dict = {
+            'gxs': front.ui.gxs_TBL,
+            'cxs': front.ui.cxs_TBL,
+            'nxs': front.ui.nxs_TBL,
+            'res': front.ui.res_TBL,
+        }
+        tbl = tbl_dict[tblname]
+        #try:
+            #tbl = front.ui.__dict__['%s_TBL' % tblname]
+        #except KeyError:
+            #ui_keys = front.ui.__dict__.keys()
+            #tblname_list = [key for key in ui_keys if key.find('_TBL') >= 0]
+            #msg = '\n'.join(['Invalid tblname = %s_TBL' % tblname,
+                             #'valid names:\n  ' + '\n  '.join(tblname_list)])
+            #raise Exception(msg)
+        front._populate_table(tbl, col_fancyheaders, col_editable, row_list, datatup_list)
+        # Set the tab text to show the number of items listed
+        text = fancytab_dict[tblname] + ' : %d' % len(row_list)
+        set_tabwidget_text(front, tblname, text)
 
+    def _populate_table(front, tbl, col_fancyheaders, col_editable, row_list, datatup_list):
+        # TODO: for chip table: delete metedata column
+        # RCOS TODO:
+        # I have a small right-click context menu working
+        # Maybe one of you can put some useful functions in these?
+        # RCOS TODO: How do we get the clicked item on a right click?
+        # RCOS TODO:
+        # The data tables should not use the item model
+        # Instead they should use the more efficient and powerful
+        # QAbstractItemModel / QAbstractTreeModel
         def set_header_context_menu(hheader):
             hheader.setContextMenuPolicy(Qt.CustomContextMenu)
-            # TODO: for chip table: delete metedata column
             opt2_callback = [
                 ('header', lambda: print('finishme')),
                 ('cancel', lambda: print('cancel')), ]
-            # HENDRIK / JASON TODO:
-            # I have a small right-click context menu working
-            # Maybe one of you can put some useful functions in these?
             popup_slot = guitools.popup_menu(tbl, opt2_callback)
             hheader.customContextMenuRequested.connect(popup_slot)
 
         def set_table_context_menu(tbl):
             tbl.setContextMenuPolicy(Qt.CustomContextMenu)
-            # RCOS TODO: How do we get the clicked item on a right click?
-            # tbl.selectedItems
-            # tbl.selectedIndexes
             opt2_callback = [
                 ('Query', front.querySignal.emit), ]
-                #('item',  lambda: print('finishme')),
-                #('cancel', lambda: print('cancel')), ]
-
             popup_slot = guitools.popup_menu(tbl, opt2_callback)
             tbl.customContextMenuRequested.connect(popup_slot)
+
+        hheader = tbl.horizontalHeader()
         #set_header_context_menu(hheader)
-        set_table_context_menu(tbl)
+        #set_table_context_menu(tbl)
 
         sort_col = hheader.sortIndicatorSection()
         sort_ord = hheader.sortIndicatorOrder()
         tbl.sortByColumn(0, Qt.AscendingOrder)  # Basic Sorting
         tblWasBlocked = tbl.blockSignals(True)
         tbl.clear()
-        tbl.setColumnCount(len(col_headers))
+        tbl.setColumnCount(len(col_fancyheaders))
         tbl.setRowCount(len(row_list))
         tbl.verticalHeader().hide()
-        tbl.setHorizontalHeaderLabels(col_headers)
-        tbl.setSelectionMode( QAbstractItemView.SingleSelection)
-        tbl.setSelectionBehavior( QAbstractItemView.SelectRows)
+        tbl.setHorizontalHeaderLabels(col_fancyheaders)
+        tbl.setSelectionMode(QAbstractItemView.SingleSelection)
+        tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
         tbl.setSortingEnabled(False)
+        #dbg_col2_dtype = {}
+        #def DEBUG_COL_DTYPE(col, dtype):
+            #if not dtype in dbg_col2_dtype:
+                #dbg_col2_dtype[dtype] = [col]
+            #else:
+                #if not col in dbg_col2_dtype[dtype]:
+                    #dbg_col2_dtype[dtype].append(col)
+        # Add items for each row and column
         for row in iter(row_list):
-            data_tup = row2_datatup[row]
+            data_tup = datatup_list[row]
             for col, data in enumerate(data_tup):
                 item = QtGui.QTableWidgetItem()
                 # RCOS TODO: Pass in datatype here.
-                #if col_headers[col] == 'AIF':
-                    #print('col=%r dat=%r, %r' % (col, data, type(data)))
+                # BOOLEAN DATA
                 if tools.is_bool(data) or data == 'True' or data == 'False':
-                    bit = bool(data)
-                    #print(bit)
-                    if bit:
-                        item.setCheckState(Qt.Checked)
-                    else:
-                        item.setCheckState(Qt.Unchecked)
+                    check_state = Qt.Checked if bool(data) else Qt.Unchecked
+                    item.setCheckState(check_state)
+                    #DEBUG_COL_DTYPE(col, 'bool')
                     #item.setData(Qt.DisplayRole, bool(data))
+                # INTEGER DATA
                 elif tools.is_int(data):
                     item.setData(Qt.DisplayRole, int(data))
+                    #DEBUG_COL_DTYPE(col, 'int')
+                # FLOAT DATA
                 elif tools.is_float(data):
                     item.setData(Qt.DisplayRole, float(data))
+                    #DEBUG_COL_DTYPE(col, 'float')
+                # STRING DATA
                 else:
                     item.setText(str(data))
-
-                item.setTextAlignment(Qt.AlignHCenter)
+                    #DEBUG_COL_DTYPE(col, 'string')
+                # Mark as editable or not
                 if col_editable[col]:
                     item.setFlags(item.flags() | Qt.ItemIsEditable)
-                    #print(item.getBackground())
                     item.setBackground(QtGui.QColor(250, 240, 240))
                 else:
                     item.setFlags(item.flags() ^ Qt.ItemIsEditable)
+                item.setTextAlignment(Qt.AlignHCenter)
                 tbl.setItem(row, col, item)
+
+        #print(dbg_col2_dtype)
         tbl.setSortingEnabled(True)
         tbl.sortByColumn(sort_col, sort_ord)  # Move back to old sorting
         tbl.show()
         tbl.blockSignals(tblWasBlocked)
-
-    @slot_(str, list, list, list, list)
-    @blocking
-    def populate_tbl(front, table_name, col_headers, col_editable,
-                     row_list, row2_datatup):
-        table_name = str(table_name)
-        #front.printDBG('populate_tbl(%s)' % table_name)
-        try:
-            tbl = front.ui.__dict__['%s_TBL' % table_name]
-        except KeyError:
-            valid_table_names = [key for key in front.ui.__dict__.keys()
-                                 if key.find('_TBL') >= 0]
-            msg = '\n'.join(['Invalid table_name = %s_TBL' % table_name,
-                             'valid names:\n  ' + '\n  '.join(valid_table_names)])
-            raise Exception(msg)
-        front._populate_table(tbl, col_headers, col_editable, row_list, row2_datatup)
 
     def isItemEditable(self, item):
         return int(Qt.ItemIsEditable & item.flags()) == int(Qt.ItemIsEditable)
@@ -486,6 +605,9 @@ class MainWindowFrontend(QtGui.QMainWindow):
     def get_nametbl_name(front, row):
         return str(front.get_header_val(front.ui.nxs_TBL, 'name', row))
 
+    def get_nametbl_nx(front, row):
+        return int(front.get_header_val(front.ui.nxs_TBL, 'nx', row))
+
     def get_imgtbl_gx(front, row):
         return int(front.get_header_val(front.ui.gxs_TBL, 'gx', row))
 
@@ -519,6 +641,15 @@ class MainWindowFrontend(QtGui.QMainWindow):
         new_val  = csv_sanatize(item.text())  # sanatize val for csv
         header_lbl = front.get_restbl_header(col)  # Get changed column
         front.changeCidSignal.emit(sel_cid, header_lbl, new_val)
+
+    @slot_(QtGui.QTableWidgetItem)
+    def name_tbl_changed(front, item):
+        front.print('name_tbl_changed()')
+        row, col = (item.row(), item.column())
+        sel_nx = front.get_nametbl_nx(row)    # The changed row's name index
+        new_val  = csv_sanatize(item.text())  # sanatize val for csv
+        header_lbl = front.get_nametbl_header(col)  # Get changed column
+        front.aliasNameSignal.emit(sel_nx, header_lbl, new_val)
 
     #=======================
     # Table Clicked Functions
@@ -561,9 +692,12 @@ class MainWindowFrontend(QtGui.QMainWindow):
 
     @slot_(int)
     def change_view(front, new_state):
-        front.print('change_view()')
+        tab_name = str(front.ui.tablesTabWidget.tabText(new_state))
+        front.print('change_view(%r)' % new_state)
         prevBlock = front.ui.tablesTabWidget.blockSignals(True)
         front.ui.tablesTabWidget.blockSignals(prevBlock)
+        if tab_name.startswith('Query Results Table'):
+            print(front.back.hs.get_cache_uid())
 
     @slot_(str, str, list)
     def modal_useroption(front, msg, title, options):

@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="newPrefix">
+    <file>SeattleUMain-red-background.png</file>
+    <file>Logo_DarkBackgrounds.png</file>
     <file>hsicon.ico</file>
   </qresource>
 </RCC>
