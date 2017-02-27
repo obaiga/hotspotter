@@ -473,7 +473,7 @@ def getTemplate(pathTo,matFileName):
 			m = sio.loadmat(pathTo+'/'+matFileName)
 	#/if os.sep
 	
-	return = m['template']
+	return m['template']
 #/ getTemplate
 
 ''' MAIN '''	
