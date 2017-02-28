@@ -10,7 +10,6 @@ import cPickle
 from os.path import normpath, exists, realpath, join, expanduser, dirname
 import datetime
 import time
-import sys
 # Science
 import numpy as np
 import cv2
@@ -18,13 +17,12 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 # Hotspotter
 import helpers
+#import skimage
+#import shelve
+#import datetime
+#import timeit
 
 VERBOSE_IO = 0  # 2
-
-ENABLE_SMART_FNAME_HASHING = False
-
-if sys.platform.startswith('win32'):
-    ENABLE_SMART_FNAME_HASHING = True
 
 
 # --- Saving ---
@@ -107,27 +105,16 @@ def debug_smart_load(dpath='', fname='*', uid='*', ext='*'):
 
 
 # --- Smart Load/Save ---
-@profile
 def __args2_fpath(dpath, fname, uid, ext):
     if len(ext) > 0 and ext[0] != '.':
         raise Exception('Fatal Error: Please be explicit and use a dot in ext')
     fname_uid = fname + uid
     if len(fname_uid) > 128:
-        fname_uid = fname + '_' + helpers.hashstr(fname_uid, 8)
+        fname_uid = helpers.hashstr(fname_uid)
     fpath = join(dpath, fname_uid + ext)
+    fpath = realpath(fpath)
     fpath = normpath(fpath)
     return fpath
-
-
-@profile
-def smart_fname_info(func_name, dpath, fname, uid, ext):
-    info_list = [
-        'dpath=%r' % dpath,
-        'uid=%r' % (uid),
-        'fname=%r, ext=%r' % (fname, ext),
-    ]
-    indent = '\n' + (' ' * 11)
-    return ('[io] ' + func_name + '(' + indent + indent.join(info_list) + ')')
 
 
 @profile
@@ -138,7 +125,8 @@ def smart_save(data, dpath='', fname='', uid='', ext='', verbose=VERBOSE_IO):
     if verbose:
         if verbose > 1:
             print('[io]')
-        print(smart_fname_info('smart_save', dpath, fname, uid, ext))
+        print(('[io] smart_save(dpath=%r,\n' + (' ' * 11) + 'fname=%r, uid=%r, ext=%r)')
+              % (dpath, fname, uid, ext))
     ret = __smart_save(data, fpath, verbose)
     if verbose > 1:
         print('[io]')
@@ -152,7 +140,8 @@ def smart_load(dpath='', fname='', uid='', ext='', verbose=VERBOSE_IO, **kwargs)
     if verbose:
         if verbose > 1:
             print('[io]')
-        print(smart_fname_info('smart_save', dpath, fname, uid, ext))
+        print(('[io] smart_load(dpath=%r,\n' + (' ' * 11) + 'fname=%r, uid=%r, ext=%r)')
+              % (dpath, fname, uid, ext))
     data = __smart_load(fpath, verbose, **kwargs)
     if verbose > 1:
         print('[io]')
@@ -216,7 +205,6 @@ def __smart_load(fpath, verbose, allow_alternative=False, can_fail=True, **kwarg
 
 
 # --- Util ---
-@profile
 def convert_alternative(fpath, verbose, can_fail):
     # check for an alternative (maybe old style or ext) file
     alternatives = find_alternatives(fpath, verbose)
@@ -239,7 +227,6 @@ def convert_alternative(fpath, verbose, can_fail):
         return data
 
 
-@profile
 def find_alternatives(fpath, verbose):
     # Check if file is in another format
     dpath, fname = os.path.split(fpath)
@@ -290,16 +277,13 @@ def exiftime_to_unixtime(datetime_str):
             #return -1
         return -1
     except ValueError as ex:
-        if isinstance(datetime_str, str) or isinstance(datetime_str, unicode):
+        if isinstance(datetime_str, str):
             if datetime_str.find('No EXIF Data') == 0:
                 return -1
             if datetime_str.find('Invalid') == 0:
                 return -1
-            if datetime_str == '0000:00:00 00:00:00':
-                return -1
         print('!!!!!!!!!!!!!!!!!!')
         print('Caught Error: ' + repr(ex))
-        print('type(datetime_str) = %r' % type(datetime_str))
         print('datetime_str = %r' % datetime_str)
         raise
 
@@ -400,20 +384,9 @@ def read_exif_list(fpath_list, **kwargs):
 
 
 @profile
-def imread(img_fpath, mode=None):
+def imread(img_fpath):
     try:
-        # opencv always reads in BGR mode (fastest load time)
         imgBGR = cv2.imread(img_fpath, flags=cv2.CV_LOAD_IMAGE_COLOR)
-        if mode is not None and mode != 'BRG':
-            # RGB is a good standard and makes physical sense
-            if mode == 'RGB':
-                return cv2.cvtColor(imgBGR, cv2.COLOR_BGR2RGB)
-            # LAB simulates human perception. Great for color comparisons
-            if mode == 'LAB':
-                return cv2.cvtColor(imgBGR, cv2.COLOR_BGR2LAB)
-            # HSV is also good for perception and more intuitive than LAB
-            if mode == 'HSV':
-                return cv2.cvtColor(imgBGR, cv2.COLOR_BGR2HSV)
         return imgBGR
     except Exception as ex:
         print('[io] Caught Exception: %r' % ex)
@@ -421,48 +394,7 @@ def imread(img_fpath, mode=None):
         raise
 
 
-DUPLICATE_HASH_PRECISION = 32
-
-
-def detect_duplicate_images(imgpath_list):
-    import sys
-    global DUPLICATE_HASH_PRECISION
-    nImg = len(imgpath_list)
-    lbl = 'checking duplicate'
-    duplicates = {}
-    mark_progress, end_progress = helpers.progress_func(nImg, lbl=lbl)
-    for count, gpath in enumerate(imgpath_list):
-        mark_progress(count)
-        img = imread(gpath)
-        img_hash = helpers.hashstr(img, DUPLICATE_HASH_PRECISION)
-        if not img_hash in duplicates:
-            duplicates[img_hash] = []
-        duplicates[img_hash].append(gpath)
-
-    if '--strict' in sys.argv:
-        # Be very safe: Check for collisions
-        for hashstr, gpath_list in duplicates.iteritems():
-            img1 = imread(gpath_list[0])
-            for gpath in gpath_list:
-                img2 = imread(gpath)
-                if not np.all(img1 == img2):
-                    DUPLICATE_HASH_PRECISION += 8
-                    raise Exception("hash collision. try again")
-    end_progress()
-    return duplicates
-
-
 # --- Standard Images ---
-
-
-def get_hsdir():
-    import sys
-    if getattr(sys, 'frozen', False):
-        hsdir = dirname(sys.executable)
-    elif __file__:
-        hsdir = dirname((dirname(__file__)))
-    return hsdir
-
 
 def splash_img_fpath():
     hsdir = dirname(__file__)

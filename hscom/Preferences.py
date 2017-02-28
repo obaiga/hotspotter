@@ -274,7 +274,6 @@ class Pref(PrefNode):
             return self._tree.child_list[attrx]
         #print(self._internal.name)
         #print(self._tree)
-        print('[prefs!] !!! ERROR !!!')
         raise AttributeError('attribute: %s.%s not found' % (self._intern.name, name))
 
     def iteritems(self):
@@ -381,7 +380,6 @@ class Pref(PrefNode):
         self_keys = set(self.__dict__.keys())
         for key, val in kwargs.iteritems():
             if key in self_keys:
-                #print('update: key=%r, %r' % (key, val))
                 #if type(val) == types.ListType:
                     #val = val[0]
                 self.__setattr__(key, val)

@@ -2,7 +2,7 @@
 from __future__ import division, print_function
 from hscom import __common__
 (print, print_, print_on, print_off, rrr, profile, printDBG) =\
-    __common__.init(__name__, '[rr2]', DEBUG=False)
+__common__.init(__name__, '[rr2]', DEBUG=False)
 # Matplotlib
 import matplotlib
 matplotlib.use('Qt4Agg')
@@ -18,14 +18,13 @@ from os.path import join, exists
 import numpy as np
 # Hotspotter imports
 from hscom import fileio as io
-from hscom import helpers as util
-from hscom import params
+from hscom import helpers
 from hscom.Printable import DynStruct
 from hsviz import draw_func2 as df2
 from hsviz import viz
-from hsviz import allres_viz
 import load_data2 as ld2
 import spatial_verification2 as sv2
+#import match_chips3 as mc3
 #import datetime
 #import subprocess
 
@@ -39,11 +38,11 @@ REPORT_MATRIX_VIZ = True
 
 class AllResults(DynStruct):
     'Data container for all compiled results'
-    def __init__(self, hs, qcx2_res, qcx_list):
+    def __init__(self, hs, qcx2_res, SV):
         super(DynStruct, self).__init__()
         self.hs       = hs
         self.qcx2_res = qcx2_res
-        self.qcx_list = hs.test_sample_cx if qcx_list is None else qcx_list
+        self.SV = SV
         self.rankres_str         = None
         self.title_suffix        = None
         self.scalar_mAP_str      = '# mAP score = NA\n'
@@ -64,7 +63,7 @@ class AllResults(DynStruct):
         scalar_summary = str(allres.scalar_summary).strip()
         toret += ('| All Results: %s \n' % hs.get_db_name())
         toret += ('| title_suffix=%s\n' % str(allres.title_suffix))
-        toret += ('| scalar_summary=\n%s\n' % util.indent(scalar_summary, '|   '))
+        toret += ('| scalar_summary=\n%s\n' % helpers.indent(scalar_summary, '|   '))
         toret += ('| ' + str(allres.scalar_mAP_str))
         toret += ('|---\n')
         toret += ('| greater5_%s \n' % (hs.cidstr(allres.greater5_cxs),))
@@ -78,11 +77,6 @@ class AllResults(DynStruct):
 
 
 class OrganizedResult(DynStruct):
-    '''
-    Maintains an organized list of query chip indexes, their top matching
-    result, the score, and the rank. What chips are populated depends on the
-    type of organization
-    '''
     def __init__(self):
         super(DynStruct, self).__init__()
         self.qcxs   = []
@@ -140,19 +134,18 @@ def get_true_match_distances(allres):
     return true_distances
 
 
-def res2_true_and_false(hs, res):
-    '''
-    Organizes results into true positive and false positive sets
-    a set is a query, its best match, and a score
-    '''
+def res2_true_and_false(hs, res, SV):
+    'Organizes results into true positive and false positive sets'
+    if not 'SV' in vars():
+        SV = True
     #if not 'res' in vars():
         #res = qcx2_res[qcx]
     indx_samp = hs.indexed_sample_cx
     qcx = res.qcx
-    cx2_score = res.cx2_score
+    cx2_score = res.cx2_score if SV else res.cx2_score
     unfilt_top_cx = np.argsort(cx2_score)[::-1]
     # Get top chip indexes and scores
-    top_cx    = np.array(util.intersect_ordered(unfilt_top_cx, indx_samp))
+    top_cx    = np.array(helpers.intersect_ordered(unfilt_top_cx, indx_samp))
     top_score = cx2_score[top_cx]
     # Get the true and false ground truth ranks
     qnx         = hs.tables.cx2_nx[qcx]
@@ -174,8 +167,9 @@ def res2_true_and_false(hs, res):
 
 
 def init_organized_results(allres):
-    print('[rr2] init_organized_results()')
+    print('[rr2] Initialize organized results')
     hs = allres.hs
+    SV = allres.SV
     qcx2_res = allres.qcx2_res
     allres.true          = OrganizedResult()
     allres.false         = OrganizedResult()
@@ -186,10 +180,10 @@ def init_organized_results(allres):
     allres.problem_false = OrganizedResult()
     # -----------------
     # Query result loop
-
-    def _organize_result(res):
+    for qcx in hs.test_sample_cx:
+        res = qcx2_res[qcx]
         # Use ground truth to sort into true/false
-        true_tup, false_tup = res2_true_and_false(hs, res)
+        true_tup, false_tup = res2_true_and_false(hs, res, SV)
         last_rank     = -1
         skipped_ranks = set([])
         # Record: all_true, missed_true, top_true, bot_true
@@ -214,18 +208,13 @@ def init_organized_results(allres):
             if topx == 0:
                 allres.top_false.append(qcx, cx, rank, score)
             topx += 1
-
-    for qcx in allres.qcx_list:
-        res = qcx2_res[qcx]
-        if res is not None:
-            _organize_result(res)
-    #print('[rr2] len(allres.true)          = %r' % len(allres.true))
-    #print('[rr2] len(allres.false)         = %r' % len(allres.false))
-    #print('[rr2] len(allres.top_true)      = %r' % len(allres.top_true))
-    #print('[rr2] len(allres.top_false)     = %r' % len(allres.top_false))
-    #print('[rr2] len(allres.bot_true)      = %r' % len(allres.bot_true))
-    #print('[rr2] len(allres.problem_true)  = %r' % len(allres.problem_true))
-    #print('[rr2] len(allres.problem_false) = %r' % len(allres.problem_false))
+    print('[rr2] len(allres.true)          = %r' % len(allres.true))
+    print('[rr2] len(allres.false)         = %r' % len(allres.false))
+    print('[rr2] len(allres.top_true)      = %r' % len(allres.top_true))
+    print('[rr2] len(allres.top_false)     = %r' % len(allres.top_false))
+    print('[rr2] len(allres.bot_true)      = %r' % len(allres.bot_true))
+    print('[rr2] len(allres.problem_true)  = %r' % len(allres.problem_true))
+    print('[rr2] len(allres.problem_false) = %r' % len(allres.problem_false))
     # qcx arrays for ttbttf
     allres.top_true_qcx_arrays  = allres.top_true.qcx_arrays(hs)
     allres.bot_true_qcx_arrays  = allres.bot_true.qcx_arrays(hs)
@@ -233,43 +222,37 @@ def init_organized_results(allres):
 
 
 def init_score_matrix(allres):
-    print('[rr2] init score matrix')
+    print(' * init score matrix')
     hs = allres.hs
+    SV = allres.SV
     qcx2_res = allres.qcx2_res
-    qcx_list = allres.qcx_list
-    nx_list = np.unique(hs.tables.cx2_nx[qcx_list])
-    #nx_list = hs.get_valid_nxs(unknown=False)
-    cxs_list = hs.nx2_cxs(nx_list, aslist=True)
+    cx2_nx = hs.tables.cx2_nx
+    # Build name-to-chips dict
+    nx2_cxs = {}
+    for cx, nx in enumerate(cx2_nx):
+        if not nx in nx2_cxs.keys():
+            nx2_cxs[nx] = []
+        nx2_cxs[nx].append(cx)
     # Sort names by number of chips
-    nx_size = map(len, cxs_list)
+    nx_list = nx2_cxs.keys()
+    nx_size = [len(nx2_cxs[nx]) for nx in nx_list]
+    nx_sorted = [x for (y, x) in sorted(zip(nx_size, nx_list))]
     # Build sorted chip list
-    nx_cxs_tuples = zip(nx_size, cxs_list)
-    # Sort by name
-    cx_sorted = [x for (y, x) in sorted(nx_cxs_tuples)]
-    # Subsort by chip
-    cx_sorted = map(sorted, cx_sorted)
-    # Flattten
-    from itertools import chain
-    cx_sorted = list(chain.from_iterable(cx_sorted))  # very fast flatten
+    cx_sorted = []
+    test_cx_set = set(hs.test_sample_cx)
+    for nx in iter(nx_sorted):
+        cxs = nx2_cxs[nx]
+        cx_sorted.extend(sorted(cxs))
+    # get matrix data rows
     row_label_cx = []
     row_scores = []
-    qcx_set = set(qcx_list)
-    # Build each row in the score matrix
     for qcx in iter(cx_sorted):
-        if not qcx in qcx_set:
+        if not qcx in test_cx_set:
             continue
-        try:
-            res = qcx2_res[qcx]
-        except IndexError:
-            print('qcx = %r' % qcx)
-            print('len(qcx2_res) = %r' % len(qcx2_res))
-            raise
-        if res is None:
-            continue
-        # Append a label to score matrix
+        res = qcx2_res[qcx]
+        cx2_score = res.cx2_score if SV else res.cx2_score
         row_label_cx.append(qcx)
-        # Append a column to score matrix
-        row_scores.append(res.cx2_score[cx_sorted])
+        row_scores.append(cx2_score[cx_sorted])
     col_label_cx = cx_sorted
     # convert to numpy matrix array
     score_matrix = np.array(row_scores, dtype=np.float64)
@@ -286,17 +269,19 @@ def get_title_suffix(hs):
     return title_suffix
 
 
-def init_allres(hs, qcx2_res,
-                qcx_list=None,
+def init_allres(hs, qcx2_res, SV=True,
                 matrix=(REPORT_MATRIX or REPORT_MATRIX_VIZ),
                 oxford=False,
                 **kwargs):
     'Organizes results into a visualizable data structure'
     # Make AllResults data containter
-    allres = AllResults(hs, qcx2_res, qcx_list)
+    allres = AllResults(hs, qcx2_res, SV)
+    #SV_aug = ['_SVOFF','_SVon'][allres.SV]
     allres.title_suffix = get_title_suffix(hs)
-    #util.ensurepath(allres.summary_dir)
-    print('[rr2] init_allres()')
+    #helpers.ensurepath(allres.summary_dir)
+    print('\n======================')
+    print(' * Initializang all results')
+    print(' * Title suffix: ' + allres.title_suffix)
     #---
     hs = allres.hs
     qcx2_res = allres.qcx2_res
@@ -314,7 +299,7 @@ def init_allres(hs, qcx2_res,
         oxsty_map_csv, scalar_mAP_str = oxsty_results.oxsty_mAP_results(allres)
         allres.scalar_mAP_str = scalar_mAP_str
         allres.oxsty_map_csv = oxsty_map_csv
-    #print(allres)
+    print(allres)
     return allres
 
 
@@ -332,7 +317,7 @@ def build_matrix_str(allres):
         return [os.path.splitext(gname)[0] for gname in gx2_gname[cx2_gx]]
     col_label_gname = cx2_gname(allres.col_label_cx)
     row_label_gname = cx2_gname(allres.row_label_cx)
-    timestamp =  util.get_timestamp(format_='comment') + '\n'
+    timestamp =  helpers.get_timestamp(format_='comment') + '\n'
     header = '\n'.join(
         ['# Result score matrix',
          '# Generated on: ' + timestamp,
@@ -353,10 +338,11 @@ def build_matrix_str(allres):
 def build_rankres_str(allres):
     'Builds csv files showing the cxs/scores/ranks of the query results'
     hs = allres.hs
+    #SV = allres.SV
     #qcx2_res = allres.qcx2_res
     cx2_cid = hs.tables.cx2_cid
     #cx2_nx = hs.tables.cx2_nx
-    test_samp = allres.qcx_list
+    test_samp = hs.test_sample_cx
     train_samp = hs.train_sample_cx
     indx_samp = hs.indexed_sample_cx
     # Get organized data for csv file
@@ -403,7 +389,7 @@ def build_rankres_str(allres):
             return [], ('NoGT', 'NoGT', -1, 'NoGT')
         # find tests with ranks greater and less than thresh
         testcx2_ttr = qcx2_top_true_rank[test_cxs_]
-        greater_cxs = test_cxs_[np.where(testcx2_ttr >= thresh)[0]]
+        greater_cxs = test_cxs_[np.where(testcx2_ttr > thresh)[0]]
         num_greater = len(greater_cxs)
         num_less    = num_with_gt - num_greater
         num_greater = num_with_gt - num_less
@@ -426,7 +412,7 @@ def build_rankres_str(allres):
     #print('greater1_cxs = %r ' % (allres.greater1_cxs,))
     # CSV Metadata
     header = '# Experiment allres.title_suffix = ' + allres.title_suffix + '\n'
-    header +=  util.get_timestamp(format_='comment') + '\n'
+    header +=  helpers.get_timestamp(format_='comment') + '\n'
     # Scalar summary
     scalar_summary  = '# Num Query Chips: %d \n' % num_chips
     scalar_summary += '# Num Query Chips with at least one match: %d \n' % len(test_samp_with_gt)
@@ -441,7 +427,7 @@ def build_rankres_str(allres):
     scalar_summary += '# OutTrain Ranks <= 1: %r/%r = %.1f%% (missed %r)\n\n' % (fmt1_out_tup)
     header += scalar_summary
     # Experiment parameters
-    #header += '# Full Parameters: \n' + util.indent(params.param_string(), '#') + '\n\n'
+    #header += '# Full Parameters: \n' + helpers.indent(params.param_string(), '#') + '\n\n'
     # More Metadata
     header += textwrap.dedent('''
     # Rank Result Metadata:
@@ -500,16 +486,16 @@ def __dump_text_report(allres, report_type):
     # Get directories
     result_dir    = allres.hs.dirs.result_dir
     timestamp_dir = join(result_dir, 'timestamped_results')
-    util.ensurepath(timestamp_dir)
-    util.ensurepath(result_dir)
+    helpers.ensurepath(timestamp_dir)
+    helpers.ensurepath(result_dir)
     # Write to timestamp and result dir
-    timestamp = util.get_timestamp()
+    timestamp = helpers.get_timestamp()
     csv_timestamp_fname = report_type + allres.title_suffix + timestamp + '.csv'
     csv_timestamp_fpath = join(timestamp_dir, csv_timestamp_fname)
     csv_fname  = report_type + allres.title_suffix + '.csv'
     csv_fpath = join(result_dir, csv_fname)
-    util.write_to(csv_fpath, report_str)
-    util.write_to(csv_timestamp_fpath, report_str)
+    helpers.write_to(csv_fpath, report_str)
+    helpers.write_to(csv_timestamp_fpath, report_str)
 
 # ===========================
 # Driver functions
@@ -609,7 +595,7 @@ def dump_problem_matches(allres):
 def dump_score_matrixes(allres):
     #print('\n---DUMPING SCORE MATRIX---')
     try:
-        allres_viz.plot_score_matrix(allres)
+        viz.plot_score_matrix(allres)
     except Exception as ex:
         print('[dump_score_matixes] IMPLEMENTME: %r ' % ex)
     pass
@@ -662,12 +648,12 @@ def dump_analysis(allres):
 
 
 def dump_all_queries2(hs):
-    import QueryResult as qr
+    import match_chips3 as mc3
     test_cxs = hs.test_sample_cx
     title_suffix = get_title_suffix(hs)
     print('[rr2] dumping all %r queries' % len(test_cxs))
     for qcx in test_cxs:
-        res = qr.QueryResult(qcx)
+        res = mc3.QueryResult(qcx)
         res.load(hs)
         # SUPER HACK (I don't know the figurename a priori, I have to contstruct
         # it to not duplciate dumping a figure)
@@ -696,7 +682,7 @@ def dump_all_queries2(hs):
 
 
 def dump_all_queries(allres):
-    test_cxs = allres.qcx_list
+    test_cxs = allres.hs.test_sample_cx
     print('[rr2] dumping all %r queries' % len(test_cxs))
     for qcx in test_cxs:
         viz.show_chip(allres, qcx, 'analysis', subdir='allqueries',
@@ -714,7 +700,8 @@ def dump_orgres_matches(allres, orgres_type):
         result_gname, _ = os.path.splitext(hs.tables.gx2_gname[hs.tables.cx2_gx[cx]])
         res = qcx2_res[qcx]
         df2.figure(fnum=1, plotnum=121)
-        df2.show_matches_annote_res(res, hs, cx, fnum=1, plotnum=121)
+        df2.show_matches_annote_res(res, hs, cx, SV=False, fnum=1, plotnum=121)
+        df2.show_matches_annote_res(res, hs, cx, SV=True,  fnum=1, plotnum=122)
         big_title = 'score=%.2f_rank=%d_q=%s_r=%s' % (score, rank, query_gname, result_gname)
         df2.set_figtitle(big_title)
         viz.__dump_or_browse(allres, orgres_type + '_matches' + allres.title_suffix)
@@ -772,11 +759,11 @@ def dump_feature_pair_analysis(allres):
         scale_list = []
         score_list = []
         lbl = 'Measuring ' + orgtype + ' pair '
-        fmt_str = util.make_progress_fmt_str(len(orgres), lbl)
+        fmt_str = helpers.make_progress_fmt_str(len(orgres), lbl)
         rank_skips = []
         gt_skips = []
         for ix, (qcx, cx, score, rank) in enumerate(orgres.iter()):
-            util.print_(fmt_str % (ix + 1,))
+            helpers.print_(fmt_str % (ix + 1,))
             # Skip low ranks
             if rank > 5:
                 rank_skips.append(qcx)
@@ -900,8 +887,8 @@ def possible_problems():
 #===============================
 
 
-def report_all(hs, qcx2_res, qcx_list, **kwargs):
-    allres = init_allres(hs, qcx2_res, qcx_list=qcx_list, **kwargs)
+def report_all(hs, qcx2_res, SV=True, **kwargs):
+    allres = init_allres(hs, qcx2_res, SV=SV, **kwargs)
     #if not 'kwargs' in vars():
         #kwargs = dict(rankres=True, stem=False, matrix=False, pdf=False,
                       #hist=False, oxford=False, ttbttf=False, problems=False,
@@ -909,9 +896,10 @@ def report_all(hs, qcx2_res, qcx_list, **kwargs):
     try:
         dump_all(allres, **kwargs)
     except Exception as ex:
+        import sys
         import traceback
         print('\n\n-----------------')
-        print('report_all(hs, qcx2_res, **kwargs=%r' % (kwargs))
+        print('report_all(hs, qcx2_res, SV=%r, **kwargs=%r' % (SV, kwargs))
         print('Caught Error in rr2.dump_all')
         print(repr(ex))
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -999,9 +987,7 @@ def print_result_summaries_list(topnum=5):
 
 def _get_orgres2_distances(allres, orgres_list=None):
     if orgres_list is None:
-        #orgres_list = ['true', 'false', 'top_true', 'bot_true', 'top_false']
-        orgres_list = ['true', 'false']
-    #print(allres)
+        orgres_list = ['true', 'false', 'top_true', 'bot_true', 'top_false']
     dist_fn = lambda orgres: get_orgres_match_distances(allres, orgres)
     orgres2_distance = {}
     for orgres in orgres_list:
@@ -1014,30 +1000,40 @@ def _get_orgres2_distances(allres, orgres_list=None):
 
 
 @profile
+def viz_db_match_distances(allres, orgres_list=None):
+    print('[rr2] viz_db_match_distances')
+    orgres2_distance = allres.get_orgres2_distances(orgres_list=orgres_list)
+    db_name = allres.hs.get_db_name()
+    viz.show_descriptors_match_distances(orgres2_distance, db_name=db_name)
+
+
+def get_true_matches():
+    qcxs = allres['true'].qcxs
+    cxs  = allres['true'].cxs
+    match_list = zip(qcxs, cxs)
+    return match_list
+
+
+@profile
 def get_orgres_match_distances(allres, orgtype_='false'):
     import algos
     qcxs = allres[orgtype_].qcxs
     cxs  = allres[orgtype_].cxs
     match_list = zip(qcxs, cxs)
-    printDBG('[rr2] getting orgtype_=%r distances between sifts' % orgtype_)
+    print('[rr2] getting orgtype_=%r distances between sifts' % orgtype_)
     adesc1, adesc2 = get_matching_descriptors(allres, match_list)
-    printDBG('[rr2]  * adesc1.shape = %r' % (adesc1.shape,))
-    printDBG('[rr2]  * adesc2.shape = %r' % (adesc2.shape,))
+    print('[rr2]  * adesc1.shape = %r' % (adesc1.shape,))
+    print('[rr2]  * adesc2.shape = %r' % (adesc2.shape,))
     #dist_list = ['L1', 'L2', 'hist_isect', 'emd']
-    #dist_list = ['L1', 'L2', 'hist_isect']
-    dist_list = ['L2', 'hist_isect']
-    hist1 = np.array(adesc1, dtype=np.float64)
-    hist2 = np.array(adesc2, dtype=np.float64)
-    distances = algos.compute_distances(hist1, hist2, dist_list)
+    #dist_list = ['L1', 'L2']
+    dist_list = ['L1', 'L2', 'hist_isect']
+    distances = algos.compute_distances(adesc1, adesc2, dist_list)
     return distances
 
 
 def get_matching_descriptors(allres, match_list):
     hs = allres.hs
     qcx2_res = allres.qcx2_res
-    # FIXME: More intelligent feature loading
-    if len(hs.feats.cx2_desc) == 0:
-        hs.refresh_features()
     cx2_desc = hs.feats.cx2_desc
     desc1_list = []
     desc2_list = []
@@ -1063,45 +1059,38 @@ def get_matching_descriptors(allres, match_list):
     return aggdesc1, aggdesc2
 
 
-def load_qcx2_res(hs, qcx_list, nocache=False):
-    'Prefrosm / loads all queries'
-    import match_chips3 as mc3
-    qreq = mc3.quickly_ensure_qreq(hs, qcxs=qcx_list)
+def load_query_results(hs, qcx_list, force_load=False):
+    query_cfg = hs.prefs.query_cfg
     # Build query big cache uid
-    query_uid = qreq.get_uid()
+    query_uid = query_cfg.get_uid()
     hs_uid    = hs.get_db_name()
-    qcxs_uid  = util.hashstr_arr(qcx_list, lbl='_qcxs')
+    qcxs_uid  = helpers.hashstr(tuple(qcx_list))
     qres_uid  = hs_uid + query_uid + qcxs_uid
     cache_dir = join(hs.dirs.cache_dir, 'query_results_bigcache')
-    print('[rr2] load_qcx2_res(): %r' % qres_uid)
+    print('\n===============')
+    print('\n[rr2] Load Query Results')
+    print('[rr2] load_query_results(): %r' % qres_uid)
     io_kwargs = dict(dpath=cache_dir, fname='query_results', uid=qres_uid, ext='.cPkl')
     # Return cache if available
-    if not params.args.nocache_query and (not nocache):
+    if not hs.args.nocache_query and (not force_load):
         qcx2_res = io.smart_load(**io_kwargs)
         if qcx2_res is not None:
-            print('[rr2]  *  cache hit')
+            print('[rr2] load_query_results(): cache hit')
             return qcx2_res
-        print('[rr2]  *  cache miss')
+        print('[rr2] load_query_results(): cache miss')
     else:
-        print('[rr2]  *  cache off')
+        print('[rr2] load_query_results(): cache off')
     # Individually load / compute queries
-    if isinstance(qcx_list, list):
-        qcx_set = set(qcx_list)
-    else:
-        qcx_set = set(qcx_list.tolist())
-    qcx_max = max(qcx_list) + 1
-    qcx2_res = [hs.query(qcx) if qcx in qcx_set else None for qcx in xrange(qcx_max)]
+    qcx2_res = [hs.query(qcx) for qcx in qcx_list]
     # Save to the cache
     print('[rr2] Saving query_results to bigcache: %r' % qres_uid)
-    util.ensuredir(cache_dir)
+    helpers.ensuredir(cache_dir)
     io.smart_save(qcx2_res, **io_kwargs)
     return qcx2_res
 
 
-def get_allres(hs, qcx_list):
-    'Performs / Loads all queries and build allres structure'
-    print('[rr2] get_allres()')
-    #valid_cxs = hs.get_valid_cxs()
-    qcx2_res = load_qcx2_res(hs, qcx_list)
-    allres = init_allres(hs, qcx2_res, qcx_list=qcx_list)
+def get_allres(hs):
+    valid_cxs = hs.get_valid_cxs()
+    qcx2_res = load_query_results(hs, valid_cxs)
+    allres = init_allres(hs, qcx2_res)
     return allres

@@ -1,7 +1,4 @@
 from __future__ import division, print_function
-import __common__
-(print, print_, print_on, print_off,
- rrr, profile) = __common__.init(__name__, '[tools]')
 # Python
 import pylru  # because we dont have functools.lru_cache
 import sys
@@ -9,23 +6,16 @@ import types
 # Science
 import numpy as np
 
-# Very odd that I have to put in dtypes in two different ways.
 VALID_INT_TYPES = (types.IntType,
                    types.LongType,
                    np.typeDict['int64'],
                    np.typeDict['int32'],
-                   np.typeDict['uint8'],
-                   np.dtype('int32'),
-                   np.dtype('uint8'),
-                   np.dtype('int64'),)
+                   np.typeDict['uint8'],)
 
 VALID_FLOAT_TYPES = (types.FloatType,
                      np.typeDict['float64'],
                      np.typeDict['float32'],
-                     np.typeDict['float16'],
-                     np.dtype('float64'),
-                     np.dtype('float32'),
-                     np.dtype('float16'),)
+                     np.typeDict['float16'],)
 
 DEBUG = False
 
@@ -40,15 +30,6 @@ else:
 def index_of(item, array):
     'index of [item] in [array]'
     return np.where(array == item)[0][0]
-
-
-def override_comparison(func):
-    def cmp_wrapper(self, other):
-        if not isinstance(other, self.__class__):
-            return super(self.__class__, self) == other
-
-    cmp_wrapper.func_name = func.func_name
-    return cmp_wrapper
 
 
 def safe_listget(list_, index, func=lambda x: x, default='?'):

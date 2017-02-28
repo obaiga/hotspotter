@@ -14,9 +14,8 @@ import guifront
 import guitools
 from guitools import drawing, slot_
 from guitools import backblocking as blocking
-from hscom import helpers as util
+from hscom import helpers
 from hscom import fileio as io
-from hscom import params
 from hsviz import draw_func2 as df2
 from hsviz import viz
 from hsviz import interact
@@ -92,10 +91,11 @@ def select_next_in_order(back):
 
 
 # Creation function
-def make_main_window(app=None, hs=None):
+def make_main_window(hs=None, app=None):
     #printDBG(r'[*back] make_main_window()')
-    back = MainWindowBackend(app=app, hs=hs)
-    if hs is None or not params.args.nogui:
+    back = MainWindowBackend(hs=hs)
+    back.app = app
+    if not hs.args.nogui:
         back.show()
         back.layout_figures()
         if app is not None:
@@ -104,48 +104,62 @@ def make_main_window(app=None, hs=None):
     return back
 
 
-def _dev_reload(back):
-    from hsdev import dev_reload
-    dev_reload.reload_all_modules()
-    df2.unregister_qt4_win('all')
-    df2.register_qt4_win(back.front)
-    back.populate_tables()
-
-
-def _user_select_new_dbdir(back):
-    'script for new database user interaction'
-    try:
-        # Ask the user what to call the new database
-        new_db = back.user_input('Enter the new database name')
-        # Return on cancel
-        if new_db is None:
-            raise StopIteration('Canceled')
-        # Ask the user where to put the new database
-        msg_put = 'Where should I put %r?' % new_db
-        opt_put = ['Choose Directory', 'My Work Dir']
-        reply = back.user_option(msg_put, 'options', opt_put, True)
-        if reply == opt_put[1]:
-            put_dir = back.get_work_directory()
-        elif reply == opt_put[0]:
-            put_dir = guitools.select_directory(
-                'Select where to put the new database')
-        else:
-            raise StopIteration('Canceled')
-        new_dbdir = join(put_dir, new_db)
-        if not exists(put_dir):
-            raise ValueError('Directory %r does not exist.' % put_dir)
-        elif exists(new_dbdir):
-            raise ValueError('New DB %r already exists.' % new_dbdir)
-        return new_dbdir
-    except ValueError as ex:
-        opt_try = ['Try Again']
-        title_try = 'New Database Failed'
-        try_again = back.user_option(str(ex), title_try, opt_try, False)
-        if try_again == 'Try Again':
-            return _user_select_new_dbdir(back)
-    except StopIteration as ex:
-        pass
-    return None
+def _dev_reload():
+    # TODO Integrate this better
+    print('===========================')
+    print('[dev] performing dev_reload')
+    print('---------------------------')
+    from hotspotter import DataStructures as ds
+    from hotspotter import algos
+    from hotspotter import load_data2 as ld2
+    from hotspotter import chip_compute2 as cc2
+    from hotspotter import feature_compute2 as fc2
+    from hotspotter import match_chips3 as mc3
+    from hotspotter import matching_functions as mf
+    from hotspotter import nn_filters
+    from hotspotter import report_results2 as rr2
+    from hotspotter import voting_rules2 as vr2
+    # Common
+    from hscom import fileio as io  # NOQA
+    from hscom import helpers  # NOQA
+    # Viz
+    from hsviz import draw_func2 as df2  # NOQA
+    from hsviz import interact  # NOQA
+    from hsviz import viz
+    # GUI
+    from hsgui import guitools  # NOQA
+    from hsgui import guifront  # NOQA
+    from hsgui import guiback  # NOQA
+    # Self
+    rrr()
+    # com
+    helpers.rrr()
+    io.rrr()
+    # hotspotter
+    ld2.rrr()
+    ds.rrr()
+    mf.rrr()
+    nn_filters.rrr()
+    mc3.rrr()
+    vr2.rrr()
+    cc2.rrr()
+    rr2.rrr()
+    fc2.rrr()
+    algos.rrr()
+    # gui
+    guitools.rrr()
+    guifront.rrr()
+    guiback.rrr()
+    # viz
+    viz.rrr()
+    interact.rrr()
+    df2.rrr()
+    print('---------------------------')
+    print('df2 reset')
+    df2.reset()
+    print('---------------------------')
+    print('[dev] finished dev_reload()')
+    print('===========================')
 
 
 #------------------------
@@ -162,7 +176,7 @@ class MainWindowBackend(QtCore.QObject):
     #------------------------
     # Constructor
     #------------------------
-    def __init__(back, app=None, hs=None):
+    def __init__(back, hs=None, app=None):
         super(MainWindowBackend, back).__init__()
         back.current_res = None
         back.timer = None
@@ -199,7 +213,7 @@ class MainWindowBackend(QtCore.QObject):
         back.table_editable = {
             'gxs':  [],
             'cxs':  ['name'],
-            'nxs':  ['name'],
+            'nxs':  [],
             'res':  ['name'],
         }
 
@@ -228,10 +242,6 @@ class MainWindowBackend(QtCore.QObject):
             viz.show_splash(fnum=fnum)
             df2.set_figtitle('%s View' % view)
 
-    def _layout_figures_if(back, did_exist):
-        #back._layout_figures_if(did_exist)
-        pass
-
     @drawing
     @profile
     def show_image(back, gx, sel_cxs=[], figtitle='Image View', **kwargs):
@@ -240,7 +250,8 @@ class MainWindowBackend(QtCore.QObject):
         df2.figure(fnum=fnum, docla=True, doclf=True)
         interact.interact_image(back.hs, gx, sel_cxs, back.select_cx,
                                 fnum=fnum, figtitle=figtitle)
-        back._layout_figures_if(did_exist)
+        if not did_exist:
+            back.layout_figures()
 
     @drawing
     @profile
@@ -254,7 +265,8 @@ class MainWindowBackend(QtCore.QObject):
             interact_fn(back.hs, cx, fnum=fnum, figtitle='Chip View')
         else:
             viz.show_chip(back.hs, cx, fnum=fnum, figtitle='Chip View')
-        back._layout_figures_if(did_exist)
+        if not did_exist:
+            back.layout_figures()
 
     @drawing
     @profile
@@ -273,7 +285,8 @@ class MainWindowBackend(QtCore.QObject):
                 res.show_analysis(back.hs, fnum=fnum, figtitle=' Analysis View')
             else:
                 res.show_top(back.hs, fnum=fnum, figtitle='Query View ')
-        back._layout_figures_if(did_exist)
+        if not did_exist:
+            back.layout_figures()
 
     @drawing
     @profile
@@ -283,7 +296,8 @@ class MainWindowBackend(QtCore.QObject):
         did_exist = df2.plt.fignum_exists(fnum)
         df2.figure(fnum=fnum, docla=True, doclf=True)
         interact.interact_chipres(back.hs, res, cx=cx, fnum=fnum)
-        back._layout_figures_if(did_exist)
+        if not did_exist:
+            back.layout_figures()
 
     @drawing
     @profile
@@ -310,16 +324,8 @@ class MainWindowBackend(QtCore.QObject):
             gx = back.hs.tables.cx2_gx(cx)
         return gx
 
-    def get_selected_cx(back, cid=None):
+    def get_selected_cx(back):
         'selected chip index'
-        if cid is not None:
-            try:
-                cx = back.hs.cid2_cx(cid)
-                return cx
-            except IndexError as ex:
-                print(ex)
-                msg = 'Query qcid=%d does not exist / is invalid' % cid
-                raise AssertionError(msg)
         if back.selection is None:
             return None
         type_ = back.selection['type_']
@@ -359,8 +365,10 @@ class MainWindowBackend(QtCore.QObject):
     #--------------------------------------------------------------------------
 
     @profile
-    def _populate_table(back, tblname, extra_cols={},
-                        index_list=None, prefix_cols=[]):
+    def _populate_table(back, tblname,
+                        extra_cols={},
+                        index_list=None,
+                        prefix_cols=[]):
         print('[*back] _populate_table(%r)' % tblname)
         headers = back.table_headers[tblname]
         editable = back.table_editable[tblname]
@@ -377,9 +385,9 @@ class MainWindowBackend(QtCore.QObject):
         prefix_datatup = [[prefix_col.get(header, 'error')
                            for header in col_headers]
                           for prefix_col in prefix_cols]
-        body_datatup = back.hs.get_datatup_list(tblname, index_list,
+        bpdy_datatup = back.hs.get_datatup_list(tblname, index_list,
                                                 col_headers, extra_cols)
-        datatup_list = prefix_datatup + body_datatup
+        datatup_list = prefix_datatup + bpdy_datatup
         row_list = range(len(datatup_list))
         # Populate with fancy headers.
         col_fancyheaders = [back.fancy_headers[key]
@@ -400,9 +408,7 @@ class MainWindowBackend(QtCore.QObject):
     def populate_result_table(back, **kwargs):
         res = back.current_res
         if res is None:
-            # Clear the table instead
             print('[*back] no results available')
-            back._populate_table('res', index_list=[])
             return
         top_cxs = res.topN_cxs(back.hs, N='all')
         qcx = res.qcx
@@ -451,10 +457,7 @@ class MainWindowBackend(QtCore.QObject):
     def user_option(back, *args, **kwargs):
         return guitools._user_option(back.front, *args, **kwargs)
 
-    def get_work_directory(back):
-        return params.get_workdir()
-
-    def get_work_directory2(back, use_cache=True):
+    def get_work_directory(back, use_cache=True):
         # TODO: This should go in api (or higher level main?)
         cache_id = 'work_directory_cache_id'
         if use_cache:
@@ -473,9 +476,6 @@ class MainWindowBackend(QtCore.QObject):
         io.global_cache_write(cache_id, work_dir)
         return work_dir
 
-    def user_select_new_dbdir(back):
-        return _user_select_new_dbdir(back)
-
     #--------------------------------------------------------------------------
     # Selection Functions
     #--------------------------------------------------------------------------
@@ -483,21 +483,20 @@ class MainWindowBackend(QtCore.QObject):
     @slot_(int)
     @blocking
     @profile
-    def select_gx(back, gx, cx=None, show=True, **kwargs):
+    def select_gx(back, gx, cx=None, **kwargs):
         # Table Click -> Image Table
         autoselect_chips = False
         if autoselect_chips and cx is None:
             cxs = back.hs.gx2_cxs(gx)
             if len(cxs > 0):
                 cx = cxs[0]
+        if cx is None:
+            back.show_splash(2, 'Chip', dodraw=False)
+        else:
+            back.show_chip(cx, dodraw=False)
         sel_cxs = [] if cx is None else [cx]
         back.selection = {'type_': 'gx', 'index': gx, 'sub': cx}
-        if show:
-            if cx is None:
-                back.show_splash(2, 'Chip', dodraw=False)
-            else:
-                back.show_chip(cx, dodraw=False)
-            back.show_image(gx, sel_cxs, **kwargs)
+        back.show_image(gx, sel_cxs, **kwargs)
 
     @slot_(int)
     def select_cid(back, cid, **kwargs):
@@ -571,18 +570,6 @@ class MainWindowBackend(QtCore.QObject):
         back.populate_tables(image=False)
         print('')
 
-    @slot_(int, str, str)
-    @blocking
-    @profile
-    def alias_name(back, nx, key, val):
-        key, val = map(str, (key, val))
-        print('[*back] alias_name(%r, %r, %r)' % (nx, key, val))
-        if key in ['name']:
-            # TODO: Add option to change name if alias fails
-            back.hs.alias_name(nx, val)
-        back.populate_tables(image=False)
-        print('')
-
     @slot_(int, str, bool)
     @blocking
     def change_image_property(back, gx, key, val):
@@ -600,16 +587,39 @@ class MainWindowBackend(QtCore.QObject):
 
     @slot_()
     @blocking
-    def new_database(back, new_dbdir=None):
+    def new_database(back):
         # File -> New Database
-        if new_dbdir is None:
-            new_dbdir = back.user_select_new_dbdir()
-        if new_dbdir is not None:
-            print('[*back] valid new_dbdir = %r' % new_dbdir)
-            util.ensurepath(new_dbdir)
-            back.open_database(new_dbdir)
-        else:
+        new_db = back.user_input('Enter the new database name')
+        msg_put = 'Where should I put %r?' % new_db
+        opt_put = ['Choose Directory', 'My Work Dir']
+        reply = back.user_option(msg_put, 'options', opt_put, True)
+        if reply == opt_put[1]:
+            put_dir = back.get_work_directory()
+        elif reply == opt_put[0]:
+            msg = 'Select where to put the new database'
+            put_dir = guitools.select_directory(msg)
+        elif reply is None:
+            back.user_info('No Reply. Aborting new database')
             print('[*back] abort new database()')
+            return None
+        else:
+            raise Exception('Unknown reply=%r' % reply)
+        new_db_dir = join(put_dir, new_db)
+        # Check the put directory exists and the new database does not exist
+        msg_try = None
+        if not exists(put_dir):
+            msg_try = 'Directory %r does not exist.' % put_dir
+        elif exists(new_db_dir):
+            msg_try = 'New Database %r already exists.' % new_db_dir
+        if msg_try is not None:
+            opt_try = ['Try Again']
+            title_try = 'New Database Failed'
+            try_again = back.user_option(msg_try, title_try, opt_try, False)
+            if try_again == 'Try Again':
+                return back.new_database()
+        print('[*back] valid new_db_dir = %r' % new_db_dir)
+        helpers.ensurepath(new_db_dir)
+        back.open_database(new_db_dir)
 
     @slot_()
     @blocking
@@ -617,15 +627,13 @@ class MainWindowBackend(QtCore.QObject):
         # File -> Open Database
         try:
             # Use the same args in a new (opened) database
-            args = params.args
-            #args = back.params.args
+            args = back.hs.args
             if db_dir is None:
                 msg = 'Select (or create) a database directory.'
                 db_dir = guitools.select_directory(msg)
             print('[*back] user selects database: ' + db_dir)
             # Try and load db
-            if args is not None:
-                args.dbdir = db_dir
+            args.dbdir = db_dir
             hs = HotSpotterAPI.HotSpotter(args=args, db_dir=db_dir)
             hs.load(load_all=False)
             # Write to cache and connect if successful
@@ -634,15 +642,13 @@ class MainWindowBackend(QtCore.QObject):
             #back.layout_figures()
         except Exception as ex:
             import traceback
-            import sys
             print(traceback.format_exc())
             back.user_info('Aborting open database')
             print('aborting open database')
             print(ex)
-            if '--strict' in sys.argv:
+            if back.hs.args.strict:
                 raise
         print('')
-        return hs
 
     @slot_()
     @blocking
@@ -680,7 +686,7 @@ class MainWindowBackend(QtCore.QObject):
         msg = 'Select directory with images in it'
         img_dpath = guitools.select_directory(msg)
         print('[*back] selected %r' % img_dpath)
-        fpath_list = util.list_images(img_dpath, fullpath=True)
+        fpath_list = helpers.list_images(img_dpath, fullpath=True)
         back.hs.add_images(fpath_list)
         back.populate_image_table()
         print('')
@@ -708,76 +714,67 @@ class MainWindowBackend(QtCore.QObject):
     @slot_()
     @blocking
     @profile
-    def add_chip(back, gx=None, roi=None):
+    def add_chip(back):
         # Action -> Add ROI
-        if gx is None:
-            gx = back.get_selected_gx()
+        gx = back.get_selected_gx()
+        figtitle = 'Image View - Select ROI (click two points)'
+        back.show_image(gx, figtitle=figtitle)
+        roi = guitools.select_roi()
         if roi is None:
-            figtitle = 'Image View - Select ROI (click two points)'
-            back.show_image(gx, figtitle=figtitle)
-            roi = guitools.select_roi()
-            if roi is None:
-                print('[back*] roiselection failed. Not adding')
-                return
+            print('[back*] roiselection failed. Not adding')
+            return
         cx = back.hs.add_chip(gx, roi)  # NOQA
         back.populate_tables()
         # RCOS TODO: Autoselect should be an option
         #back.select_gx(gx, cx)
         back.select_gx(gx)
         print('')
-        cid = back.hs.cx2_cid(cx)
-        return cid
 
     @slot_()
     @blocking
     @profile
-    def query(back, cid=None, tx=None, **kwargs):
+    def query(back, cid=None, tx=None):
         # Action -> Query
-
-        with util.Indent('[back.prequery]'):
-            print('[back] query(cid=%r, %r)' % (cid, kwargs))
-            cx = back.get_selected_cx(cid)
-            print('[back] cx = %r' % cx)
-            if cx is None:
-                back.user_info('Cannot query. No chip selected')
-                return
-        with util.Indent('[back.query]'):
-            try:
-                res = back.hs.query(cx, **kwargs)
-            except Exception as ex:
-                # TODO Catch actually exceptions here
-                print('[back] ex = %r' % ex)
-                raise
-        with util.Indent('[back.postquery]'):
-            if isinstance(res, str):
-                back.user_info(res)
-                return
-            back.current_res = res
-            back.populate_result_table()
-            print(r'[back] finished query')
-            print('')
-            # Show results against test chip index (tx)
-            back.show_query_result(res, tx)
+        #prevBlock = back.front.blockSignals(True)
+        print('[**back] query(cid=%r)' % cid)
+        cx = back.get_selected_cx() if cid is None else back.hs.cid2_cx(cid)
+        print('[**back.query()] cx = %r)' % cx)
+        if cx is None:
+            back.user_info('Cannot query. No chip selected')
+            return
+        try:
+            res = back.hs.query(cx)
+        except Exception as ex:
+            # TODO Catch actuall exceptions here
+            print('[**back.query()] ex = %r' % ex)
+            raise
+        if isinstance(res, str):
+            back.user_info(res)
+            return
+        back.current_res = res
+        back.populate_result_table()
+        print(r'[/back] finished query')
+        print('')
+        back.show_query_result(res, tx)
         return res
 
     @slot_()
     @blocking
     @profile
-    def reselect_roi(back, cid=None, roi=None, **kwargs):
+    def reselect_roi(back, **kwargs):
         # Action -> Reselect ROI
         print(r'[\back] reselect_roi()')
-        cx = back.get_selected_cx(cid)
+        cx = back.get_selected_cx()
         if cx is None:
             back.user_info('Cannot reselect ROI. No chip selected')
             return
         gx = back.hs.tables.cx2_gx[cx]
+        figtitle = 'Image View - ReSelect ROI (click two points)'
+        back.show_image(gx, [cx], figtitle=figtitle, **kwargs)
+        roi = guitools.select_roi()
         if roi is None:
-            figtitle = 'Image View - ReSelect ROI (click two points)'
-            back.show_image(gx, [cx], figtitle=figtitle, **kwargs)
-            roi = guitools.select_roi()
-            if roi is None:
-                print('[back*] roiselection failed. Not changing')
-                return
+            print('[back*] roiselection failed. Not adding')
+            return
         back.hs.change_roi(cx, roi)
         back.populate_tables()
         back.select_gx(gx, cx, **kwargs)
@@ -788,20 +785,19 @@ class MainWindowBackend(QtCore.QObject):
     @slot_()
     @blocking
     @profile
-    def reselect_ori(back, cid=None, theta=None, **kwargs):
+    def reselect_ori(back, **kwargs):
         # Action -> Reselect ORI
-        cx = back.get_selected_cx(cid)
+        cx = back.get_selected_cx()
         if cx is None:
             back.user_info('Cannot reselect orientation. No chip selected')
             return
         gx = back.hs.tables.cx2_gx[cx]
+        figtitle = 'Image View - Select Orientation (click two points)'
+        back.show_image(gx, [cx], figtitle=figtitle, **kwargs)
+        theta = guitools.select_orientation()
         if theta is None:
-            figtitle = 'Image View - Select Orientation (click two points)'
-            back.show_image(gx, [cx], figtitle=figtitle, **kwargs)
-            theta = guitools.select_orientation()
-            if theta is None:
-                print('[back*] theta selection failed. Not changing')
-                return
+            print('[back*] theta selection failed. Not adding')
+            return
         back.hs.change_theta(cx, theta)
         back.populate_tables()
         back.select_gx(gx, cx, **kwargs)
@@ -823,21 +819,6 @@ class MainWindowBackend(QtCore.QObject):
         back.populate_tables()
         back.select_gx(gx)
         print('[back] deleted cx=%r\n' % cx)
-        print('')
-
-    @slot_()
-    @blocking
-    @profile
-    def delete_image(back, gx=None):
-        if gx is None:
-            gx = back.get_selected_gx()
-        if gx is None:
-            back.user_info('Cannot delete image. No image selected')
-            return
-        back.clear_selection()
-        back.hs.delete_image(gx)
-        back.populate_tables()
-        print('[back] deleted gx=%r\n' % gx)
         print('')
 
     @slot_()
@@ -879,26 +860,26 @@ class MainWindowBackend(QtCore.QObject):
         # pyqt-how-to-capture-output-of-pythons-interpreter-
         # and-display-it-in-qedittext
         #prevBlock = back.front.blockSignals(True)
-        #import matching_functions as mf
-        #import DataStructures as ds
-        #import match_chips3 as mc3
+        import matching_functions as mf
+        import DataStructures as ds
+        import match_chips3 as mc3
         import sys
         back.precompute_feats()
         valid_cx = back.hs.get_valid_cxs()
-        #if back.params.args.quiet:
-            #mc3.print_off()
-            #ds.print_off()
-            #mf.print_off()
-        fmtstr = util.progress_str(len(valid_cx), '[back*] Query qcx=%r: ')
+        if back.hs.args.quiet:
+            mc3.print_off()
+            ds.print_off()
+            mf.print_off()
+        fmtstr = helpers.progress_str(len(valid_cx), '[back*] Query qcx=%r: ')
         for count, qcx in enumerate(valid_cx):
             sys.stdout.write(fmtstr % (qcx, count))
             back.hs.query(qcx, dochecks=False)
             if count % 100 == 0:
                 sys.stdout.write('\n ...')
         sys.stdout.write('\n ...')
-        #mc3.print_on()
-        #ds.print_on()
-        #mf.print_on()
+        mc3.print_on()
+        ds.print_on()
+        mf.print_on()
         print('')
         #back.front.blockSignals(prevBlock)
 
@@ -938,14 +919,6 @@ class MainWindowBackend(QtCore.QObject):
     #--------------------------------------------------------------------------
     # Help menu slots
     #--------------------------------------------------------------------------
-
-    @slot_()
-    def view_docs(back):
-        from hscom import cross_platform as cplat
-        hsdir = io.get_hsdir()
-        pdf_dpath = join(hsdir, '_doc')
-        pdf_fpath = join(pdf_dpath, 'HotSpotterUserGuide.pdf')
-        cplat.startfile(pdf_fpath)
 
     @slot_()
     def view_database_dir(back):
@@ -998,8 +971,8 @@ class MainWindowBackend(QtCore.QObject):
         front = back.front
         wasBlocked = front.blockSignals(True)
         devmode = True  # NOQA
-        #print(util.indent(str(hs), '[*back.hs] '))
-        #rrr()
+        print(helpers.indent(str(hs), '[*back.hs] '))
+        rrr()
         print(r'[\back] finished dev_help')
         #app = back.app
         #from PyQt4 import QtGui
@@ -1011,7 +984,7 @@ class MainWindowBackend(QtCore.QObject):
         pyqtRemoveInputHook()
         #from IPython.lib.inputhook import enable_qt4
         #enable_qt4()
-        execstr = util.ipython_execstr()
+        execstr = helpers.ipython_execstr()
         #print(execstr)
         print('Debugging in IPython. IPython will break gui until you exit')
         exec(execstr)
@@ -1024,9 +997,9 @@ class MainWindowBackend(QtCore.QObject):
     @blocking
     def dev_reload(back):
         # Help -> Developer Reload
-        _dev_reload(back)
-
-    @slot_()
-    @blocking
-    def detect_dupimg(back):
-        back.hs.dbg_duplicate_images()
+        #import dev
+        #dev.dev_reload()
+        # FIXME
+        _dev_reload()
+        df2.unregister_qt4_win('all')
+        df2.register_qt4_win(back.front)

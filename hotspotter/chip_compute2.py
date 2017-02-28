@@ -2,8 +2,9 @@ from __future__ import division, print_function
 from hscom import __common__
 (print, print_,
  print_on, print_off,
- rrr, profile, printDBG) = __common__.init(__name__, '[cc2]', DEBUG=False)
+ rrr, profile) = __common__.init(__name__, '[cc2]')
 # Python
+import sys
 import warnings
 from os.path import join
 # Science
@@ -11,10 +12,8 @@ import numpy as np
 import cv2
 from PIL import Image
 # Hotspotter
-import algos
-from hscom import helpers as util
+from hscom import helpers
 from hscom import fileio as io
-from hscom import params
 from hscom.Parallelize import parallel_compute
 #from hscom.Printable import DynStruct
 #import load_data2 as ld2
@@ -26,6 +25,16 @@ from hscom.Parallelize import parallel_compute
 #import skimage.filter.rank
 #import skimage.exposure
 #import skimage.util
+
+
+DEBUG = False
+if DEBUG:
+    def printDBG(msg):
+        print(msg)
+        sys.stdout.flush()
+else:
+    def printDBG(msg):
+        pass
 
 
 def xywh_to_tlbr(roi, img_wh):
@@ -94,12 +103,14 @@ def ensure_rgb(img):
     except Exception as ex:
         msg = ('[cc2] Caught Exception:\n   ex=%s\n' % str(ex) +
                '[cc2] img.shape=%r, img.dtype=%r\n' % (img.shape, img.dtype) +
-               '[cc2] stats(img) = %s' % (util.printable_mystats(img)))
+               '[cc2] stats(img) = %s' % (helpers.printable_mystats(img)))
         print(msg)
         raise Exception(msg)
 
 
+# =======================================
 # Parallelizable Work Functions
+# =======================================
 def build_transform2(roi, chipsz, theta):
     (x, y, w, h) = roi
     (w_, h_) = chipsz
@@ -135,7 +146,7 @@ def build_transform(x, y, w, h, w_, h_, theta, homogenous=False):
     else:
         transform = M[0:2, :] / M[2, 2]
 
-    #util.horiz_print(S, T1, T2)
+    #helpers.horiz_print(S, T1, T2)
     #print('T1======')
     #print(T1)
     #print('R------')
@@ -269,6 +280,7 @@ def grabcut_fn(chipBGR):
 
 
 def region_norm_fn(chip):
+    import algos
     chip  = ensure_gray(chip)
     chip_ = np.array(chip, dtype=np.float)
     chipw, chiph = chip_.shape
@@ -360,12 +372,14 @@ def batch_extract_chips(gfpath_list, cfpath_list, roi_list, theta_list,
     parallel_compute(compute_chip, **pcc_kwargs)
 
 
+# =======================================
 # Main Script
-@util.indent_decor('[cc2]')
-@profile
-def load_chips(hs, cx_list=None, force_compute=False, **kwargs):
-    print('=============================')
+# =======================================
+#@profile
+def load_chips(hs, cx_list=None, **kwargs):
+    print('\n=============================')
     print('[cc2] Precomputing chips and loading chip paths: %r' % hs.get_db_name())
+    print('=============================')
     #----------------
     # COMPUTE SETUP
     #----------------
@@ -381,7 +395,6 @@ def load_chips(hs, cx_list=None, force_compute=False, **kwargs):
     cx_list = hs.get_valid_cxs() if cx_list is None else cx_list
     if not np.iterable(cx_list):
         cx_list = [cx_list]
-    print('[cc2] len(cx_list) = %r' % len(cx_list))
     if len(cx_list) == 0:
         return  # HACK
     cx_list = np.array(cx_list)  # HACK
@@ -436,40 +449,31 @@ def load_chips(hs, cx_list=None, force_compute=False, **kwargs):
     #--------------------------
     # EXTRACT AND RESIZE CHIPS
     #--------------------------
-    # Compute all chips with paramatarized filters
     pcc_kwargs = {
-        'func': compute_chip,
         'arg_list': [gfpath_list, cfpath_list, roi_list, theta_list, chipsz_list],
-        'lazy': not params.args.nocache_chips and (not force_compute),
-        'num_procs': params.args.num_procs,
-        'common_args': [filter_list],
+        'lazy': not hs.args.nocache_chips,
+        'num_procs': hs.args.num_procs,
+        'common_args': [filter_list]
     }
-    parallel_compute(**pcc_kwargs)
+    # Compute all chips with paramatarized filters
+    parallel_compute(compute_chip, **pcc_kwargs)
 
     # Read sizes
-    # RCOS TODO: This is slow. We need to cache this data.
     try:
-        # Hackish way to read images sizes a little faster.
-        # change the directory so the os doesnt have to do as much work
-        import os
-        cwd = os.getcwd()
-        os.chdir(hs.dirs.chip_dir)
-        cfname_list = [_cfname_fmt  % cid for cid in iter(cid_list)]
         rsize_list = [(None, None) if path is None else Image.open(path).size
-                      for path in iter(cfname_list)]
-        os.chdir(cwd)
+                      for path in iter(cfpath_list)]
     except IOError as ex:
         import gc
         gc.collect()
-        print('[cc2] ex=%r' % ex)
+        print('[cc] ex=%r' % ex)
         print('path=%r' % path)
-        if util.checkpath(path, verbose=True):
+        if helpers.checkpath(path, verbose=True):
             import time
             time.sleep(1)  # delays for 1 seconds
-            print('[cc2] file exists but cause IOError?')
-            print('[cc2] probably corrupted. Removing it')
+            print('[cc] file exists but cause IOError?')
+            print('[cc] probably corrupted. Removing it')
             try:
-                util.remove_file(path)
+                helpers.remove_file(path)
             except OSError:
                 print('Something bad happened')
                 raise
@@ -481,9 +485,9 @@ def load_chips(hs, cx_list=None, force_compute=False, **kwargs):
 
     # Extend the datastructure if needed
     list_size = max(cx_list) + 1
-    #util.ensure_list_size(hs.cpaths.cx2_chip_path, list_size)
-    util.ensure_list_size(hs.cpaths.cx2_rchip_path, list_size)
-    util.ensure_list_size(hs.cpaths.cx2_rchip_size, list_size)
+    #helpers.ensure_list_size(hs.cpaths.cx2_chip_path, list_size)
+    helpers.ensure_list_size(hs.cpaths.cx2_rchip_path, list_size)
+    helpers.ensure_list_size(hs.cpaths.cx2_rchip_size, list_size)
     # Copy the values into the ChipPaths object
     #for lx, cx in enumerate(cx_list):
         #hs.cpaths.cx2_chip_path[cx] = cfpath_list[lx]

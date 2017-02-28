@@ -9,17 +9,15 @@ import sys
 # Science
 import numpy as np
 # Qt
+import PyQt4
 from PyQt4 import QtCore, QtGui
-from PyQt4.QtCore import Qt
+from PyQt4.Qt import Qt
 # HotSpotter
 from hscom import fileio as io
 from hscom import helpers
-from hscom import helpers as util
 from hsviz import draw_func2 as df2
 
 IS_INIT = False
-QAPP = None
-IS_ROOT = False
 DISABLE_NODRAW = False
 DEBUG = False
 
@@ -118,8 +116,7 @@ def backblocking(func):
             #print('ex = %r' % ex)
             import traceback
             print(traceback.format_exc())
-            #back.user_info('Error in blocking ex=%r' % ex)
-            back.user_info('Error while blocking gui:\nex=%r' % ex)
+            back.user_info('Error in blocking ex=%r' % ex)
             raise
         back.front.blockSignals(wasBlocked_)
         #print('[guitools] UNBLOCKING')
@@ -140,7 +137,7 @@ def frontblocking(func):
             result = func(front, *args, **kwargs)
         except Exception as ex:
             front.blockSignals(wasBlocked_)
-            print('Block wrapper caught exception in %r' % func.func_name)
+            print('Block wrapper caugt exception in %r' % func.func_name)
             print('front = %r' % front)
             VERBOSE = False
             if VERBOSE:
@@ -160,7 +157,7 @@ def frontblocking(func):
 def drawing(func):
     'Wraps a class function and draws windows on completion'
     #printDBG('[@guitools] Wrapping %r with drawing' % func.func_name)
-    @util.indent_decor('[drawing]')
+
     def drawing_wrapper(self, *args, **kwargs):
         #print('[guitools] DRAWING')
         result = func(self, *args, **kwargs)
@@ -341,7 +338,7 @@ def select_files(caption='Select Files:', directory=None, name_filter=None):
     print(caption)
     if directory is None:
         directory = io.global_cache_read('select_directory')
-    qdlg = QtGui.QFileDialog()
+    qdlg = PyQt4.Qt.QFileDialog()
     qfile_list = qdlg.getOpenFileNames(caption=caption, directory=directory, filter=name_filter)
     file_list = map(str, qfile_list)
     print('Selected %d files' % len(file_list))
@@ -354,8 +351,8 @@ def select_directory(caption='Select Directory', directory=None):
     print(caption)
     if directory is None:
         directory = io.global_cache_read('select_directory')
-    qdlg = QtGui.QFileDialog()
-    qopt = QtGui.QFileDialog.ShowDirsOnly
+    qdlg = PyQt4.Qt.QFileDialog()
+    qopt = PyQt4.Qt.QFileDialog.ShowDirsOnly
     qdlg_kwargs = dict(caption=caption, options=qopt, directory=directory)
     dpath = str(qdlg.getExistingDirectory(**qdlg_kwargs))
     print('Selected Directory: %r' % dpath)
@@ -373,7 +370,7 @@ def show_open_db_dlg(parent=None):
             db_dir = None
     print('[*guitools] cached db_dir=%r' % db_dir)
     if parent is None:
-        parent = QtGui.QDialog()
+        parent = PyQt4.QtGui.QDialog()
     opendb_ui = OpenDatabaseDialog.Ui_Dialog()
     opendb_ui.setupUi(parent)
     #opendb_ui.new_db_but.clicked.connect(create_new_database)
@@ -382,20 +379,14 @@ def show_open_db_dlg(parent=None):
     return opendb_ui, parent
 
 
-@util.indent_decor('[qt-init]')
 @profile
 def init_qtapp():
     global IS_INIT
-    global IS_ROOT
-    global QAPP
-    if QAPP is not None:
-        return QAPP, IS_ROOT
-    app = QtCore.QCoreApplication.instance()
+    app = PyQt4.Qt.QCoreApplication.instance()
     is_root = app is None
     if is_root:  # if not in qtconsole
         print('[*guitools] Initializing QApplication')
-        app = QtGui.QApplication(sys.argv)
-        QAPP = app
+        app = PyQt4.Qt.QApplication(sys.argv)
     try:
         __IPYTHON__
         is_root = False
@@ -406,14 +397,12 @@ def init_qtapp():
     return app, is_root
 
 
-@util.indent_decor('[qt-exit]')
 @profile
 def exit_application():
     print('[*guitools] exiting application')
     QtGui.qApp.quit()
 
 
-@util.indent_decor('[qt-main]')
 @profile
 def run_main_loop(app, is_root=True, back=None, **kwargs):
     if back is not None:
@@ -453,17 +442,17 @@ def exec_core_app_loop(app):
 @profile
 def ping_python_interpreter(frequency=4200):  # 4200):
     'Create a QTimer which lets the python catch ctrl+c'
-    timer = QtCore.QTimer()
+    timer = PyQt4.Qt.QTimer()
     timer.timeout.connect(lambda: None)
     timer.start(frequency)
     return timer
 
 
 def make_dummy_main_window():
-    class DummyBackend(QtCore.QObject):
+    class DummyBackend(Qt.QObject):
         def __init__(self):
             super(DummyBackend,  self).__init__()
-            self.front = QtGui.QMainWindow()
+            self.front = PyQt4.Qt.QMainWindow()
             self.front.setWindowTitle('Dummy Main Window')
             self.front.show()
     back = DummyBackend()

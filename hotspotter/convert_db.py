@@ -13,7 +13,6 @@ from PIL import Image
 import numpy as np
 # Hotspotter
 from hscom import helpers
-from hscom import helpers as util
 import load_data2 as ld2
 import db_info
 

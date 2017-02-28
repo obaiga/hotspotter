@@ -11,19 +11,17 @@ import numpy as np
 # Hotspotter
 import draw_func2 as df2
 import extract_patch
-from hscom import params
 from hscom import fileio as io
-from hscom import helpers as util
-from hotspotter import QueryResult as qr
+from hscom import helpers
 
 #from interaction import interact_keypoints, interact_chipres, interact_chip # NOQA
 
 
 FNUMS = dict(image=1, chip=2, res=3, inspect=4, special=5, name=6)
 
-IN_IMAGE_OVERRIDE = util.get_arg('--in-image-override', type_=bool, default=None)
-SHOW_QUERY_OVERRIDE = util.get_arg('--show-query-override', type_=bool, default=None)
-NO_LABEL_OVERRIDE = util.get_arg('--no-label-override', type_=bool, default=None)
+IN_IMAGE_OVERRIDE = helpers.get_arg('--in-image-override', type_=bool, default=None)
+SHOW_QUERY_OVERRIDE = helpers.get_arg('--show-query-override', type_=bool, default=None)
+NO_LABEL_OVERRIDE = helpers.get_arg('--no-label-override', type_=bool, default=None)
 
 
 @profile
@@ -43,6 +41,78 @@ def get_square_row_cols(nSubplots, max_cols=5):
     nRows = int(np.ceil(nSubplots / nCols))
     return nRows, nCols
 
+
+@profile
+def show_descriptors_match_distances(orgres2_distance, fnum=1, db_name='', **kwargs):
+    disttype_list = orgres2_distance.itervalues().next().keys()
+    orgtype_list = orgres2_distance.keys()
+    (nRow, nCol) = len(orgtype_list), len(disttype_list)
+    nColors = nRow * nCol
+    color_list = df2.distinct_colors(nColors)
+    df2.figure(fnum=fnum, docla=True, doclf=True)
+    pnum_ = lambda px: (nRow, nCol, px + 1)
+    plot_type = helpers.get_arg('--plot-type', default='plot')
+
+    # Remember min and max val for each distance type (l1, emd...)
+    distkey2_min = {distkey: np.uint64(-1) for distkey in disttype_list}
+    distkey2_max = {distkey: 0 for distkey in disttype_list}
+
+    def _distplot(dists, color, label, distkey, plot_type=plot_type):
+        data = sorted(dists)
+        ax = df2.gca()
+        min_ = distkey2_min[distkey]
+        max_ = distkey2_max[distkey]
+        if plot_type == 'plot':
+            df2.plot(data, color=color, label=label)
+            #xticks = np.linspace(np.min(data), np.max(data), 3)
+            #yticks = np.linspace(0, len(data), 5)
+            #ax.set_xticks(xticks)
+            #ax.set_yticks(yticks)
+            ax.set_ylim(min_, max_)
+            ax.set_xlim(0, len(dists))
+            ax.set_ylabel('distance')
+            ax.set_xlabel('matches indexes (sorted by distance)')
+            df2.legend(loc='lower right')
+        if plot_type == 'pdf':
+            df2.plot_pdf(data, color=color, label=label)
+            ax.set_ylabel('pr')
+            ax.set_xlabel('distance')
+            ax.set_xlim(min_, max_)
+            df2.legend(loc='upper right')
+        df2.dark_background(ax)
+        df2.small_xticks(ax)
+        df2.small_yticks(ax)
+
+    px = 0
+    for orgkey in orgtype_list:
+        for distkey in disttype_list:
+            dists = orgres2_distance[orgkey][distkey]
+            if len(dists) == 0:
+                continue
+            min_ = dists.min()
+            max_ = dists.max()
+            distkey2_min[distkey] = min(distkey2_min[distkey], min_)
+            distkey2_max[distkey] = max(distkey2_max[distkey], max_)
+
+    for orgkey in orgtype_list:
+        for distkey in disttype_list:
+            print(((orgkey, distkey)))
+            dists = orgres2_distance[orgkey][distkey]
+            df2.figure(fnum=fnum, pnum=pnum_(px))
+            color = color_list[px]
+            title = distkey + ' ' + orgkey
+            label = 'P(%s | %s)' % (distkey, orgkey)
+            _distplot(dists, color, label, distkey, **kwargs)
+            #ax = df2.gca()
+            #ax.set_title(title)
+            px += 1
+
+    subtitle = 'the matching distances between sift descriptors'
+    title = '(sift) matching distances'
+    if db_name != '':
+        title = db_name + ' ' + title
+    df2.set_figtitle(title, subtitle)
+    df2.adjust_subplots_safe()
 
 #=============
 # Splash Viz
@@ -109,7 +179,6 @@ def show_name(hs, nx, nx2_cxs=None, fnum=0, sel_cxs=[], subtitle='',
 #==========================
 
 
-@util.indent_decor('[annote_roi]')
 @profile
 def _annotate_roi(hs, ax, cx, sel_cxs, draw_lbls, annote):
     # Draw an roi around a chip in the image
@@ -130,7 +199,6 @@ def _annotate_roi(hs, ax, cx, sel_cxs, draw_lbls, annote):
     return xy_center
 
 
-@util.indent_decor('[annote_image]')
 @profile
 def _annotate_image(hs, ax, gx, sel_cxs, draw_lbls, annote):
     # draw chips in the image
@@ -146,7 +214,6 @@ def _annotate_image(hs, ax, gx, sel_cxs, draw_lbls, annote):
     ax._hs_cx_list = cx_list
 
 
-@util.indent_decor('[show_image]')
 @profile
 def show_image(hs, gx, sel_cxs=[], fnum=1, figtitle='Img', annote=True,
                draw_lbls=True, **kwargs):
@@ -230,7 +297,6 @@ def _annotate_qcx_match_results(hs, res, qcx, kpts, cx2_color):
         _kpts_helper(kpts_true, df2.GREEN, .6, 'True Matches')
 
 
-@util.indent_decor('[annote_kpts]')
 @profile
 def _annotate_kpts(kpts, sel_fx, draw_ell, draw_pts, color=None, nRandKpts=None, rect=False):
     #print('[viz] _annotate_kpts()')
@@ -265,7 +331,6 @@ def _annotate_kpts(kpts, sel_fx, draw_ell, draw_pts, color=None, nRandKpts=None,
         df2.draw_kpts2(sel_kpts, ell_color=df2.BLUE, arrow=True, rect=True)
 
 
-@util.indent_decor('[show_chip]')
 @profile
 def show_chip(hs, cx=None, allres=None, res=None, draw_ell=True,
               draw_pts=False, nRandKpts=None, prefix='', sel_fx=None,
@@ -383,7 +448,6 @@ def res_show_chipres(res, hs, cx, **kwargs):
     return show_chipres(hs, res, cx, **kwargs)
 
 
-@util.indent_decor('[show_chipres]')
 def show_chipres(hs, res, cx, fnum=None, pnum=None, sel_fm=[], in_image=False, **kwargs):
     'shows single annotated match result.'
     qcx = res.qcx
@@ -425,16 +489,7 @@ def show_chipres(hs, res, cx, fnum=None, pnum=None, sel_fm=[], in_image=False, *
     kwargs_ = dict(fs=fs, lbl1=lbl1, lbl2=lbl2, fnum=fnum,
                    pnum=pnum, vert=hs.prefs.display_cfg.vert)
     kwargs_.update(kwargs)
-    try:
-        ax, xywh1, xywh2 = df2.show_chipmatch2(rchip1, rchip2, kpts1, kpts2, fm, **kwargs_)
-    except Exception as ex:
-        print('!!!!!!!!!!!!!!!')
-        print('[viz] %s: %s' % (type(ex), ex))
-        print('[viz] vsstr = %s' % hs.vs_str(qcx, cx))
-        qr.dbg_check_query_result(hs, res)
-        print('consider qr.remove_corrupted_queries(hs, res, dryrun=False)')
-        util.qflag()
-        raise
+    ax, xywh1, xywh2 = df2.show_chipmatch2(rchip1, rchip2, kpts1, kpts2, fm, **kwargs_)
     x1, y1, w1, h1 = xywh1
     x2, y2, w2, h2 = xywh2
     if len(sel_fm) > 0:
@@ -447,8 +502,7 @@ def show_chipres(hs, res, cx, fnum=None, pnum=None, sel_fm=[], in_image=False, *
     return ax, xywh1, xywh2
 
 
-@util.indent_decor('[annote_chipres]')
-def annotate_chipres(hs, res, cx, showTF=True, showScore=True, showRank=True, title_pref='',
+def annotate_chipres(hs, res, cx, showTF=True, showScore=True, title_pref='',
                      title_suff='', show_gname=False, show_name=True,
                      time_appart=True, in_image=False, offset1=(0, 0),
                      offset2=(0, 0), show_query=True, xywh2=None, **kwargs):
@@ -465,21 +519,17 @@ def annotate_chipres(hs, res, cx, showTF=True, showScore=True, showRank=True, ti
                    falsestr:  df2.FALSE_RED}[isgt_str]
     # Build title
     title = '*%s*' % isgt_str if showTF else ''
-    if showRank:
-        rank_str = ' rank=' + str(res.get_cx_ranks([cx])[0] + 1)
-        title += rank_str
     if showScore:
-        score_str = (' score=' + util.num_fmt(score)) % (score)
+        score_str = (' score=' + helpers.num_fmt(score)) % (score)
         title += score_str
-
     title = title_pref + str(title) + title_suff
     # Build xlabel
     xlabel_ = []
-    if show_gname:
+    if 'show_gname':
         xlabel_.append('gname=%r' % hs.cx2_gname(cx))
-    if show_name:
+    if 'show_name':
         xlabel_.append('name=%r' % hs.cx2_name(cx))
-    if time_appart:
+    if 'time_appart':
         xlabel_.append('\n' + hs.get_timedelta_str(qcx, cx))
     xlabel = ', '.join(xlabel_)
     ax = df2.gca()
@@ -520,7 +570,6 @@ def annotate_chipres(hs, res, cx, showTF=True, showScore=True, showRank=True, ti
 #==========================
 
 
-@util.indent_decor('[show_top]')
 @profile
 def show_top(res, hs, *args, **kwargs):
     topN_cxs = res.topN_cxs(hs)
@@ -532,13 +581,12 @@ def show_top(res, hs, *args, **kwargs):
                      all_kpts=False, **kwargs)
 
 
-@util.indent_decor('[analysis]')
 @profile
 def res_show_analysis(res, hs, **kwargs):
         print('[viz] res.show_analysis()')
         # Parse arguments
-        noshow_gt  = kwargs.pop('noshow_gt', params.args.noshow_gt)
-        show_query = kwargs.pop('show_query', params.args.noshow_query)
+        noshow_gt  = kwargs.pop('noshow_gt', hs.args.noshow_gt)
+        show_query = kwargs.pop('show_query', hs.args.noshow_query)
         cx_list    = kwargs.pop('cx_list', None)
         figtitle   = kwargs.pop('figtitle', None)
 
@@ -557,7 +605,7 @@ def res_show_analysis(res, hs, **kwargs):
                     figtitle = 'WARNING: no top scores!' + hs.cidstr(res.qcx)
                 else:
                     topscore = res.get_cx2_score()[topN_cxs][0]
-                    figtitle = ('q%s -- topscore=%r' % (hs.cidstr(res.qcx), topscore))
+                    figtitle = ('topscore=%r -- q%s' % (topscore, hs.cidstr(res.qcx)))
         else:
             print('[viz.analysis] showing a given list of cxs')
             topN_cxs = cx_list
@@ -574,17 +622,15 @@ def res_show_analysis(res, hs, **kwargs):
                          figtitle=figtitle, show_query=show_query, **kwargs)
 
 
-@util.indent_decor('[_showres]')
 @profile
 def _show_res(hs, res, **kwargs):
     ''' Displays query chip, groundtruth matches, and top 5 matches'''
-    #printDBG('[viz._show_res()] %s ' % util.printableVal(locals()))
+    #printDBG('[viz._show_res()] %s ' % helpers.printableVal(locals()))
     #printDBG = print
     in_image = hs.prefs.display_cfg.show_results_in_image
     annote     = kwargs.pop('annote', 2)  # this is toggled
     fnum       = kwargs.get('fnum', 3)
     figtitle   = kwargs.get('figtitle', '')
-    aug        = kwargs.get('aug', '')
     topN_cxs   = kwargs.get('topN_cxs', [])
     gt_cxs     = kwargs.get('gt_cxs',   [])
     all_kpts   = kwargs.get('all_kpts', False)
@@ -600,7 +646,7 @@ def _show_res(hs, res, **kwargs):
     if len(topN_cxs) in [8]:
         max_nCols = 4
 
-    printDBG('[viz]========================')
+    printDBG('========================')
     printDBG('[viz._show_res()]----------------')
     all_gts = hs.get_other_indexed_cxs(res.qcx)
     _tup = tuple(map(len, (topN_cxs, gt_cxs, all_gts)))
@@ -679,9 +725,6 @@ def _show_res(hs, res, **kwargs):
         #printDBG('[viz._show_res()] Plotting Chips %s:' % hs.cidstr(cx_list))
         if cx_list is None:
             return
-        # Do lazy load before show_chipres
-        hs.get_chip(cx_list)
-        hs.get_kpts(cx_list)
         for ox, cx in enumerate(cx_list):
             plotx = ox + plotx_shift + 1
             pnum = (rowcols[0], rowcols[1], plotx)
@@ -714,8 +757,7 @@ def _show_res(hs, res, **kwargs):
     # Plot Ground Truth
     _plot_matches_cxs(gt_cxs, nQuerySubplts, (nRows, nGTCols))
     _plot_matches_cxs(topN_cxs, shift_topN, (nRows, nTopNCols))
-    #figtitle += ' q%s name=%s' % (hs.cidstr(res.qcx), hs.cx2_name(res.qcx))
-    figtitle += aug
+    figtitle += ' q%s name=%s' % (hs.cidstr(res.qcx), hs.cx2_name(res.qcx))
     df2.set_figtitle(figtitle, incanvas=not NO_LABEL_OVERRIDE)
 
     # Result Interaction
@@ -829,10 +871,9 @@ def draw_feat_row(rchip, fx, kp, sift, fnum, nRows, nCols, px, prevsift=None,
     ax._hs_viewtype = 'histogram'
     if prevsift is not None:
         from hotspotter import algos
-        #dist_list = ['L1', 'L2', 'hist_isect', 'emd']
-        dist_list = ['L2', 'hist_isect']
+        dist_list = ['L1', 'L2', 'hist_isect', 'emd']
         distmap = algos.compute_distances(sift, prevsift, dist_list)
-        dist_str = ', '.join(['(%s, %.2E)' % (key, val) for key, val in distmap.iteritems()])
+        dist_str = ', '.join(['(%s, %.1E)' % (key, val) for key, val in distmap.iteritems()])
         df2.set_xlabel(dist_str)
     return px + nCols
 
@@ -843,17 +884,12 @@ def show_nearest_descriptors(hs, qcx, qfx, fnum=None):
     if fnum is None:
         fnum = df2.next_fnum()
     # Inspect the nearest neighbors of a descriptor
-    from hotspotter import match_chips3 as mc3
-    qreq = mc3.quickly_ensure_qreq(hs)
-    data_index = qreq._data_index
-    if data_index is None:
-        pass
-    dx2_cx = data_index.ax2_cx
-    dx2_fx = data_index.ax2_fx
-    flann  = data_index.flann
-    K      = hs.qreq.cfg.nn_cfg.K
-    Knorm  = hs.qreq.cfg.nn_cfg.Knorm
-    checks = hs.qreq.cfg.nn_cfg.checks
+    dx2_cx = hs.qdat._data_index.ax2_cx
+    dx2_fx = hs.qdat._data_index.ax2_fx
+    K      = hs.qdat.cfg.nn_cfg.K
+    Knorm  = hs.qdat.cfg.nn_cfg.Knorm
+    checks = hs.qdat.cfg.nn_cfg.checks
+    flann  = hs.qdat._data_index.flann
     qfx2_desc = hs.get_desc(qcx)[qfx:qfx + 1]
 
     try:
@@ -915,13 +951,14 @@ def ensure_fm(hs, cx1, cx2, fm=None, res='db'):
     '''
     if fm is not None:
         return fm
-    print('[viz.sv] ensure_fm()')
+    print('[viz] ensure_fm()')
+    from hotspotter import QueryResult as qr
     if res == 'db':
         query_args = hs.prefs.query_cfg.flat_dict()
         query_args['sv_on'] = False
         query_args['use_cache'] = False
         # Query without spatial verification to get assigned matches
-        print('[viz.sv] query_args = %r' % (query_args))
+        print('query_args = %r' % (query_args))
         res = hs.query(cx1, **query_args)
     elif res == 'gt':
         # For testing purposes query_groundtruth is a bit faster than
@@ -929,7 +966,7 @@ def ensure_fm(hs, cx1, cx2, fm=None, res='db'):
         query_args = hs.prefs.query_cfg.flat_dict()
         query_args['sv_on'] = False
         query_args['use_cache'] = False
-        print('[viz.sv] query_args = %r' % (query_args))
+        print('query_args = %r' % (query_args))
         res = hs.query_groundtruth(cx1, **query_args)
     assert isinstance(res, qr.QueryResult)
     # Get chip index to feature match
@@ -954,12 +991,12 @@ def ensure_cx2(hs, cx1, cx2=None):
     return cx2
 
 
-@util.indent_decor('[viz.sv]')
 def viz_spatial_verification(hs, cx1, figtitle='Spatial Verification View', **kwargs):
     #kwargs = {}
+    from hscom import helpers
     from hotspotter import spatial_verification2 as sv2
     import cv2
-    print('\n[viz] ======================')
+    print('\n======================')
     cx2 = ensure_cx2(hs, cx1, kwargs.pop('cx2', None))
     print('[viz] viz_spatial_verification  %s' % hs.vs_str(cx1, cx2))
     fnum = kwargs.get('fnum', 4)
@@ -987,12 +1024,11 @@ def viz_spatial_verification(hs, cx1, figtitle='Spatial Verification View', **kw
         Aff, aff_inliers = sv2.homography_inliers(*homog_args, just_affine=True)
         H, inliers = sv2.homography_inliers(*homog_args, just_affine=False)
     except Exception as ex:
-        print(ex)
-        #print('[viz] homog_args = %r' % (homog_args))
-        #print('[viz] ex = %r' % (ex,))
+        print('[viz] homog_args = %r' % (homog_args))
+        print('[viz] ex = %r' % (ex,))
         raise
-    print(util.horiz_string(['H = ', str(H)]))
-    print(util.horiz_string(['Aff = ', str(Aff)]))
+    print(helpers.horiz_string(['H = ', str(H)]))
+    print(helpers.horiz_string(['Aff = ', str(Aff)]))
 
     # Transform the chips
     print('warp homog')
