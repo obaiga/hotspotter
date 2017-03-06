@@ -147,6 +147,15 @@ def connect_file_signals(front):
     ui.actionImport_Img_dir.triggered.connect(back.import_images_from_dir)
     ui.actionQuit.triggered.connect(back.quit)
 
+#function for new functionalities -MD
+def connect_button_signals(front):
+    ui = front.ui
+    back= front.back
+    ui.pushButton.clicked.connect(back.import_images_from_dir)
+    ui.pushButton_2.clicked.connect(back.save_database)
+    #ui.AutoChip.clicked.connect(back.AutoChip)
+    ui.pushButton_3.clicked.connect(back.save_database)
+    #ui.AutoQuery.clicked.connect(back.AutoQuery)
 
 def connect_action_signals(front):
     ui = front.ui
@@ -235,7 +244,7 @@ class MainWindowFrontend(QtGui.QMainWindow):
         front.back = back
         front.ui = init_ui(front)
         # Progress bar is not hooked up yet
-        front.ui.progressBar.setVisible(False)
+        #front.ui.progressBar.setVisible(False)
         front.connect_signals()
         front.steal_stdout()
 
@@ -281,6 +290,7 @@ class MainWindowFrontend(QtGui.QMainWindow):
         connect_action_signals(front)
         connect_option_signals(front)
         connect_batch_signals(front)
+        connect_button_signals(front) #-MD
         #connect_experimental_signals(front)
         connect_help_signals(front)
         #

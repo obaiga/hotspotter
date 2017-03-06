@@ -13,6 +13,10 @@ APPLE = PLATFORM == 'darwin'
 WIN32 = PLATFORM == 'win32'
 LINUX = PLATFORM == 'linux2'
 
+LIB_EXT = {'win32': '.dll',
+           'darwin': '.dylib',
+           'linux2': '.so'}[PLATFORM]
+
 
 def join_SITE_PACKAGES(*args):
     import site
@@ -43,7 +47,8 @@ except AssertionError:
 def add_data(a, dst, src):
     import textwrap
     from hscom import helpers
-    from os.path import dirname, normpath
+    from os.path import dirname, normpath, splitext
+    global LIB_EXT
 
     def fixwin32_shortname(path1):
         import ctypes
@@ -73,11 +78,19 @@ def add_data(a, dst, src):
     dst = dst
     helpers.ensurepath(dirname(dst))
     pretty_path = lambda str_: str_.replace('\\', '/')
+    # Default datatype is DATA
+    dtype = 'DATA'
+    # Infer datatype from extension
+    extension = splitext(dst)[1].lower()
+    if extension == LIB_EXT.lower():
+        dtype = 'BINARY'
     print(textwrap.dedent('''
     [setup] a.add_data(
     [setup]    dst=%r,
-    [setup]    src=%r)''').strip('\n') % tuple(map(pretty_path, (dst, src))))
-    a.datas.append((dst, src, 'DATA'))
+    [setup]    src=%r,
+    [setup]    dtype=%s)''').strip('\n') %
+          (pretty_path(dst), pretty_path(src), dtype))
+    a.datas.append((dst, src, dtype))
 
 
 # This needs to be relative to build directory. Leave as is.
@@ -106,19 +119,39 @@ add_data(a, dst, src)
 # Add TPL Libs for current PLATFORM
 ROOT_DLLS = ['libgcc_s_dw2-1.dll', 'libstdc++-6.dll']
 
-LIB_EXT = {'win32': 'dll',
-           'darwin': 'dylib',
-           'linux2': 'so'}[PLATFORM]
 
 #/usr/local/lib/python2.7/dist-packages/pyflann/lib/libflann.so
 # FLANN Library
-try:
-    libflann_fname = 'libflann.' + LIB_EXT
+libflann_fname = 'libflann' + LIB_EXT
+if WIN32:
     libflann_src = join_SITE_PACKAGES('pyflann', 'lib', libflann_fname)
     libflann_dst = join(hsbuild, libflann_fname)
     add_data(a, libflann_dst, libflann_src)
-except Exception as ex:
-    print(repr(ex))
+
+if APPLE:
+    try:
+        libflann_src = '/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/pyflann/lib/libflann.dylib'
+        libflann_dst = join(hsbuild, libflann_fname)
+        add_data(a, libflann_dst, libflann_src)
+    except Exception as ex:
+        print(repr(ex))
+
+    libhesaff_fname = 'libhesaff' + LIB_EXT
+    libhesaff_src = join(root_dir, 'hstpl', 'extern_feat', libhesaff_fname)
+    libhesaff_dst = join(hsbuild, 'hstpl', 'extern_feat', libhesaff_fname)
+    add_data(a, libhesaff_dst, libhesaff_src)
+
+    # We need to add these 4 opencv libraries because pyinstaller does not find them.
+    missing_cv_name_list = [
+        'libopencv_videostab.2.4',
+        'libopencv_superres.2.4',
+        'libopencv_stitching.2.4',
+    ]
+    for name in missing_cv_name_list:
+        fname = name + LIB_EXT
+        src = join('/opt/local/lib', fname)
+        dst = join(hsbuild, fname)
+        add_data(a, dst, src)
 
 lib_rpath = join('hstpl', 'extern_feat')
 
@@ -126,7 +159,7 @@ lib_rpath = join('hstpl', 'extern_feat')
 walk_path = join(root_dir, lib_rpath)
 for root, dirs, files in os.walk(walk_path):
     for lib_fname in files:
-        if fnmatch.fnmatch(lib_fname, '*.' + LIB_EXT):
+        if fnmatch.fnmatch(lib_fname, '*' + LIB_EXT):
             # tpl libs should be relative to hotspotter
             toc_src  = join(root_dir, lib_rpath, lib_fname)
             toc_dst = join(hsbuild, lib_rpath, lib_fname)
@@ -134,6 +167,14 @@ for root, dirs, files in os.walk(walk_path):
             if lib_fname in ROOT_DLLS:
                 toc_dst = join(hsbuild, lib_fname)
             add_data(a, toc_dst, toc_src)
+
+# Qt GUI Libraries
+walk_path = '/opt/local/Library/Frameworks/QtGui.framework/Versions/4/Resources/qt_menu.nib'
+for root, dirs, files in os.walk(walk_path):
+    for lib_fname in files:
+        toc_src = join(walk_path, lib_fname)
+        toc_dst = join('qt_menu.nib', lib_fname)
+        add_data(a, toc_dst, toc_src)
 
 # Documentation
 userguide_dst = '_doc/HotSpotterUserGuide.pdf'
@@ -165,29 +206,42 @@ exe_kwargs = {
     'append_pkg': False,
 }
 
-exe_kwargs['strip'] = None
-exe_kwargs['upx']   = True
-exe_kwargs['onedir'] = True
-exe_kwargs['onefile'] = False
-exe_kwargs['windowed'] = False
-exe_kwargs['strip'] = None
-#exe_kwargs['upx-dir'] = False
-#exe_kwargs['onefile'] = 'HotSpotterApp'
+collect_kwargs = {
+    'strip': None,
+    'upx': True,
+    'name': join('dist', 'hotspotter')
+}
+
+# PYINSTALLER DOC:
+# Only the following command-line options have an effect when
+# building from a spec file:
+# --upx-dir=
+# --distpath=
+# --workpath=
+# --noconfirm
+# --ascii
+
+#exe_kwargs['upx']   = True
+#exe_kwargs['onedir'] = True
+#exe_kwargs['onefile'] = False
+#exe_kwargs['windowed'] = False
 
 # Windows only EXE options
 if WIN32:
     exe_kwargs['icon'] = iconfile
-    exe_kwargs['version'] = 1.5
+    #exe_kwargs['version'] = 1.5
+
 
 if APPLE:
     exe_kwargs['console'] = False
 
-exe = EXE(pyz, a.scripts, **exe_kwargs)   # NOQA
+# Pyinstaller will gather .pyos
+opt_flags = [('O', '', 'OPTION')]
+exe = EXE(pyz, a.scripts + opt_flags, **exe_kwargs)   # NOQA
 
-collect_kwargs = dict(strip=None, upx=True, name=join('dist', 'hotspotter'))
 coll = COLLECT(exe, a.binaries, a.zipfiles, a.datas, **collect_kwargs)  # NOQA
 
-bundle_name = 'hotspotter'
+bundle_name = 'HotSpotter'
 if APPLE:
     bundle_name += '.app'
 

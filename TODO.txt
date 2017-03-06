@@ -26,8 +26,11 @@ Vizualize the Knth feature.
 
 #--- Feature ----
 
+
 Add a #matches column to the results table
 Let the user change chip properties from the results table. 
+
+RCOS: Make use of hs.gx2_exif(1, tag='Orientation') to auto orient images
 
 RCOS: The chip/image you have selected should be highlighted in the QItemTable
 RCOS: Adding a chip should not draw the chip view. (by default. add option)
@@ -56,7 +59,31 @@ Easy modifications.
 
 Add ability to orient an entire image. 
 
+
+#--- Dev Testing Features ---
+
+RCOS: I want a flag which sets the "work dir" for a user. Then I want a nice
+way of getting that work dir from any place in the program. This will be a
+developer tool.
+
 #--- Annoyances ----
+
+
+* chip_compute2 is too slow. This is because of two problems: 
+    1) parallelize has to check to make sure all the chips are there.
+       We should be able to make a much faster way of doing this by specifying
+       the directory where they should be. (exists is slow)
+    2) rsize_list has to be populated. 
+       This should be fixable my adding an image property which specifies the
+       size of the image. This data should be verified if reading an image
+       fails, and it should be optional (ie, a None value means you have to
+       read in the data)
+
+* When adding a new ROI, the program goes through and deletes data that
+* belongs to this new chip. It needs to do this in case a user made a bunch of
+* chips and then deleted them and then added a bunch more. But it should be
+* able to figure out when it doesnt need to do this to make the interface
+* faster. 
 
 When drawing ROIs theta is not always specified when it should be in
 vizualizations. 
