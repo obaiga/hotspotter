@@ -1,4 +1,5 @@
 
+EXTENSION = .bmp
 ''' Do autochipping '''
 def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .75, skip = 8, crit = [0,0,1], minSize = [1,1]):
 	'''
@@ -19,11 +20,11 @@ def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .75, skip = 8, 
 	import os
 	chippedImages = {};
 	for fileName in os.listdir(directoryToTemplates):
-		if fileName.endswith('.mat'):
+		if fileName.endswith('EXTENSION'):
 			# get template and autochip
 			template = getTemplate(directoryToTemplates, fileName)
 			chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
-			chippedImages[fileName[0:len(fileName)-4]] = chips
+			chippedImages[fileName[0:len(fileName)-len(EXTENSION)]] = chips
 	return chippedImages
 #/doAutochipping
 
@@ -33,8 +34,8 @@ def autochip(template, exclFac = 1, skip = 8, stopCrit = .75, crit = [0,0,1], mi
 	Find largest rectangles within a template.
 	Input:
 		template
-			<numpy.matrix, dtype=bool>
-			boolean region defining area of interest. MATLAB .mat file, converted to numpy.matrix 	
+			<numpyEXTENSIONrix, dtype=bool>
+			boolean region defining area of interest. MATLAB EXTENSION file, converted to numpyEXTENSIONrix 	
 		exclFac
 			<int>
 			Measure of how much of each chip we ignore on consecutive searches
@@ -183,7 +184,7 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=1):
 	Find largest rectangles within a template.
 	Input:
 		template 	
-			<numpy.matrix, dtype=bool>
+			<numpyEXTENSIONrix, dtype=bool>
 			boolean region defining area of interest.
 		minSize 	
 			<tuple>
