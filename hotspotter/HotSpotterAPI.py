@@ -25,7 +25,7 @@ import feature_compute2 as fc2
 import load_data2 as ld2
 import match_chips3 as mc3
 import matching_functions as mf
-
+from autochip import autochip as ac
 
 def _checkargs_onload(hs):
     'checks relevant arguments after loading tables'
@@ -595,6 +595,24 @@ class HotSpotter(DynStruct):
             hs.unload_cxdata(cx)
             hs.delete_queryresults_dir()  # Query results are now invalid
         return cx
+    ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    @profile
+    def autochip(hs, pathToTemplates '''Probably others'''):
+        '''
+        hs: chip table
+        pathToTemplates: string
+        '''
+        print('[hs] autochip');
+        chippedImages = ac.doAutochipping(pathToTemplates, exclFac=1, stopCrit=.9, skip=8, crit=[0,0,1], minSize=[1,1])
+        imageNum = len(get_valid_gxs(hs))   # Get first index for new image
+        chipNum = get_num_chips(hs)         # Get first index for new chip
+        for image in chippedImages:
+            for chip in image:
+                hs.add_chip(hs, chipNum, chip)
+                chipNum = chipNum+1
+            imageNum = imageNum+1
+        print '[hs] automatically added {} chips from {} images'.format(chipNum, imageNum)
+        return chipNum        
 
     @profile
     def add_images(hs, fpath_list, move_images=True):

@@ -1,7 +1,14 @@
+''' 
+autochip.py
+Author: Joshua Beard
+Contributor: Taz Bales-Heisterkamp
+Last Edited: 3/7/17
+'''
 
-EXTENSION = .bmp
+EXTENSION = '.bmp'
+
 ''' Do autochipping '''
-def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .75, skip = 8, crit = [0,0,1], minSize = [1,1]):
+def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .9, skip = 8, crit = [0,0,1], minSize = [1,1]):
 	'''
 	Driver for autochipping. Designed to be plug-n-play with HotSpotter GUI
 	Author: Joshua Beard
@@ -17,6 +24,7 @@ def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .75, skip = 8, 
 
 	'''
 	''' Initialization '''
+	print('[ac] doing autochipping')
 	import os
 	chippedImages = {};
 	for fileName in os.listdir(directoryToTemplates):
@@ -489,17 +497,17 @@ def findLargestSquares(template):
 import scipy.io as sio
 import os
 
-def getTemplate(pathTo,matFileName):
+def getTemplate(pathTo,templateFileName):
 	if os.sep == '\\':				# Windows
 		if pathTo.endswith('\\'):	# separator is present
-			m = sio.loadmat(pathTo+matFileName)
+			m = sio.loadmat(pathTo+templateFileName)
 		else:						# separator is absent
-			m = sio.loadmat(pathTo+'\\'+matFileName)
+			m = sio.loadmat(pathTo+'\\'+templateFileName)
 	else:							# Unix
 		if pathTo.endswith('/'):	# separator is present
-			m = sio.loadmat(pathTo+matFileName)
+			m = sio.loadmat(pathTo+templateFileName)
 		else:						# separator is absent
-			m = sio.loadmat(pathTo+'/'+matFileName)
+			m = sio.loadmat(pathTo+'/'+templateFileName)
 	#/if os.sep
 	
 	return m['template']
