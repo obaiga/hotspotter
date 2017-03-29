@@ -32,7 +32,7 @@ def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .9, skip = 8, c
 	import os
 	chippedImages = {};
 	for fileName in os.listdir(directoryToTemplates):
-		if fileName.endswith('EXTENSION'):
+		if fileName.endswith(EXTENSION):
 			# get template and autochip
 			template = getTemplate(directoryToTemplates, fileName, EXTENSION)
 			chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
