@@ -31,10 +31,10 @@ def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, cr
     #print('Checking file extension')
 		if fileName.endswith(EXTENSION):
 			# get template and autochip
-                        print('getting template name')
+                        print('[ac] getting template name')
 			template = getTemplate(directoryToTemplates, fileName, EXTENSION)
                         print(template)
-                        print('getting chips')
+                        print('[ac] getting chips')
                         chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
                         print(chips)
 			chippedImages[fileName[0:len(fileName)-len(EXTENSION)]] = chips
