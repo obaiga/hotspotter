@@ -41,7 +41,7 @@ def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .9, skip = 8, c
 #/doAutochipping
 
 ''' autochip '''
-def autochip(template, exclFac = 1, skip = 8, stopCrit = .75, crit = [0,0,1], minSize = [1,1]):
+def autochip(template, exclFac = 1, skip = 8, stopCrit = 1, crit = [0,0,1], minSize = [1,1]):
 	'''
 	Find largest rectangles within a template.
 	Input:
