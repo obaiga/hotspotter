@@ -5,9 +5,8 @@ Contributor: Taz Bales-Heisterkamp
 Last Edited: 3/29/17
 '''
 
-#EXTENSION = '.bmp'
-
 EXTENSION ='.bmp'
+
 ''' Do autochipping '''
 def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, crit = [0,0,1], minSize = [1,1]):
 	'''
@@ -29,7 +28,7 @@ def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, cr
 	import os
 	chippedImages = {};
 	for fileName in os.listdir(directoryToTemplates):
-                print('Checking file extension')
+    #print('Checking file extension')
 		if fileName.endswith(EXTENSION):
 			# get template and autochip
                         print('getting template name')
