@@ -533,13 +533,12 @@ def getTemplate(pathTo, templateFileName, ext = EXTENSION):
 
 ''' MAIN '''	
 if __name__ == "__main__":
+	# Either specify the directory to the templates or the directory to the templates and one of the template names (both as strings)
 	import sys
 	if len(sys.argv) == 2:
-                print('if')
 		chippedImages = doAutochipping(sys.argv[1])
 		print chippedImages
-	else:# len(sys.argv) == 3:
-                print('else')
+	else:# len(sys.argv) == 3: 
 		template = getTemplate(sys.argv[1], sys.argv[2])
 		C = autochip(template)
 		print C
