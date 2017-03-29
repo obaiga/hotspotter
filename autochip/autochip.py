@@ -498,17 +498,29 @@ from scipy import misc
 from os import sep
 from numpy import asmatrix
 
-def getTemplate(pathTo, templateFileName, extension = EXTENSION):
+def getTemplate(pathTo, templateFileName, ext = EXTENSION):
 	if sep == '\\':					# Windows
 		if pathTo.endswith('\\'):	# separator is present
-			m = misc.imread(pathTo+templateFileName+extension)
+			if templateFileName.endswith(ext):
+				m = misc.imread(pathTo+templateFileName)
+			else:			
+				m = misc.imread(pathTo+templateFileName+ext)
 		else:						# separator is absent
-			m = misc.imread(pathTo+'\\'+templateFileName+extension)
+			if templateFileName.endswith(ext):
+				m = misc.imread(pathTo+'\\'+templateFileName)
+			else:				
+				m = misc.imread(pathTo+'\\'+templateFileName+ext)
 	else:							# Unix
 		if pathTo.endswith('/'):	# separator is present
-			m = misc.imread(pathTo+templateFileName+extension)
+			if templateFileName.endswith(ext):
+				m = misc.imread(pathTo+templateFileName)			
+			else:
+				m = misc.imread(pathTo+templateFileName+ext)
 		else:						# separator is absent
-			m = misc.imread(pathTo+'/'+templateFileName+extension)
+			if templateFileName.endswith(ext):
+				m = misc.imread(pathTo+'/'+templateFileName)				
+			else:
+				m = misc.imread(pathTo+'/'+templateFileName+ext)
 	#/if os.sep
 	
 	return asmatrix(m)
