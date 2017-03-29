@@ -5,9 +5,8 @@ Contributor: Taz Bales-Heisterkamp
 Last Edited: 3/29/17
 '''
 
-#EXTENSION = '.bmp'
-
 EXTENSION ='.bmp'
+
 ''' Do autochipping '''
 def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, crit = [0,0,1], minSize = [1,1]):
 	'''
@@ -29,13 +28,13 @@ def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, cr
 	import os
 	chippedImages = {};
 	for fileName in os.listdir(directoryToTemplates):
-                print('Checking file extension')
+    #print('Checking file extension')
 		if fileName.endswith(EXTENSION):
 			# get template and autochip
-                        print('getting template name')
+                        print('[ac] getting template name')
 			template = getTemplate(directoryToTemplates, fileName, EXTENSION)
                         print(template)
-                        print('getting chips')
+                        print('[ac] getting chips')
                         chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
                         print(chips)
 			chippedImages[fileName[0:len(fileName)-len(EXTENSION)]] = chips
@@ -534,13 +533,12 @@ def getTemplate(pathTo, templateFileName, ext = EXTENSION):
 
 ''' MAIN '''	
 if __name__ == "__main__":
+	# Either specify the directory to the templates or the directory to the templates and one of the template names (both as strings)
 	import sys
 	if len(sys.argv) == 2:
-                print('if')
 		chippedImages = doAutochipping(sys.argv[1])
 		print chippedImages
-	else:# len(sys.argv) == 3:
-                print('else')
+	else:# len(sys.argv) == 3: 
 		template = getTemplate(sys.argv[1], sys.argv[2])
 		C = autochip(template)
 		print C
