@@ -5,14 +5,11 @@ Contributor: Taz Bales-Heisterkamp
 Last Edited: 3/29/17
 '''
 
-EXTENSION = '.bmp'
+#EXTENSION = '.bmp'
 
-<<<<<<< HEAD
 EXTENSION ='.bmp'
-=======
->>>>>>> cc343fdcffadf31519fbde625b810204a8c0ecfa
 ''' Do autochipping '''
-def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .9, skip = 8, crit = [0,0,1], minSize = [1,1]):
+def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, crit = [0,0,1], minSize = [1,1]):
 	'''
 	Driver for autochipping. Designed to be plug-n-play with HotSpotter GUI
 	Author: Joshua Beard
@@ -32,10 +29,15 @@ def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .9, skip = 8, c
 	import os
 	chippedImages = {};
 	for fileName in os.listdir(directoryToTemplates):
-		if fileName.endswith('EXTENSION'):
+                print('Checking file extension')
+		if fileName.endswith(EXTENSION):
 			# get template and autochip
+                        print('getting template name')
 			template = getTemplate(directoryToTemplates, fileName, EXTENSION)
-			chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
+                        print(template)
+                        print('getting chips')
+                        chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
+                        print(chips)
 			chippedImages[fileName[0:len(fileName)-len(EXTENSION)]] = chips
 	return chippedImages
 #/doAutochipping
@@ -534,9 +536,11 @@ def getTemplate(pathTo, templateFileName, ext = EXTENSION):
 if __name__ == "__main__":
 	import sys
 	if len(sys.argv) == 2:
+                print('if')
 		chippedImages = doAutochipping(sys.argv[1])
 		print chippedImages
 	else:# len(sys.argv) == 3:
+                print('else')
 		template = getTemplate(sys.argv[1], sys.argv[2])
 		C = autochip(template)
 		print C
