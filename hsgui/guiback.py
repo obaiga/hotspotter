@@ -737,7 +737,7 @@ class MainWindowBackend(QtCore.QObject):
     @blocking
     @profile
     def autochip(back):
-        fpath = back.get_work_directory() + '/matFiles'
+        fpath = back.get_work_directory() + '/Demo_Data/templates'
         #fpath = os.getcwd() + '/matFiles'
         back.hs.autochip(fpath)
         back.populate_tables()

@@ -131,10 +131,7 @@ def main(defaultdb='NAUTS', usedbcache=False, default_load_all=True):
     try:
         hs.load(load_all=load_all)
         from hscom import fileio as io
-<<<<<<< HEAD
-=======
         #imported from wrong module
->>>>>>> 9fe0ab99185cfb4aeac8f8dde990e64a43438424
         #from hotspotter import fileio as io
         db_dir = hs.dirs.db_dir
         io.global_cache_write('db_dir', db_dir)
