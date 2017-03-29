@@ -595,6 +595,24 @@ class HotSpotter(DynStruct):
             hs.unload_cxdata(cx)
             hs.delete_queryresults_dir()  # Query results are now invalid
         return cx
+    ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    @profile
+    def autochip(hs, pathToTemplates '''Probably others'''):
+        '''
+        hs: chip table
+        pathToTemplates: string
+        '''
+        print('[hs] autochip');
+        chippedImages = ac.doAutochipping(pathToTemplates, exclFac=1, stopCrit=.9, skip=8, crit=[0,0,1], minSize=[1,1])
+        imageNum = len(get_valid_gxs(hs))   # Get first index for new image
+        chipNum = get_num_chips(hs)         # Get first index for new chip
+        for image in chippedImages:
+            for chip in image:
+                hs.add_chip(hs, chipNum, chip)
+                chipNum = chipNum+1
+            imageNum = imageNum+1
+        print '[hs] automatically added {} chips from {} images'.format(chipNum, imageNum)
+        return chipNum        
 
     '''Edited 3//7/17 by Matt Dioso'''
     ''' Added 3/5/17 by Joshua Beard 

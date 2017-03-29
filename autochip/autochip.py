@@ -1,7 +1,18 @@
+''' 
+autochip.py
+Author: Joshua Beard
+Contributor: Taz Bales-Heisterkamp
+Last Edited: 3/29/17
+'''
 
+EXTENSION = '.bmp'
+
+<<<<<<< HEAD
 EXTENSION ='.bmp'
+=======
+>>>>>>> cc343fdcffadf31519fbde625b810204a8c0ecfa
 ''' Do autochipping '''
-def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .75, skip = 8, crit = [0,0,1], minSize = [1,1]):
+def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .9, skip = 8, crit = [0,0,1], minSize = [1,1]):
 	'''
 	Driver for autochipping. Designed to be plug-n-play with HotSpotter GUI
 	Author: Joshua Beard
@@ -17,12 +28,13 @@ def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .75, skip = 8, 
 
 	'''
 	''' Initialization '''
+	print('[ac] doing autochipping')
 	import os
 	chippedImages = {};
 	for fileName in os.listdir(directoryToTemplates):
 		if fileName.endswith('EXTENSION'):
 			# get template and autochip
-			template = getTemplate(directoryToTemplates, fileName)
+			template = getTemplate(directoryToTemplates, fileName, EXTENSION)
 			chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
 			chippedImages[fileName[0:len(fileName)-len(EXTENSION)]] = chips
 	return chippedImages
@@ -486,23 +498,36 @@ def findLargestSquares(template):
 #/FindLargestSquares		
 	
 ''' Helper function GETTEMPLATE '''
-import scipy.io as sio
-import os
+from scipy import misc
+from os import sep
+from numpy import asmatrix
 
-def getTemplate(pathTo,matFileName):
-	if os.sep == '\\':				# Windows
+def getTemplate(pathTo, templateFileName, ext = EXTENSION):
+	if sep == '\\':					# Windows
 		if pathTo.endswith('\\'):	# separator is present
-			m = sio.loadmat(pathTo+matFileName)
+			if templateFileName.endswith(ext):
+				m = misc.imread(pathTo+templateFileName)
+			else:			
+				m = misc.imread(pathTo+templateFileName+ext)
 		else:						# separator is absent
-			m = sio.loadmat(pathTo+'\\'+matFileName)
+			if templateFileName.endswith(ext):
+				m = misc.imread(pathTo+'\\'+templateFileName)
+			else:				
+				m = misc.imread(pathTo+'\\'+templateFileName+ext)
 	else:							# Unix
 		if pathTo.endswith('/'):	# separator is present
-			m = sio.loadmat(pathTo+matFileName)
+			if templateFileName.endswith(ext):
+				m = misc.imread(pathTo+templateFileName)			
+			else:
+				m = misc.imread(pathTo+templateFileName+ext)
 		else:						# separator is absent
-			m = sio.loadmat(pathTo+'/'+matFileName)
+			if templateFileName.endswith(ext):
+				m = misc.imread(pathTo+'/'+templateFileName)				
+			else:
+				m = misc.imread(pathTo+'/'+templateFileName+ext)
 	#/if os.sep
 	
-	return m['template']
+	return asmatrix(m)
 #/ getTemplate
 
 ''' MAIN '''	
