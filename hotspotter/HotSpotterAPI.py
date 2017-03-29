@@ -622,7 +622,7 @@ class HotSpotter(DynStruct):
     @profile # IhavenoideawhatImdoing
     #@helpers.indent_decor('[hs.autochip]') #mine doesn't recognize helpers
     def autochip(hs, directoryToTemplates, exclFac = 1, stopCrit = .9, skip = 8, crit = [0,0,1], minSize = [1,1]):
-        chipDict = ac.doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .9, skip = 8, crit = [0,0,1], minSize = [1,1])
+        chipDict = ac.doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, crit = [0,0,1], minSize = [1,1])
         print(chipDict)
         chipNum = 0;
         for image in chipDict:
