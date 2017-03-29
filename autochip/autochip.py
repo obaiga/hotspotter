@@ -7,6 +7,10 @@ Last Edited: 3/29/17
 
 EXTENSION = '.bmp'
 
+<<<<<<< HEAD
+=======
+EXTENSION ='.bmp'
+>>>>>>> refs/remotes/origin/matt
 ''' Do autochipping '''
 def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .9, skip = 8, crit = [0,0,1], minSize = [1,1]):
 	'''

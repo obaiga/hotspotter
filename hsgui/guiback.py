@@ -20,6 +20,7 @@ from hsviz import draw_func2 as df2
 from hsviz import viz
 from hsviz import interact
 from hotspotter import HotSpotterAPI
+import os
 
 FNUMS = dict(image=1, chip=2, res=3, inspect=4, special=5, name=6)
 viz.register_FNUMS(FNUMS)
@@ -728,6 +729,18 @@ class MainWindowBackend(QtCore.QObject):
         # RCOS TODO: Autoselect should be an option
         #back.select_gx(gx, cx)
         back.select_gx(gx)
+        print('')
+
+    '''Added 3/7/2017 by Matt Dioso
+    pretty rough'''
+    @slot_()
+    @blocking
+    @profile
+    def autochip(back):
+        fpath = back.get_work_directory() + '/Demo_Data/templates'
+        #fpath = os.getcwd() + '/matFiles'
+        back.hs.autochip(fpath)
+        back.populate_tables()
         print('')
 
     @slot_()
