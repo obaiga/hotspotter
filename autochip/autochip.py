@@ -1,5 +1,5 @@
 
-EXTENSION = .bmp
+EXTENSION ='.bmp'
 ''' Do autochipping '''
 def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .75, skip = 8, crit = [0,0,1], minSize = [1,1]):
 	'''

@@ -153,7 +153,7 @@ def connect_button_signals(front):
     back= front.back
     ui.pushButton.clicked.connect(back.import_images_from_dir)
     ui.pushButton_2.clicked.connect(back.save_database)
-    #ui.AutoChip.clicked.connect(back.AutoChip)
+    ui.AutoChip.clicked.connect(back.autochip)
     ui.pushButton_3.clicked.connect(back.save_database)
     #ui.AutoQuery.clicked.connect(back.AutoQuery)
 
