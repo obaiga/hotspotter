@@ -2,7 +2,7 @@
 autochip.py
 Author: Joshua Beard
 Contributor: Taz Bales-Heisterkamp
-Last Edited: 3/7/17
+Last Edited: 3/29/17
 '''
 
 EXTENSION = '.bmp'
@@ -30,7 +30,7 @@ def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = .9, skip = 8, c
 	for fileName in os.listdir(directoryToTemplates):
 		if fileName.endswith('EXTENSION'):
 			# get template and autochip
-			template = getTemplate(directoryToTemplates, fileName)
+			template = getTemplate(directoryToTemplates, fileName, EXTENSION)
 			chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
 			chippedImages[fileName[0:len(fileName)-len(EXTENSION)]] = chips
 	return chippedImages
@@ -494,23 +494,24 @@ def findLargestSquares(template):
 #/FindLargestSquares		
 	
 ''' Helper function GETTEMPLATE '''
-import scipy.io as sio
-import os
+from scipy import misc
+from os import sep
+from numpy import asmatrix
 
-def getTemplate(pathTo,templateFileName):
-	if os.sep == '\\':				# Windows
+def getTemplate(pathTo, templateFileName, extension = EXTENSION):
+	if sep == '\\':					# Windows
 		if pathTo.endswith('\\'):	# separator is present
-			m = sio.loadmat(pathTo+templateFileName)
+			m = misc.imread(pathTo+templateFileName+extension)
 		else:						# separator is absent
-			m = sio.loadmat(pathTo+'\\'+templateFileName)
+			m = misc.imread(pathTo+'\\'+templateFileName+extension)
 	else:							# Unix
 		if pathTo.endswith('/'):	# separator is present
-			m = sio.loadmat(pathTo+templateFileName)
+			m = misc.imread(pathTo+templateFileName+extension)
 		else:						# separator is absent
-			m = sio.loadmat(pathTo+'/'+templateFileName)
+			m = misc.imread(pathTo+'/'+templateFileName+extension)
 	#/if os.sep
 	
-	return m['template']
+	return asmatrix(m)
 #/ getTemplate
 
 ''' MAIN '''	
