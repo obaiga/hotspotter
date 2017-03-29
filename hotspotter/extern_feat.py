@@ -80,7 +80,7 @@ if OLD_HESAFF:
     detect_kpts = detect_kpts_old
     print('[extern_feat] using: old hessian affine')
 else:
-    detect_kpts = detect_kpts_new
+    #detect_kpts = detect_kpts_new
     print('[extern_feat] using: new pyhesaff')
 
 
