@@ -6,6 +6,7 @@ Last Edited: 3/29/17
 '''
 
 EXTENSION ='.bmp'
+TEMPLATE_MAX_VAL = 255
 
 ''' Do autochipping '''
 def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, crit = [0,0,1], minSize = [1,1]):
@@ -275,11 +276,8 @@ def findLargestRects(template, crit=[0,0,1], minSize=[1,1], skip=1):
 		minSize[1] = math.floor(minSize[1]*nC)
 	
 		
-	# If we haven't run FINDLARGESTSQUARES yet, do it. 
-	if template.max() - template.min() == 1:
-		S = findLargestSquares(template)
-	else: 	# o.t.w. just use our "template"
-		S = template
+	# run FINDLARGESTSQUARES 
+	S = findLargestSquares(template)
 	
 	# Get longest square side
 	n = S.max()
@@ -471,6 +469,7 @@ def findLargestSquares(template):
 
 	# get height, width of template
 	nR,nC = template.shape;
+	template = template == TEMPLATE_MAX_VAL # Convert to Boolean
 	# Use boolean template to create a float matrix for tracking square sizes
 	S = np.multiply(np.ones((nR, nC)), template)
 
