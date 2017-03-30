@@ -8,6 +8,7 @@ import sys
 from os.path import dirname, realpath, join
 # Scientific
 import numpy as np
+import pdb
 
 OLD_HESAFF = False or '--oldhesaff' in sys.argv
 if '--newhesaff' in sys.argv:
@@ -39,7 +40,9 @@ DESC_DTYPE = np.uint8
 #---------------------------------------
 # Define precompute functions
 def precompute(rchip_fpath, feat_fpath, dict_args, compute_fn):
+    pdb.set_trace()
     kpts, desc = compute_fn(rchip_fpath, dict_args)
+    pdb.set_trace()
     np.savez(feat_fpath, kpts, desc)
     return kpts, desc
 
@@ -80,7 +83,7 @@ if OLD_HESAFF:
     detect_kpts = detect_kpts_old
     print('[extern_feat] using: old hessian affine')
 else:
-    #detect_kpts = detect_kpts_new
+    detect_kpts = detect_kpts_new
     print('[extern_feat] using: new pyhesaff')
 
 

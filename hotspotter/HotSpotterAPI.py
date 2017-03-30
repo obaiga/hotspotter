@@ -616,15 +616,9 @@ class HotSpotter(DynStruct):
         chipNum = 0;
         for image in chipDict:
             for chip in chipDict[image]:
-<<<<<<< HEAD
-                pdb.set_trace()
-                cx = hs.add_chip(chipNum, chip) # IDK what to do with the rest of the parameters.
-                chipNum = chipNum+1
-=======
                 cx = hs.add_chip(imageNum, chip) # IDK what to do with the rest of the parameters.
                 chipNum = chipNum+1 # This is ultimately somewhat useless.
             imageNum = imageNum+1
->>>>>>> 7bf311fe83f0e95b72fe4d50ed41a8bce83f0e10
         print('[hs] added %d chips' % chipNum)
         return chipNum #don't think this is needed -MD
 
