@@ -62,6 +62,10 @@ def _get_datatup_list(hs, tblname, index_list, header_order, extra_cols):
     cols = _datatup_cols(hs, tblname)
     cols.update(extra_cols)
     unknown_header = lambda indexes: ['ERROR!' for gx in indexes]
+    '''========================'''
+    import pdb
+    pdb.set_trace()
+    '''========================'''
     get_tup = lambda header: cols.get(header, unknown_header)(index_list)
     unziped_tups = [get_tup(header) for header in header_order]
     datatup_list = [tup for tup in izip(*unziped_tups)]
@@ -568,6 +572,7 @@ class HotSpotter(DynStruct):
 
     @profile
     def add_chip(hs, gx, roi, nx=0, theta=0, props={}, dochecks=True):
+        
         # TODO: Restructure for faster adding (preallocate and double size)
         # OR just make all the tables python lists
         print('[hs] adding chip to gx=%r' % gx)
@@ -582,7 +587,11 @@ class HotSpotter(DynStruct):
         hs.tables.cx2_cid   = np.concatenate((hs.tables.cx2_cid, [next_cid]))
         hs.tables.cx2_nx    = np.concatenate((hs.tables.cx2_nx,  [nx]))
         hs.tables.cx2_gx    = np.concatenate((hs.tables.cx2_gx,  [gx]))
-        hs.tables.cx2_roi   = np.vstack((hs.tables.cx2_roi, [roi]))
+        if len(roi) == 1 and len(roi[0]) == 4: # This is the case that was throwing errors
+            hs.tables.cx2_roi = np.vstack((hs.tables.cx2_roi, roi))
+        else: # This is the case that HotSpotter was originally designed for:
+            hs.tables.cx2_roi   = np.vstack((hs.tables.cx2_roi, [roi]))
+            
         hs.tables.cx2_theta = np.concatenate((hs.tables.cx2_theta, [theta]))
         prop_dict = hs.tables.prop_dict
         for key in prop_dict.iterkeys():
@@ -606,11 +615,13 @@ class HotSpotter(DynStruct):
     def autochip(hs, directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, crit = [0,0,1], minSize = [1,1]):
         chipDict = ac.doAutochipping(directoryToTemplates, exclFac, stopCrit, skip, crit, minSize)
         print(chipDict)
+        imageNum = 0
         chipNum = 0;
         for image in chipDict:
             for chip in chipDict[image]:
-                cx = hs.add_chip(chipNum, chip) # IDK what to do with the rest of the parameters.
-                chipNum = chipNum+1
+                cx = hs.add_chip(imageNum, chip) # IDK what to do with the rest of the parameters.
+                chipNum = chipNum+1 # This is ultimately somewhat useless.
+            imageNum = imageNum+1
         print('[hs] added %d chips' % chipNum)
         return chipNum #don't think this is needed -MD
 
