@@ -27,6 +27,7 @@ import match_chips3 as mc3
 import matching_functions as mf
 from autochip import autochip as ac
 
+
 def _checkargs_onload(hs):
     'checks relevant arguments after loading tables'
     args = hs.args
@@ -202,7 +203,7 @@ def __define_method(hs, method_name):
     hs.__dict__[method_name] = lambda *args: api.__dict__['_' + method_name](hs, *args)
     #hs.cx2_tnx = lambda *args: api._cx2_tnx(hs, *args)
 
-
+'''===================================================================================='''
 class HotSpotter(DynStruct):
     'The HotSpotter main class is a root handle to all relevant data'
     def __init__(hs, args=None, db_dir=None):
@@ -613,16 +614,19 @@ class HotSpotter(DynStruct):
     @profile # IhavenoideawhatImdoing
     #@helpers.indent_decor('[hs.autochip]') #mine doesn't recognize helpers
     def autochip(hs, directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, crit = [0,0,1], minSize = [1,1]):
+        # use autochip module to do autochipping
         chipDict = ac.doAutochipping(directoryToTemplates, exclFac, stopCrit, skip, crit, minSize)
-        print(chipDict)
-        imageNum = 0
-        chipNum = 0;
-        for image in chipDict:
-            for chip in chipDict[image]:
+        print(chipDict) # Print for sanity check
+        chipNum = 0;    # Keep track of chips for fun
+        # Go through each image in image table
+        for imageNum in range(0, len(hs.tables.gx2_gname)):
+            # Grab image name from image table, toss extension
+            (imageName, dummy) = os.path.splitext(hs.tables.gx2_gname[imageNum])
+            # Use image name from table to reference chip dict
+            for chip in chipDict[imageName]:
                 cx = hs.add_chip(imageNum, chip) # IDK what to do with the rest of the parameters.
                 chipNum = chipNum+1 # This is ultimately somewhat useless.
-            imageNum = imageNum+1
-        print('[hs] added %d chips' % chipNum)
+        print('[hs.autochip] added %d chips' % chipNum) # Sanity check
         return chipNum #don't think this is needed -MD
 
     @profile
