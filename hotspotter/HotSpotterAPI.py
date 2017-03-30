@@ -62,10 +62,6 @@ def _get_datatup_list(hs, tblname, index_list, header_order, extra_cols):
     cols = _datatup_cols(hs, tblname)
     cols.update(extra_cols)
     unknown_header = lambda indexes: ['ERROR!' for gx in indexes]
-    '''========================'''
-    import pdb
-    pdb.set_trace()
-    '''========================'''
     get_tup = lambda header: cols.get(header, unknown_header)(index_list)
     unziped_tups = [get_tup(header) for header in header_order]
     datatup_list = [tup for tup in izip(*unziped_tups)]
