@@ -114,6 +114,12 @@ def _load_features_individualy(hs, cx_list):
     precompute_args = [rchip_fpath_list, feat_fpath_list, kwargs_list]
     pfc_kwargs = {'num_procs': hs.args.num_procs, 'lazy': use_cache}
     precompute_fn = feat_type2_precompute[feat_cfg.feat_type]
+    
+    '''========='''
+    import pdb
+    pdb.set_trace()
+    '''========='''
+    
     parallel_compute(precompute_fn, precompute_args, **pfc_kwargs)
     # Load precomputed features sequentially
     kpts_list, desc_list = sequential_feat_load(feat_cfg, feat_fpath_list)

@@ -338,10 +338,10 @@ class HotSpotter(DynStruct):
 
     @profile
     def refresh_features(hs, cx_list=None):
-        '''========='''
+        '''=========
         import pdb
         pdb.set_trace()
-        '''========='''
+        ========='''
         hs.load_chips(cx_list=cx_list)
         hs.load_features(cx_list=cx_list)
 
@@ -616,7 +616,7 @@ class HotSpotter(DynStruct):
     def autochip(hs, directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, crit = [0,0,1], minSize = [1,1]):
         # use autochip module to do autochipping
         chipDict = ac.doAutochipping(directoryToTemplates, exclFac, stopCrit, skip, crit, minSize)
-        print(chipDict) # Print for sanity check
+        #print(chipDict) # Print for sanity check
         chipNum = 0;    # Keep track of chips for fun
         # Go through each image in image table
         for imageNum in range(0, len(hs.tables.gx2_gname)):
