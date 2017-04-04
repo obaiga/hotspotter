@@ -12,6 +12,7 @@ from hscom import helpers
 from hscom import fileio as io
 from hscom.Parallelize import parallel_compute
 import extern_feat
+import pdb
 
 
 def whiten_features(desc_list):
@@ -116,6 +117,7 @@ def _load_features_individualy(hs, cx_list):
     precompute_fn = feat_type2_precompute[feat_cfg.feat_type]
     parallel_compute(precompute_fn, precompute_args, **pfc_kwargs)
     # Load precomputed features sequentially
+    pdb.set_trace()
     kpts_list, desc_list = sequential_feat_load(feat_cfg, feat_fpath_list)
     return kpts_list, desc_list
 

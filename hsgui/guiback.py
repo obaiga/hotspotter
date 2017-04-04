@@ -875,10 +875,12 @@ class MainWindowBackend(QtCore.QObject):
         # pyqt-how-to-capture-output-of-pythons-interpreter-
         # and-display-it-in-qedittext
         #prevBlock = back.front.blockSignals(True)
-        import matching_functions as mf
-        import DataStructures as ds
-        import match_chips3 as mc3
+        from hotspotter import matching_functions as mf
+        from hotspotter import DataStructures as ds
+        from hotspotter import match_chips3 as mc3
         import sys
+	import pdb
+	pdb.set_trace()
         back.precompute_feats()
         valid_cx = back.hs.get_valid_cxs()
         if back.hs.args.quiet:

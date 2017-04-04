@@ -35,7 +35,7 @@ def _worker(input, output):
     #printDBG('[parallel] worker is done input=%r output=%r' % (input, output))
 
 
-def parallel_compute(func, arg_list, num_procs=None, lazy=True, args=None, common_args=[]):
+def parallel_compute(func, arg_list, num_procs=1, lazy=True, args=None, common_args=[]):
     if args is not None and num_procs is None:
         num_procs = args.num_procs
     elif num_procs is None:
@@ -48,7 +48,8 @@ def parallel_compute(func, arg_list, num_procs=None, lazy=True, args=None, commo
     # Do not execute small tasks in parallel
     if nTasks < num_procs / 2 or nTasks == 1:
         num_procs = 1
-    num_procs = min(num_procs, nTasks)
+    #num_procs = min(num_procs, nTasks)
+    num_procs=1
     task_lbl = func.func_name + ': '
     try:
         ret = parallelize_tasks(task_list, num_procs, task_lbl)
@@ -95,12 +96,12 @@ def parallelize_tasks(task_list, num_procs, task_lbl='', verbose=True):
            if num_procs > 1 else
            'Executing %d %s tasks in serial' % (nTasks, task_lbl))
     with helpers.Timer(msg=msg):
-        if num_procs > 1:
+        if num_procs >= 1:
             # Parallelize tasks
-            return _compute_in_parallel(task_list, num_procs, task_lbl, verbose)
+            return _compute_in_serial(task_list, task_lbl, verbose) #trying to force serial computation -MD
+            #return _compute_in_parallel(task_list, num_procs, task_lbl, verbose)
         else:
             return _compute_in_serial(task_list, task_lbl, verbose)
-
 
 def _compute_in_serial(task_list, task_lbl='', verbose=True):
     # Serialize Tasks
