@@ -480,7 +480,6 @@ class HotSpotter(DynStruct):
             if hs.args.strict:
                 raise
             return msg
-        pdb.set_trace()
         print(res)
         return res
 
