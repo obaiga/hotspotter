@@ -57,7 +57,7 @@ try:
 
     def detect_kpts_new(rchip_fpath, dict_args):
         print('using new')
-       # pdb.set_trace()
+        pdb.set_trace()
         kpts, desc = pyhesaff.detect_kpts(rchip_fpath, **dict_args)
         return kpts, desc
     print('[extern_feat] new hessaff is available')

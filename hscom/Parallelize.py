@@ -87,7 +87,7 @@ def make_task_list(func, arg_list, lazy=True, common_args=[]):
     return task_list
 
 
-def parallelize_tasks(task_list, num_procs, task_lbl='', verbose=True):
+def parallelize_tasks(task_list, num_procs, task_lbl, verbose=True):
     '''
     Used for embarissingly parallel tasks, which write output to disk
     '''
@@ -97,10 +97,12 @@ def parallelize_tasks(task_list, num_procs, task_lbl='', verbose=True):
            'Executing %d %s tasks in serial' % (nTasks, task_lbl))
     with helpers.Timer(msg=msg):
         if num_procs >= 1:
+            print('[parallel] Forced serial processing')
             # Parallelize tasks
             return _compute_in_serial(task_list, task_lbl, verbose) #trying to force serial computation -MD
             #return _compute_in_parallel(task_list, num_procs, task_lbl, verbose)
         else:
+            print('[parallel] Natural serial processing')
             return _compute_in_serial(task_list, task_lbl, verbose)
 
 def _compute_in_serial(task_list, task_lbl='', verbose=True):
