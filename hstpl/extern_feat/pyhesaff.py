@@ -111,6 +111,10 @@ def detect_kpts(img_fpath, use_adaptive_scale=False, **kwargs):
     kpts = np.empty((nKpts, 5), kpts_dtype)
     desc = np.empty((nKpts, 128), desc_dtype)
     # Populate arrays
+    '''========='''
+    import pdb
+    pdb.set_trace()
+    '''========='''
     hesaff_lib.exportArrays(hesaff_ptr, nKpts, kpts, desc)
     # Adapt scale if requested
     if use_adaptive_scale:

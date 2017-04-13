@@ -116,8 +116,8 @@ def _load_features_individualy(hs, cx_list):
     precompute_fn = feat_type2_precompute[feat_cfg.feat_type]
     
     '''========='''
-    import pdb
-    pdb.set_trace()
+    #import pdb
+    #pdb.set_trace()
     '''========='''
     
     parallel_compute(precompute_fn, precompute_args, **pfc_kwargs)

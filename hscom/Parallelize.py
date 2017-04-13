@@ -97,7 +97,9 @@ def parallelize_tasks(task_list, num_procs, task_lbl='', verbose=True):
     with helpers.Timer(msg=msg):
         if num_procs > 1:
             # Parallelize tasks
-            return _compute_in_parallel(task_list, num_procs, task_lbl, verbose)
+            #return _compute_in_parallel(task_list, num_procs, task_lbl, verbose)
+            ''' Hacky patch to hopefully avoid segfaults '''
+            return _compute_in_serial(task_list, task_lbl, verbose)
         else:
             return _compute_in_serial(task_list, task_lbl, verbose)
 
