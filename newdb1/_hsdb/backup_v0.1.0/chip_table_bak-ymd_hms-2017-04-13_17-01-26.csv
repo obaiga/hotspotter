@@ -1,0 +1,6 @@
+# chip table
+# NumData 3
+#   ChipID,  ImgID,  NameID,  roi[tl_x  tl_y  w  h],  theta
+         1,      1,       0,  [1162  720  335  231],    0.0
+         2,      2,       0,      [582 690 435 164],    0.0
+         3,      3,       0,  [1233  724  357  175],    0.0
