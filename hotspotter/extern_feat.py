@@ -60,11 +60,7 @@ def precompute_hesaff(rchip_fpath, feat_fpath, dict_args):
 try:        # NOTE: pyhesaff lives in ~/code/hesaff as of 4/21/17
     #from hstpl.extern_feat import pyhesaff
     import pyhesaff # Replaces line above
-    
-    '''====================='''
-    import pdb; pdb.set_trace()
-    '''====================='''
-        
+            
     def detect_kpts_new(rchip_fpath, dict_args):
         #kpts, desc = pyhesaff.detect_kpts(rchip_fpath, **dict_args)
         kpts, desc = pyhesaff.detect_feats(rchip_fpath, **dict_args)    # Replaces line above
