@@ -338,10 +338,6 @@ class HotSpotter(DynStruct):
 
     @profile
     def refresh_features(hs, cx_list=None):
-        '''=========
-        import pdb
-        pdb.set_trace()
-        ========='''
         hs.load_chips(cx_list=cx_list)
         hs.load_features(cx_list=cx_list)
 
