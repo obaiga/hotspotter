@@ -774,6 +774,48 @@ class MainWindowBackend(QtCore.QObject):
         back.show_query_result(res, tx)
         return res
 
+    '''Added 4/23/2017 by Joshua Beard
+    pretty rough'''
+    @slot_()
+    @blocking
+    @profile
+    def autoquery(back):
+        ''' From autochip '''
+        # ASSUME images are in PWD/DB/images
+        fpath = back.get_work_directory() + '/' + back.hs.get_db_name() +'/images/templates' # JB
+        #fpath = back.get_work_directory() + '/test_autochip/templates'
+        #fpath = back.get_work_directory() + '/Demo_Data/templates'
+        #fpath = os.getcwd() + '/matFiles'
+        back.hs.autoquery(fpath)
+        back.populate_tables()
+        print('')
+        
+        ''' From query '''
+        # Action -> Query
+        #prevBlock = back.front.blockSignals(True)
+        print('[**back] query(cid=%r)' % cid)
+        cx = back.get_selected_cx() if cid is None else back.hs.cid2_cx(cid)
+        print('[**back.query()] cx = %r)' % cx)
+        ''' This should be unnecessary due to autopilot style
+        if cx is None:
+            back.user_info('Cannot query. No chip selected')
+            return
+        '''
+        try:
+            res = back.hs.query(cx)
+        except Exception as ex:
+            # TODO Catch actuall exceptions here
+            print('[**back.query()] ex = %r' % ex)
+            raise
+        if isinstance(res, str):
+            back.user_info(res)
+            return
+        back.current_res = res
+        back.populate_result_table()
+        print(r'[/back] finished query')
+        print('')
+        return res
+        
     @slot_()
     @blocking
     @profile

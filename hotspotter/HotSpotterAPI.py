@@ -27,6 +27,10 @@ import match_chips3 as mc3
 import matching_functions as mf
 from autochip import autochip as ac
 
+'''
+TODO:
+Autoquery
+'''
 
 def _checkargs_onload(hs):
     'checks relevant arguments after loading tables'
@@ -450,10 +454,36 @@ class HotSpotter(DynStruct):
     #---------------
     # Query Functions
     #---------------
+    
+    ''' Under construction '''
+    @profile
+    def autoquery(hs):
+        import MCL as mcl
+        # Initialize at zero
+        scoreMat = np.zeros((hs.get_num_chips(), hs.get_num_chip()))
+        # go through every chip
+        for chipNum in hs.get_valid_cxs():
+            results = hs.query(chipNum)
+            results = results.cx2_score
+            maxScore = max(results)
+            # normalize scores from [0,1]
+            results = [score/maxScore for score in results]
+            # Only grab nonzero values
+            results = results[np.nonzero(results)]
+            
+            for score, i in results:
+                if scoreMat[chipNum-1][i] == 0.0: # If empty, stick score in
+                    scoreMat[chipNum-1][i] = results[score]
+                    scoreMat[i][chipNum-1] = results[score]
+                else: # If already been matched, average scores
+                    scoreMat[chipNum-1][i] = (results[score] + scoreMat[chipNum-1][i])/2
+                    scoreMat[i][chipNum-1] = (results[score] + scoreMat[i][chipNum-1])/2
+                
+            
     @profile
     def prequery(hs):
         mc3.prequery(hs)
-
+        
     @profile
     def query(hs, qcx, *args, **kwargs):
         return hs.query_database(qcx, *args, **kwargs)
