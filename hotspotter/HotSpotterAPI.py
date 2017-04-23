@@ -456,30 +456,47 @@ class HotSpotter(DynStruct):
     #---------------
     
     ''' Under construction '''
+    ''' UPDATE: does not populate matrix properly '''
     @profile
     def autoquery(hs):
-        import MCL as mcl
+        #import MCL as mcl
         # Initialize at zero
-        scoreMat = np.zeros((hs.get_num_chips(), hs.get_num_chip()))
-        # go through every chip
-        for chipNum in hs.get_valid_cxs():
-            results = hs.query(chipNum)
-            results = results.cx2_score
+        numChips = hs.get_num_chips()
+        scoreMat = np.zeros((numChips, numChips))
+        print("[hs] beginning autoquery")
+        
+        ''' Make score matrix with query results '''
+        for chipNum in hs.get_valid_cxs():  # For each chip
+            results = hs.query(chipNum)     # Query this chip
+            results = results.cx2_score     # Toss everything except the score
+            
+            # Normalize scores
             maxScore = max(results)
-            # normalize scores from [0,1]
             results = [score/maxScore for score in results]
+            
             # Only grab nonzero values
-            results = results[np.nonzero(results)]
+            '''====================='''
+            #import pdb; pdb.set_trace()
+            '''====================='''
+            matches = np.nonzero(results)[0]
             
-            for score, i in results:
-                if scoreMat[chipNum-1][i] == 0.0: # If empty, stick score in
-                    scoreMat[chipNum-1][i] = results[score]
-                    scoreMat[i][chipNum-1] = results[score]
-                else: # If already been matched, average scores
-                    scoreMat[chipNum-1][i] = (results[score] + scoreMat[chipNum-1][i])/2
-                    scoreMat[i][chipNum-1] = (results[score] + scoreMat[i][chipNum-1])/2
-                
             
+            for i in matches:                # For each matched chip,
+                if scoreMat[chipNum-1][i] == 0.0:   # If these chips haven't been matched yet,
+                    # Insert this score
+                    scoreMat[chipNum-1][i] = results[i]
+                    scoreMat[i][chipNum-1] = results[i]
+                else: # If chips have been matched by previous query,
+                    # Average old and new score
+                    scoreMat[chipNum-1][i] = (results[i] + scoreMat[chipNum-1][i])/2
+                    scoreMat[i][chipNum-1] = (results[i] + scoreMat[i][chipNum-1])/2
+        
+        ''' Write scores to csv file '''
+        print("[hs] saving aq scores")
+        ld2.write_score_matrix(hs, scoreMat)
+        print("[hs] autoquery done")
+        
+        
     @profile
     def prequery(hs):
         mc3.prequery(hs)
