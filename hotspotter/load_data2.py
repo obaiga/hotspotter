@@ -27,6 +27,7 @@ VERBOSE_LOAD_DATA = True
 CHIP_TABLE_FNAME = 'chip_table.csv'
 NAME_TABLE_FNAME = 'name_table.csv'
 IMAGE_TABLE_FNAME = 'image_table.csv'
+SCORE_MATRIX_FNAME = 'scores.csv'
 
 # TODO: Allow alternative internal directories
 RDIR_INTERNAL_ALTS = ['.hs_internals']
@@ -662,6 +663,30 @@ def make_image_csv(hs):
     image_table = make_csv_table(column_labels, column_list, header)
     return image_table
 
+def write_score_matrix(hs, scoreMat): # TODO: don't pass the matrix, offload string conversion
+    
+    print('[ld2] Writing score matrix')
+    internal_dir = hs.dirs.internal_dir
+    #CREATE_BACKUP = True  # TODO: Should be a preference
+    #if CREATE_BACKUP:
+    #    backup_csv_tables(hs, force_backup=True)
+    fpath = join(internal_dir, SCORE_MATRIX_FNAME)
+    # write csv files
+    size = len(scoreMat)
+    fid = open(fpath, "w")
+    for row in range(size):
+        for col in range(size-1):
+            if row == col:
+                fid.write(str('1,'))
+            else:
+            #import pdb; pdb.set_trace()
+                fid.write(str(scoreMat[row][col])+",")
+
+        if row == col:
+            fid.write(str('1\n'))
+        else:
+            fid.write(str(scoreMat[row][col+1])+"\n")
+    fid.close()
 
 def write_csv_tables(hs):
     'Saves the tables to disk'

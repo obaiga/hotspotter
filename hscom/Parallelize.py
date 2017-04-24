@@ -100,8 +100,14 @@ def parallelize_tasks(task_list, num_procs, task_lbl, verbose=True):
         if num_procs >= 1:
             print('[parallel] Forced serial processing')
             # Parallelize tasks
+<<<<<<< HEAD
             return _compute_in_serial(task_list, task_lbl, verbose) #trying to force serial computation -MD
             #return _compute_in_parallel(task_list, num_procs, task_lbl, verbose)
+=======
+            #return _compute_in_parallel(task_list, num_procs, task_lbl, verbose)
+            ''' Hacky patch to hopefully avoid segfaults '''
+            return _compute_in_serial(task_list, task_lbl, verbose)
+>>>>>>> 6f9d36ef9b6599d8a6c3cd0de3e5ab2c91c3d957
         else:
             print('[parallel] Natural serial processing')
             return _compute_in_serial(task_list, task_lbl, verbose)
