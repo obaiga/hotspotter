@@ -63,15 +63,12 @@ try:        # NOTE: pyhesaff lives in ~/code/hesaff as of 4/21/17
     import pyhesaff # Replaces line above
             
     def detect_kpts_new(rchip_fpath, dict_args):
-<<<<<<< HEAD
         print('using new')
         pdb.set_trace()
         kpts, desc = pyhesaff.detect_kpts(rchip_fpath, **dict_args)
-=======
         #kpts, desc = pyhesaff.detect_kpts(rchip_fpath, **dict_args)
         kpts, desc = pyhesaff.detect_feats(rchip_fpath, **dict_args)    # Replaces line above
 
->>>>>>> 6f9d36ef9b6599d8a6c3cd0de3e5ab2c91c3d957
         return kpts, desc
     #print('[extern_feat] new hessaff is available')
     print('[extern_feat] got newest hesaff from hesaff repo')
