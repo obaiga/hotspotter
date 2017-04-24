@@ -456,9 +456,12 @@ class HotSpotter(DynStruct):
     #---------------
     
     ''' Under construction '''
-    ''' UPDATE: does not populate matrix properly '''
+    ''' UPDATE: does not populate matrix properly
+        TODO: maybe populate matrix for all scores, not just matches
+    '''
+    
     @profile
-    def autoquery(hs):
+    def autoquery(hs): 
         #import MCL as mcl
         # Initialize at zero
         numChips = hs.get_num_chips()
@@ -474,12 +477,12 @@ class HotSpotter(DynStruct):
             maxScore = max(results)
             results = [score/maxScore for score in results]
             
-            # Only grab nonzero values
             '''====================='''
             #import pdb; pdb.set_trace()
             '''====================='''
-            matches = np.nonzero(results)[0]
             
+            # Only grab nonzero values
+            matches = np.nonzero(results)[0]
             
             for i in matches:                # For each matched chip,
                 if scoreMat[chipNum-1][i] == 0.0:   # If these chips haven't been matched yet,
