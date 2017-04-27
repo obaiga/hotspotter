@@ -28,7 +28,7 @@ import matching_functions as mf
 from autochip import autochip as ac
 import pdb
 import autoquery as aq
-
+import MCL.mcl.mcl_clustering as mcl
 '''
 TODO:
 Autoquery
@@ -521,6 +521,10 @@ class HotSpotter(DynStruct):
         print("[hs] saving aq scores")
         ld2.write_score_matrix(hs, scoreMat)
         print("[hs] autoquery done")
+        #pdb.set_trace()
+        print("[hs] clustering...")
+        hs.cluster(3, 3, 120, 2)
+        print("[hs] done clustering")
         
         
     @profile
@@ -574,8 +578,16 @@ class HotSpotter(DynStruct):
         print('[mc3] len(gt_cxs) = %r' % (gt_cxs,))
         return mc3.query_dcxs(hs, qcx, gt_cxs, qdat)
 
-    @profile
-    #def 
+    #@profile
+    def cluster(hs, expand_factor = 3, inflate_factor = 3, max_loop = 60, mult_factor = 2):
+        SCORE_MATRIX_NAME = 'scores.csv'
+        fpath = os.path.join(hs.dirs.internal_dir, SCORE_MATRIX_NAME)
+        #fpath = os.path.join(hs.dirs.db_dir, '_hsdb', SCORE_MATRIX_NAME)
+        #if os.path.isfile(fpath):
+            #os.remove(fpath)
+        M, G = mcl.get_graph(fpath)
+        M, clusters = mcl.networkx_mcl(G, expand_factor = 3, inflate_factor = 3, max_loop = 60, mult_factor = 2)
+        mcl.clusters_to_output(hs, clusters)
 
     # ---------------
     # Change functions
@@ -687,7 +699,6 @@ class HotSpotter(DynStruct):
     @profile # IhavenoideawhatImdoing
     #@helpers.indent_decor('[hs.autochip]') #mine doesn't recognize helpers
     def autochip(hs, directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, crit = [0,0,1], minSize = [1,1]):
-        pdb.set_trace()
         # use autochip module to do autochipping
         chipDict = ac.doAutochipping(directoryToTemplates, exclFac, stopCrit, skip, crit, minSize)
         #print(chipDict) # Print for sanity check

@@ -773,6 +773,7 @@ class MainWindowBackend(QtCore.QObject):
         print(r'[/back] finished query')
         print('')
         back.show_query_result(res, tx)
+        back.populate_tables()
         return res
 
     '''Added 4/23/2017 by Joshua Beard
