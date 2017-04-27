@@ -118,8 +118,6 @@ def _compute_in_serial(task_list, task_lbl='', verbose=True):
         # Compute each task
         for count, (fn, args) in enumerate(task_list):
             mark_progress(count)
-            #sys.stdout.flush()
-            pdb.set_trace()
             result = fn(*args)
             result_list.append(result)
         end_prog()

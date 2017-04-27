@@ -64,8 +64,6 @@ try:        # NOTE: pyhesaff lives in ~/code/hesaff as of 4/21/17
             
     def detect_kpts_new(rchip_fpath, dict_args):
         print('using new')
-        pdb.set_trace()
-        kpts, desc = pyhesaff.detect_kpts(rchip_fpath, **dict_args)
         #kpts, desc = pyhesaff.detect_kpts(rchip_fpath, **dict_args)
         kpts, desc = pyhesaff.detect_feats(rchip_fpath, **dict_args)    # Replaces line above
 

@@ -737,14 +737,9 @@ class MainWindowBackend(QtCore.QObject):
     @blocking
     @profile
     def autochip(back):
-<<<<<<< HEAD
-        fpath = '/home/matt/code/matt/hotspotter/autochip/test/demo1/templates'
-        #fpath = ~/code/matt/hotspotter/autochip/test/demo1/templates
-        #fpath = back.get_work_directory() + '/templates' # JB
-=======
-        # ASSUME images are in PWD/DB/images
-        fpath = back.get_work_directory() + '/' + back.hs.get_db_name() +'/images/templates' # JB
->>>>>>> 6f9d36ef9b6599d8a6c3cd0de3e5ab2c91c3d957
+        # ASSUME images are in PWD/DB/images   
+        fpath = join(back.hs.dirs.db_dir, 'images/templates') # Added 4/27/17 jb
+        #fpath = back.get_work_directory() + '/' + back.hs.get_db_name() +'/images/templates' # JB
         #fpath = back.get_work_directory() + '/test_autochip/templates'
         #fpath = back.get_work_directory() + '/Demo_Data/templates'
         #fpath = os.getcwd() + '/matFiles'
