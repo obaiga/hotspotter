@@ -29,6 +29,14 @@ from autochip import autochip as ac
 import pdb
 import autoquery as aq
 import MCL.mcl.mcl_clustering as mcl
+
+MCL_MULT_FACTOR     = 3
+MCL_EXPAND_FACTOR   = 3
+MCL_INFLATE_FACTOR  = 3
+MCL_MAX_LOOP        = 60
+AC_EXCL_FAC         = 1
+AC_STOP_CRIT        = .9
+
 '''
 TODO:
 Autoquery
@@ -464,66 +472,11 @@ class HotSpotter(DynStruct):
     
     @profile
     def autoquery(hs): 
-        scoreMat = aq.makeScoreMat(hs)
-        '''
-        SAME_CHIP_WEIGHT = 1
-        #import MCL as mcl
-        # Initialize at zero
-        numChips = hs.get_num_chips()
-        scoreMat = np.zeros((numChips, numChips))
-        print("[hs] beginning autoquery")
-        
-        # Make score matrix with query results
-        for i in hs.get_valid_cxs():  # For each chip
-            
-            cid1 = hs.cx2_cid(i)            # Get chip id
-            c1_gname = hs.cx2_gname(i)        # Get image name
-            
-            results = hs.query(chipNum)     # Query this chip
-            results = results.cx2_score     # Toss everything except the score
-            
-            # Normalize scores
-            maxScore = max(results)
-            if not maxScore:
-                results = [0]*len(results)
-            else:
-                results = [score/maxScore for score in results]
-            
-            for j in hs.get_valid_cxs():
-                
-                cid2 = hs.cs2_cid(i)
-                c2_gname = hs.cx2_gname(i)
-                
-                if cid1==cid2:
-                    scoreMat[i][j] = SAME_CHIP_WEIGHT
-                    scoreMat[j][i] = SAME_CHIP_WEIGHT
-                else:
-                    if c1_gname == c2_gname:
-                        scoreMat[i][j] = SAME_IMAGE_WEIGHT
-            
-            #import pdb; pdb.set_trace()
-           
-            # Only grab nonzero values
-            matches = np.nonzero(results)[0]
-            
-            for i in matches:                # For each matched chip,
-                if scoreMat[chipNum-1][i] == 0.0:   # If these chips haven't been matched yet,
-                    # Insert this score
-                    scoreMat[chipNum-1][i] = results[i]
-                    scoreMat[i][chipNum-1] = results[i]
-                else: # If chips have been matched by previous query,
-                    # Average old and new score
-                    scoreMat[chipNum-1][i] = (results[i] + scoreMat[chipNum-1][i])/2
-                    scoreMat[i][chipNum-1] = (results[i] + scoreMat[i][chipNum-1])/2
-        
-        # Write scores to csv file
-        '''
-        print("[hs] saving aq scores")
-        ld2.write_score_matrix(hs, scoreMat)
-        print("[hs] autoquery done")
-        #pdb.set_trace()
-        print("[hs] clustering...")
-        hs.cluster(3, 3, 120, 2)
+        scoreMat = aq.makeScoreMat(hs)          # Autoquery (make score matrix)
+        ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
+        print("[hs] autoquery done") 
+        print("[hs] clustering...") 
+        hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
         print("[hs] done clustering")
         
         
@@ -698,9 +651,9 @@ class HotSpotter(DynStruct):
     Need to think about rotation during SQ17'''
     @profile # IhavenoideawhatImdoing
     #@helpers.indent_decor('[hs.autochip]') #mine doesn't recognize helpers
-    def autochip(hs, directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, crit = [0,0,1], minSize = [1,1]):
+    def autochip(hs, directoryToTemplates):
         # use autochip module to do autochipping
-        chipDict = ac.doAutochipping(directoryToTemplates, exclFac, stopCrit, skip, crit, minSize)
+        chipDict = ac.doAutochipping(directoryToTemplates, AC_EXCL_FAC, AC_STOP_CRIT)
         #print(chipDict) # Print for sanity check
         chipNum = 0;    # Keep track of chips for fun
         # Go through each image in image table
