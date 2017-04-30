@@ -29,10 +29,10 @@ from autochip import autochip as ac
 import pdb
 import autoquery as aq
 import MCL.mcl.mcl_clustering as mcl
-
+MCL_SELF_LOOP       = 1
 MCL_MULT_FACTOR     = 3
-MCL_EXPAND_FACTOR   = 3
-MCL_INFLATE_FACTOR  = 3
+MCL_EXPAND_FACTOR   = 3 
+MCL_INFLATE_FACTOR  = 2	# Influences granularity of clusters 
 MCL_MAX_LOOP        = 60
 AC_EXCL_FAC         = 1
 AC_STOP_CRIT        = .9
@@ -472,11 +472,11 @@ class HotSpotter(DynStruct):
     
     @profile
     def autoquery(hs): 
-        scoreMat = aq.makeScoreMat(hs)          # Autoquery (make score matrix)
+        scoreMat = aq.makeScoreMat(hs, MCL_SELF_LOOP)         # Autoquery (make score matrix)
         ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
         print("[hs] autoquery done") 
         print("[hs] clustering...") 
-        hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
+        hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR, MCL_SELF_LOOP)
         print("[hs] done clustering")
         
         

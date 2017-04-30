@@ -11,7 +11,7 @@ TIME_DELTA_MAX = 90
 #import MCL as mcl
 # Initialize at zero
 
-def makeScoreMat(hs):
+def makeScoreMat(hs, self_loop=SAME_CHIP_WEIGHT):
     numChips = hs.get_num_chips()
     scoreMat = np.zeros((numChips, numChips))
     print("[aq] beginning autoquery")
@@ -42,8 +42,8 @@ def makeScoreMat(hs):
                 print(cid1),
                 print(" == "),
                 print(cid2)
-                scoreMat[i][j] = SAME_CHIP_WEIGHT
-                scoreMat[j][i] = SAME_CHIP_WEIGHT
+                scoreMat[i][j] = self_loop 
+                scoreMat[j][i] = self_loop 
 
             # Unique chips
             else:
