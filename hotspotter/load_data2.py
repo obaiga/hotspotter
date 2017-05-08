@@ -663,6 +663,23 @@ def make_image_csv(hs):
     image_table = make_csv_table(column_labels, column_list, header)
     return image_table
 
+def write_clusters(hs, clusterTable):
+    print('[ld2] writing cluster table')
+    internal_dir = hs.dirs.internal_dir
+    fpath = join(internal_dir, CLUSTER_TABLE_NAME)
+    if os.path.isfile(fpath):
+        print('[ld2] deleting old cluster table')
+        os.remove(fpath)
+    # write csv files
+    (nImgs, nFields) = shape(clusterTable)
+    fid = open(fpath, "w")
+    for image in range(nImgs):
+        for field in range(nFields-1):
+            fid.write(clusterTable[image][field]+",")
+        fid.write(clusterTable[image][nFields]+"\n")
+    fid.close()
+
+
 def write_score_matrix(hs, scoreMat): # TODO: don't pass the matrix, offload string conversion
     
     print('[ld2] Writing score matrix')
