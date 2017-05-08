@@ -478,7 +478,11 @@ class HotSpotter(DynStruct):
         print("[hs] clustering...") 
         hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
         print("[hs] done clustering")
-        
+        #        
+        # Noah's cluster work goes here
+        # Return clusterTable
+        #
+        ld2.write_clusters(hs, clusterTable)
         
     @profile
     def prequery(hs):
