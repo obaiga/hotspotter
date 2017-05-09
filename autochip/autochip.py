@@ -33,6 +33,7 @@ def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, cr
                 try:
                     template = getTemplate(directoryToTemplates, fileName, EXTENSION)
                     print('[ac] getting chips...')
+                    #import pdb; pdb.set_trace()
                     chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
                     print('[ac] got %i chips:' % len(chips))
                     print('[ac]'),
@@ -99,10 +100,8 @@ def autochip(template, exclFac = 1, skip = 8, stopCrit = 1, crit = [0,0,1], minS
     import math
     
     templateMod = template.copy()    # Get a template to mess around with
+    #import pdb; pdb.set_trace()
     chipBounds = [];                # Initialize chip bounds
-    
-    ''' DEBUG '''
-    import pdb
     
     ''' Work '''
     stopCrit = abs(stopCrit)    # Make sure we don't try to mess with negatives
@@ -125,7 +124,6 @@ def autochip(template, exclFac = 1, skip = 8, stopCrit = 1, crit = [0,0,1], minS
     
             # Get bounds for rectangle to remove from future searches
             if exclFac > 0 and exclFac <= 1:    
-                #import pdb; pdb.set_trace()
                 rmWidth = int(math.floor(width*exclFac))    # Determine width of rect to remove
                 rmHeight = int(math.floor(height*exclFac))  # Determine width of rect to remove
                 
@@ -133,8 +131,8 @@ def autochip(template, exclFac = 1, skip = 8, stopCrit = 1, crit = [0,0,1], minS
                     rmRow = row             
                     rmCol = col
                 else:               # Remove fraction of chip
-                    rmRow = int(row+(math.floor(rmHeight/2)))
-                    rmCol = int(col+(math.floor(rmWidth/2)))
+                    rmRow = int(row+(math.floor((height-rmHeight)/2)))
+                    rmCol = int(col+(math.floor((width-rmWidth)/2)))
 
             else:            # Remove a point
                 rmWidth = 0
@@ -142,11 +140,9 @@ def autochip(template, exclFac = 1, skip = 8, stopCrit = 1, crit = [0,0,1], minS
                 rmRow = int(row+math.floor(height/2))
                 rmCol = int(col+math.floor(width/2))
 
-            ''' DB 
-            pdb.set_trace()'''
+
             # Cut out some part of template for next search
             templateMod[rmRow:rmRow+rmHeight+1,rmCol:rmCol+rmWidth+1] = 0;
-        # /while
     
     # If we're running until we get a certain number of chips
     elif stopCrit > 1:
