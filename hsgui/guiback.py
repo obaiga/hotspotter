@@ -205,7 +205,7 @@ class MainWindowBackend(QtCore.QObject):
         # A list of default internal headers to display
         back.table_headers = {
             'gxs':  ['gx', 'gname', 'nCxs', 'aif'],
-            'cxs':  ['cid', 'name', 'gname', 'nGt', 'nKpts', 'theta'],
+            'cxs':  ['cid', 'name', 'gname', 'nGt', 'nKpts'],#, 'theta'],
             'nxs':  ['nx', 'name', 'nCxs'],
             'res':  ['rank', 'score', 'name', 'cid']
         }
