@@ -153,22 +153,92 @@ def clusters_to_output(hs, clusters):
     print("Clusters:")
     for k, v in clusters.items():
         print('{}, {}'.format(k, v))
+    #temp_dict = {}
+    #new stuff from here till
+    imageList = [[]]
+    temp = 0
+    for k,v in clusters.items():
+        for chipID in v:
+            imageList[temp].append("cat"+str(k+1))
+            imageList[temp].append(hs.cx2_gname(chipID))
+            temp =  temp +1
+            imageList.append([])
+                                   
+    #here and return imageList at the bottom
+
     cid_dict = {}
     for k,v in clusters.items():
         for chipID in v:
             if (chipID+1) not in cid_dict.keys():
                 cid_dict[chipID+1] = k+1
-
+    
     for k,v in cid_dict.items():
         print('{}, {}'.format(k,v))
 
+    """
+    
+    chip_gname = hs.cx2_gname(0)
+    cat1name = 0
+    cat2name = 0
+    cat3name = 0
+    cat1count = 0
+    cat2count = 0
+    cat3count = 0
+    maxChips = hs.get_num_chips() -1
+    for i in hs.get_valid_cxs():
+        chip1_gname = hs.cx2_gname(i)
+        #print ("start case1")
+        if(i == 0):
+            cat1name = cid_dict[1]
+            print ("start case")
+        if(chip1_gname != chip_gname):
+            print ("new image")
+            if (cat1count >=cat2count) and (cat1count >= cat3count):
+                largest = cat1name
+            elif(cat2count >=cat1count) and (cat2count >=cat3count):
+                largest = cat1name
+            else:
+                if cat3name == 0:
+                    largest = cat1name
+                else:
+                    largest = cat3name
+            totalcount = cat1count+cat2count+cat3count
+            for chipname in range((i+1-totalcount),i+1):
+                cid_dict[chipname] = largest                  
+            cat1name = cid_dict[i+1]
+            cat2name = 0
+            cat3name = 0
+            cat1count = 1
+            cat2count = 0
+            cat3count = 0
+            chip_gname = hs.cx2_gname(i)
+    
+        else:
+            if cid_dict[i+1] == cat1name:
+                
+                cat1count = (cat1count +1)
+            elif cat2name == 0:
+                cat2name = cid_dict[i+1]
+                cat2count = (cat2count + 1)
+            elif cid_dict[i+1] == cat2name:
+                cat2count = (cat2count +1)
+            elif cat3name == 0:
+                cat3name = cid_dict[i+1]
+                cat3count = (cat3count + 1)
+            elif cid_dict[i+1] == cat3name:
+                cat3count = (cat3count +1)
+            else:
+                print("more then three cats in 1 image")
+                cat1count = cat1count +1
 
-        
+    for k,v in cid_dict.items():
+        print('{}, {}'.format(k,v))
+    """                          
     for chipobj in hs.get_valid_cxs():
         chipID = hs.cx2_cid(chipobj)
         chipname = "Cat_"+str(cid_dict[chipID])
         hs.change_name(chipobj, chipname)
-        
+    return imageList  
 
 if __name__ == '__main__':
 
