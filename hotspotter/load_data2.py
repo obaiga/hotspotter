@@ -28,7 +28,7 @@ CHIP_TABLE_FNAME = 'chip_table.csv'
 NAME_TABLE_FNAME = 'name_table.csv'
 IMAGE_TABLE_FNAME = 'image_table.csv'
 SCORE_MATRIX_FNAME = 'scores.csv'
-
+CLUSTER_TABLE_NAME = 'cluster_table.csv'
 # TODO: Allow alternative internal directories
 RDIR_INTERNAL_ALTS = ['.hs_internals']
 RDIR_INTERNAL2 = '_hsdb'
