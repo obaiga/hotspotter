@@ -154,6 +154,7 @@ def clusters_to_output(hs, clusters):
     for k, v in clusters.items():
         print('{}, {}'.format(k, v))
     #temp_dict = {}
+    #new stuff from here till
     imageList = [[]]
     temp = 0
     for k,v in clusters.items():
@@ -163,7 +164,7 @@ def clusters_to_output(hs, clusters):
             temp =  temp +1
             imageList.append([])
                                    
-
+    #here and return imageList at the bottom
 
     cid_dict = {}
     for k,v in clusters.items():
