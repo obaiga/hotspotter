@@ -130,8 +130,11 @@ class Ui_mainSkel(object):
         self.gxs_TBL.setRowCount(0)
         self.gxs_TBL.horizontalHeader().setCascadingSectionResizes(False)
         self.gxs_TBL.horizontalHeader().setStretchLastSection(True)
-        self.gxs_TBL.horizontalHeader().setDefaultSectionSize(150)
-        #self.gxs_TBL.horizontalHeader().setResizeMode(ResizetoContents)
+        self.gxs_TBL.horizontalHeader().setDefaultSectionSize(250)
+	#self.gxs_TBL.setVisible(False)
+	#self.gxs_TBL.resizeColumnsToContents()
+	#self.gxs_TBL.setVisible(True)        
+	#self.gxs_TBL.horizontalHeader().setResizeMode(QHeaderView.Stretch)
         self.imageView.addWidget(self.gxs_TBL)
         self.verticalLayout_6.addLayout(self.imageView)
 
@@ -162,7 +165,7 @@ class Ui_mainSkel(object):
         self.cxs_TBL.setColumnCount(0)
         self.cxs_TBL.setRowCount(0)
         self.cxs_TBL.horizontalHeader().setStretchLastSection(True)
-        self.cxs_TBL.horizontalHeader().setDefaultSectionSize(100)
+        self.cxs_TBL.horizontalHeader().setDefaultSectionSize(250)
         self.chipView.addWidget(self.cxs_TBL)
         self.verticalLayout_7.addLayout(self.chipView)
 

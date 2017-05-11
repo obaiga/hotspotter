@@ -308,6 +308,7 @@ class MainWindowFrontend(QtGui.QMainWindow):
         ui.cxs_TBL.sortByColumn(0, Qt.AscendingOrder)
         ui.res_TBL.sortByColumn(0, Qt.AscendingOrder)
         ui.gxs_TBL.sortByColumn(0, Qt.AscendingOrder)
+	
 
     def print(front, msg):
         print('[*front*] ' + msg)
