@@ -159,7 +159,8 @@ def clusters_to_output(hs, clusters):
     temp = 0
     for k,v in clusters.items():
         for chipID in v:
-            imageList[temp].append("cat"+str(k+1))
+            imageList[temp].append(str(k))
+            #imageList[temp].append("cat"+str(k+1))
             imageList[temp].append(hs.cx2_gname(chipID))
             temp =  temp +1
             imageList.append([])    # Add null entry for future entries
@@ -239,6 +240,7 @@ def clusters_to_output(hs, clusters):
         chipname = "Cat_"+str(cid_dict[chipID])
         hs.change_name(chipobj, chipname)
     return imageList  
+
 
 if __name__ == '__main__':
 

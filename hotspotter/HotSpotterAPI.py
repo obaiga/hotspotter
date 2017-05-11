@@ -29,11 +29,11 @@ from autochip import autochip as ac
 import pdb
 import autoquery as aq
 import MCL.mcl.mcl_clustering as mcl
-MCL_SELF_LOOP       = 1
-MCL_MULT_FACTOR     = 3
+MCL_SELF_LOOP       = 0
+MCL_MULT_FACTOR     = 2
 MCL_EXPAND_FACTOR   = 3 
-MCL_INFLATE_FACTOR  = 10 	# Influences granularity of clusters 
-MCL_MAX_LOOP        = 60
+MCL_INFLATE_FACTOR  = 1.25	# Influences granularity of clusters 
+MCL_MAX_LOOP        = 1000
 AC_EXCL_FAC         = .75
 AC_STOP_CRIT        = .45
 
@@ -535,14 +535,14 @@ class HotSpotter(DynStruct):
         return mc3.query_dcxs(hs, qcx, gt_cxs, qdat)
 
     #@profile
-    def cluster(hs, expand_factor = 3, inflate_factor = 3, max_loop = 60, mult_factor = 2):
+    def cluster(hs, expand_factor, inflate_factor, max_loop, mult_factor):
         SCORE_MATRIX_NAME = 'scores.csv'
         fpath = os.path.join(hs.dirs.internal_dir, SCORE_MATRIX_NAME)
         #fpath = os.path.join(hs.dirs.db_dir, '_hsdb', SCORE_MATRIX_NAME)
         #if os.path.isfile(fpath):
             #os.remove(fpath)
         M, G = mcl.get_graph(fpath)
-        M, clusters = mcl.networkx_mcl(G, expand_factor = 3, inflate_factor = 3, max_loop = 60, mult_factor = 2)
+        M, clusters = mcl.networkx_mcl(G, expand_factor, inflate_factor, max_loop, mult_factor)
         return mcl.clusters_to_output(hs, clusters)
 
     # ---------------
