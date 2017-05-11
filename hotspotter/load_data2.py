@@ -671,7 +671,7 @@ def write_clusters(hs, clusterTable):
         print('[ld2] deleting old cluster table')
         os.remove(fpath)
     # write csv files
-    (nImgs, nFields) = shape(clusterTable)
+    (nImgs, nFields) = clusterTable.shape()
     fid = open(fpath, "w")
     for image in range(nImgs):
         for field in range(nFields-1):
