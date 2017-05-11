@@ -9,7 +9,7 @@ EXTENSION ='.bmp'
 TEMPLATE_MAX_VAL = 255
 MIN_SIZE = 32   # Minimum sided length of extracted chips
 ''' Do autochipping '''
-def doAutochipping(directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, crit = [0,0,1], minSize = [MIN_SIZE, MIN_SIZE]):
+def doAutochipping(hs, directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8, crit = [0,0,1], minSize = [MIN_SIZE, MIN_SIZE]):
     '''
     Driver for autochipping. Designed to be plug-n-play with HotSpotter GUI
     Author: Joshua Beard
@@ -534,6 +534,15 @@ def getTemplate(pathTo, templateFileName, ext = EXTENSION):
     '''
     return asmatrix(m)
 #/ getTemplate
+
+def getNumTemplates(directoryToTemplates, ext = EXTENSION):
+    import os
+    dirlist = os.listdir(directoryToTemplates) 
+    numTemplates = 0
+    for item in dirlist:
+        if item.endswith(ext):
+            numTemplates = numTemplates + 1;
+    return numTemplates
 
 ''' MAIN '''    
 if __name__ == "__main__":

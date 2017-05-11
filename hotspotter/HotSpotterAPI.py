@@ -653,10 +653,16 @@ class HotSpotter(DynStruct):
     Need to think about rotation during SQ17'''
     @profile # IhavenoideawhatImdoing
     #@helpers.indent_decor('[hs.autochip]') #mine doesn't recognize helpers
+    # TODO: handle nImages!=nTemplates more effectively (GUI popup would be nice)
     def autochip(hs, directoryToTemplates):
-        # use autochip module to do autochipping
+        nImages = len(hs.get_valid_gxs())
+        nTemplates = ac.getNumTemplates(directoryToTemplates)
         #pdb.set_trace()
-        chipDict = ac.doAutochipping(directoryToTemplates, AC_EXCL_FAC, AC_STOP_CRIT)
+        if nImages != nTemplates:
+            print('ERROR: number of images is unequal to number of templates')
+            return 0
+        # use autochip module to do autochipping
+        chipDict = ac.doAutochipping(hs, directoryToTemplates, AC_EXCL_FAC, AC_STOP_CRIT)
         if not chipDict:
             print("[hs] No templates found!")
         #print(chipDict) # Print for sanity check
