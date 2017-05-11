@@ -35,7 +35,7 @@ MCL_EXPAND_FACTOR   = 3
 MCL_INFLATE_FACTOR  = 2	# Influences granularity of clusters 
 MCL_MAX_LOOP        = 60
 AC_EXCL_FAC         = 1
-AC_STOP_CRIT        = .9
+AC_STOP_CRIT        = .45
 
 '''
 TODO:
@@ -476,7 +476,7 @@ class HotSpotter(DynStruct):
         ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
         print("[hs] autoquery done") 
         print("[hs] clustering...") 
-        hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR, MCL_SELF_LOOP)
+        hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
         print("[hs] done clustering")
         
         
