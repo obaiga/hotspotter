@@ -32,10 +32,10 @@ import MCL.mcl.mcl_clustering as mcl
 MCL_SELF_LOOP       = 1
 MCL_MULT_FACTOR     = 3
 MCL_EXPAND_FACTOR   = 3 
-MCL_INFLATE_FACTOR  = 2	# Influences granularity of clusters 
+MCL_INFLATE_FACTOR  = 8	# Influences granularity of clusters 
 MCL_MAX_LOOP        = 60
-AC_EXCL_FAC         = 1
-AC_STOP_CRIT        = 3
+AC_EXCL_FAC         = .75
+AC_STOP_CRIT        = .45
 
 '''
 TODO:
@@ -476,9 +476,11 @@ class HotSpotter(DynStruct):
         ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
         print("[hs] autoquery done") 
         print("[hs] clustering...") 
+        # Uncomment this when Noah gets clustering done.
+        #clusterTable = hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
         hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
         print("[hs] done clustering")
-        
+        ld2.write_clusters(hs, clusterTable)
         
     @profile
     def prequery(hs):
@@ -653,7 +655,10 @@ class HotSpotter(DynStruct):
     #@helpers.indent_decor('[hs.autochip]') #mine doesn't recognize helpers
     def autochip(hs, directoryToTemplates):
         # use autochip module to do autochipping
+        #pdb.set_trace()
         chipDict = ac.doAutochipping(directoryToTemplates, AC_EXCL_FAC, AC_STOP_CRIT)
+        if not chipDict:
+            print("[hs] No templates found!")
         #print(chipDict) # Print for sanity check
         chipNum = 0;    # Keep track of chips for fun
         # Go through each image in image table

@@ -28,7 +28,7 @@ CHIP_TABLE_FNAME = 'chip_table.csv'
 NAME_TABLE_FNAME = 'name_table.csv'
 IMAGE_TABLE_FNAME = 'image_table.csv'
 SCORE_MATRIX_FNAME = 'scores.csv'
-
+CLUSTER_TABLE_NAME = 'cluster_table.csv'
 # TODO: Allow alternative internal directories
 RDIR_INTERNAL_ALTS = ['.hs_internals']
 RDIR_INTERNAL2 = '_hsdb'
@@ -662,6 +662,23 @@ def make_image_csv(hs):
     column_list   = [gx2_gid, gx2_gname, gx2_aif]
     image_table = make_csv_table(column_labels, column_list, header)
     return image_table
+
+def write_clusters(hs, clusterTable):
+    print('[ld2] writing cluster table')
+    internal_dir = hs.dirs.internal_dir
+    fpath = join(internal_dir, CLUSTER_TABLE_NAME)
+    if os.path.isfile(fpath):
+        print('[ld2] deleting old cluster table')
+        os.remove(fpath)
+    # write csv files
+    (nImgs, nFields) = clusterTable.shape()
+    fid = open(fpath, "w")
+    for image in range(nImgs):
+        for field in range(nFields-1):
+            fid.write(clusterTable[image][field]+",")
+        fid.write(clusterTable[image][nFields]+"\n")
+    fid.close()
+
 
 def write_score_matrix(hs, scoreMat): # TODO: don't pass the matrix, offload string conversion
     
