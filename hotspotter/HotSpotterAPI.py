@@ -32,7 +32,7 @@ import MCL.mcl.mcl_clustering as mcl
 MCL_SELF_LOOP       = 1
 MCL_MULT_FACTOR     = 3
 MCL_EXPAND_FACTOR   = 3 
-MCL_INFLATE_FACTOR  = 8	# Influences granularity of clusters 
+MCL_INFLATE_FACTOR  = 10 	# Influences granularity of clusters 
 MCL_MAX_LOOP        = 60
 AC_EXCL_FAC         = .75
 AC_STOP_CRIT        = .45
@@ -471,14 +471,15 @@ class HotSpotter(DynStruct):
     '''
     
     @profile
+    # TODO: Do not allow autoquery unless chips exist.
     def autoquery(hs): 
         scoreMat = aq.makeScoreMat(hs, MCL_SELF_LOOP)         # Autoquery (make score matrix)
         ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
         print("[hs] autoquery done") 
         print("[hs] clustering...") 
         # Uncomment this when Noah gets clustering done.
-        #clusterTable = hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
-        hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
+        clusterTable = hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
+        #hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
         print("[hs] done clustering")
         ld2.write_clusters(hs, clusterTable)
         
@@ -542,7 +543,7 @@ class HotSpotter(DynStruct):
             #os.remove(fpath)
         M, G = mcl.get_graph(fpath)
         M, clusters = mcl.networkx_mcl(G, expand_factor = 3, inflate_factor = 3, max_loop = 60, mult_factor = 2)
-        mcl.clusters_to_output(hs, clusters)
+        return mcl.clusters_to_output(hs, clusters)
 
     # ---------------
     # Change functions

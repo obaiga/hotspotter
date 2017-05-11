@@ -671,14 +671,22 @@ def write_clusters(hs, clusterTable):
         print('[ld2] deleting old cluster table')
         os.remove(fpath)
     # write csv files
+    #import pdb; pdb.set_trace()
+
+    fid = open(fpath, "w")
+    for cat, image in clusterTable:
+        fid.write(cat+","+image+"\n")
+    print('[ld2] wrote clusters to cluster table')
+    '''
     (nImgs, nFields) = clusterTable.shape()
     fid = open(fpath, "w")
     for image in range(nImgs):
         for field in range(nFields-1):
             fid.write(clusterTable[image][field]+",")
         fid.write(clusterTable[image][nFields]+"\n")
+    '''
     fid.close()
-
+    print('[ld2] successfully closed cluster table file')
 
 def write_score_matrix(hs, scoreMat): # TODO: don't pass the matrix, offload string conversion
     

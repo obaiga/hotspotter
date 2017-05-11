@@ -162,8 +162,8 @@ def clusters_to_output(hs, clusters):
             imageList[temp].append("cat"+str(k+1))
             imageList[temp].append(hs.cx2_gname(chipID))
             temp =  temp +1
-            imageList.append([])
-                                   
+            imageList.append([])    # Add null entry for future entries
+    imageList.remove([])            # Remove null entries                               
     #here and return imageList at the bottom
 
     cid_dict = {}
