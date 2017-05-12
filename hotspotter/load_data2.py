@@ -687,11 +687,14 @@ def write_clusters(hs, clusterTable, numClusters):
     '''
     #Testy stuff
     # Keep track of unique image-cat pairs
-    written = {'':[]}       # Dictionary corresponding to image-cluster pairs
-    if not written[image]:  # Image has not been encountered yet
-         written[image] = [0]*8#TODO: number of clusters (not 8 lol)
-    else:                   # Image has been encountered
-        if not written[image][int(cat)]: # This image-cat pair has not been written
+    written = {'':[]}                       # Dictionary corresponding to image-cluster pairs
+    if not written[image]:                  # Image has not been encountered yet
+        written[image] = [0]*numClusters    # Initialize
+        fid.write("Cat_"+cat+","+image+"\n") # write to csv
+        written[image][int(cat)] = 1        
+        
+    else:                                   # Image has been encountered
+        if not written[image][int(cat)]:    # This image-cat pair has not been written
             fid.write("Cat_"+cat+","+image"\n")
             written[image][int(cat)] = 1    # Record this image-cat pair
     fid.close()
