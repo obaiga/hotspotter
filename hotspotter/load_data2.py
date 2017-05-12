@@ -687,6 +687,7 @@ def write_clusters(hs, clusterTable):
     '''
     #Testy stuff
     # Keep track of unique image-cat pairs
+    '''
     written = {'':[]}       # Dictionary corresponding to image-cluster pairs
     if not written{image}:  # Image has not been encountered yet
          written.{image} = [0]*8#TODO: number of clusters (not 8 lol)
@@ -694,7 +695,7 @@ def write_clusters(hs, clusterTable):
         if not written{image}[int(cat)]: # This image-cat pair has not been written
             fid.write("Cat_"+cat+","+image"\n")
             written{image}[int(cat)] = 1    # Record this image-cat pair
-
+    '''
     fid.close()
     print('[ld2] successfully closed cluster table file')
 

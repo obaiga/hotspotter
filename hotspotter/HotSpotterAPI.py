@@ -476,13 +476,8 @@ class HotSpotter(DynStruct):
         scoreMat = aq.makeScoreMat(hs, MCL_SELF_LOOP)         # Autoquery (make score matrix)
         ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
         print("[hs] autoquery done") 
-        print("[hs] clustering...") 
-        # Uncomment this when Noah gets clustering done.
-        clusterTable = hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
-        #hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
-        print("[hs] done clustering")
-        ld2.write_clusters(hs, clusterTable)
         
+       
     @profile
     def prequery(hs):
         mc3.prequery(hs)
@@ -537,7 +532,13 @@ class HotSpotter(DynStruct):
     #@profile
     def cluster(hs, expand_factor, inflate_factor, max_loop, mult_factor):
         SCORE_MATRIX_NAME = 'scores.csv'
-        fpath = os.path.join(hs.dirs.internal_dir, SCORE_MATRIX_NAME)
+        print("[hs] clustering...") 
+        # Uncomment this when Noah gets clustering done.
+        clusterTable, numClusters = hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
+        #hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
+        print("[hs] done clustering")
+        ld2.write_clusters(hs, clusterTable, numClusters)
+ fpath = os.path.join(hs.dirs.internal_dir, SCORE_MATRIX_NAME)
         #fpath = os.path.join(hs.dirs.db_dir, '_hsdb', SCORE_MATRIX_NAME)
         #if os.path.isfile(fpath):
             #os.remove(fpath)
