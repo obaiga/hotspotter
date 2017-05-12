@@ -663,16 +663,16 @@ def make_image_csv(hs):
     image_table = make_csv_table(column_labels, column_list, header)
     return image_table
 
-def write_clusters(hs, clusterTable):
+def write_clusters(hs, clusterTable, numClusters):
     print('[ld2] writing cluster table')
     internal_dir = hs.dirs.internal_dir
     fpath = join(internal_dir, CLUSTER_TABLE_NAME)
     if os.path.isfile(fpath):
         print('[ld2] deleting old cluster table')
         os.remove(fpath)
-    # write csv files
     #import pdb; pdb.set_trace()
 
+    # write csv files
     fid = open(fpath, "w")
     for cat, image in clusterTable:
         fid.write(cat+","+image+"\n")
@@ -687,15 +687,13 @@ def write_clusters(hs, clusterTable):
     '''
     #Testy stuff
     # Keep track of unique image-cat pairs
-    '''
     written = {'':[]}       # Dictionary corresponding to image-cluster pairs
-    if not written{image}:  # Image has not been encountered yet
-         written.{image} = [0]*8#TODO: number of clusters (not 8 lol)
+    if not written[image]:  # Image has not been encountered yet
+         written[image] = [0]*8#TODO: number of clusters (not 8 lol)
     else:                   # Image has been encountered
-        if not written{image}[int(cat)]: # This image-cat pair has not been written
+        if not written[image][int(cat)]: # This image-cat pair has not been written
             fid.write("Cat_"+cat+","+image"\n")
-            written{image}[int(cat)] = 1    # Record this image-cat pair
-    '''
+            written[image][int(cat)] = 1    # Record this image-cat pair
     fid.close()
     print('[ld2] successfully closed cluster table file')
 

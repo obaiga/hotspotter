@@ -411,6 +411,7 @@ class Ui_mainSkel(object):
         self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.imageTab), _translate("mainSkel", "Image Table", None))
         self.pushButton_3.setText(_translate("mainSkel", "Save Database", None))
         self.AutoQuery.setText(_translate("mainSkel", "AutoQuery", None))
+        self.Cluster.setText(_translate("mainSkel", "Cluster", None))
         self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.chipTab), _translate("mainSkel", "Chip Table", None))
         self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.nameTab), _translate("mainSkel", "Name View", None))
         self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.tab_6), _translate("mainSkel", "Query Results Table", None))

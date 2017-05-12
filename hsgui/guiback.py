@@ -821,6 +821,13 @@ class MainWindowBackend(QtCore.QObject):
         print('')
         return res
         '''
+
+    'Added by Matt Dioso 5/12/17'
+    @slot_()
+    @blocking
+    @profile
+    def cluster(back):
+        back.hs.cluster()
         
     @slot_()
     @blocking

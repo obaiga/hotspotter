@@ -530,21 +530,13 @@ class HotSpotter(DynStruct):
         return mc3.query_dcxs(hs, qcx, gt_cxs, qdat)
 
     #@profile
-    def cluster(hs, expand_factor, inflate_factor, max_loop, mult_factor):
-        SCORE_MATRIX_NAME = 'scores.csv'
+    def cluster(hs, expand_factor=MCL_EXPAND_FACTOR, inflate_factor=MCL_INFLATE_FACTOR, max_loop=MCL_MAX_LOOP, mult_factor=MCL_MULT_FACTOR):
         print("[hs] clustering...") 
-        # Uncomment this when Noah gets clustering done.
-        clusterTable, numClusters = hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
-        #hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
-        print("[hs] done clustering")
-        ld2.write_clusters(hs, clusterTable, numClusters)
- 	fpath = os.path.join(hs.dirs.internal_dir, SCORE_MATRIX_NAME)
-        #fpath = os.path.join(hs.dirs.db_dir, '_hsdb', SCORE_MATRIX_NAME)
-        #if os.path.isfile(fpath):
-            #os.remove(fpath)
         M, G = mcl.get_graph(fpath)
         M, clusters = mcl.networkx_mcl(G, expand_factor, inflate_factor, max_loop, mult_factor)
-        return mcl.clusters_to_output(hs, clusters)
+        clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
+        ld2.write_clusters(hs, clusterTable, numClusters)
+        print("[hs] done clustering")
 
     # ---------------
     # Change functions
