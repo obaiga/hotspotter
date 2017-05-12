@@ -150,27 +150,39 @@ def get_graph(csv_filename):
     return np.array(M), G
 
 def clusters_to_output(hs, clusters):
+    #walk through dict print out all chips belonging to each cluster
     print("Clusters:")
     for k, v in clusters.items():
         print('{}, {}'.format(k, v))
-    #temp_dict = {}
-    #new stuff from here till
+
+        
+    """
+    create a 2d array that walks through clusters dict
+    and wrights the image the chip comes from and the cluster it 
+    belongs to 
+    """
     imageList = [[]]
     temp = 0
     for k,v in clusters.items():
         for chipID in v:
-            imageList[temp].append("cat"+str(k+1))
+            imageList[temp].append("cat_"+str(k+1))
             imageList[temp].append(hs.cx2_gname(chipID))
             temp =  temp +1
             imageList.append([])
+            
+    clusterCount = len(clusters) #how many clusters or cats we have
+    print "clusterCount: " +str(clusterCount)
                                    
-    #here and return imageList at the bottom
+    #Here we are walking through the dict and creating a new one
+    #Where we force the chip to belong to one cluster(the cluster with the lower number
 
     cid_dict = {}
     for k,v in clusters.items():
         for chipID in v:
             if (chipID+1) not in cid_dict.keys():
-                cid_dict[chipID+1] = k+1
+                cid_dict[chipID+1] = "cat_"+str(k+1)
+            else:
+                cid_dict[chipID+1] = cid_dict[chipID+1] +", cat_"+str(k+1)
     
     for k,v in cid_dict.items():
         print('{}, {}'.format(k,v))
@@ -234,11 +246,14 @@ def clusters_to_output(hs, clusters):
     for k,v in cid_dict.items():
         print('{}, {}'.format(k,v))
     """                          
+    
     for chipobj in hs.get_valid_cxs():
         chipID = hs.cx2_cid(chipobj)
-        chipname = "Cat_"+str(cid_dict[chipID])
+        chipname = cid_dict[chipID]
+        #chipname = "Cat_"+str(cid_dict[chipID])
         hs.change_name(chipobj, chipname)
-    return imageList  
+    
+    return imageList, clusterCount
 
 if __name__ == '__main__':
 
