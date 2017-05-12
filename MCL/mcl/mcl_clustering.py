@@ -138,9 +138,10 @@ def get_options():
 
     return options, filename
 
-def get_graph(csv_filename):
+def get_graph(csv_filepath, csv_name='scores.csv'):
+    from os.path import join
     import networkx as nx
-
+    csv_filename = join(csv_filepath, csv_name)
     M = []
     for r in open(csv_filename):
         r = r.strip().split(",")

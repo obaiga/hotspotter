@@ -532,7 +532,7 @@ class HotSpotter(DynStruct):
     #@profile
     def cluster(hs, expand_factor=MCL_EXPAND_FACTOR, inflate_factor=MCL_INFLATE_FACTOR, max_loop=MCL_MAX_LOOP, mult_factor=MCL_MULT_FACTOR):
         print("[hs] clustering...") 
-        M, G = mcl.get_graph(fpath)
+        M, G = mcl.get_graph(hs.dirs.internal_dir)
         M, clusters = mcl.networkx_mcl(G, expand_factor, inflate_factor, max_loop, mult_factor)
         clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
         ld2.write_clusters(hs, clusterTable, numClusters)

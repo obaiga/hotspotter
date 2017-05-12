@@ -695,7 +695,7 @@ def write_clusters(hs, clusterTable, numClusters):
         
     else:                                   # Image has been encountered
         if not written[image][int(cat)]:    # This image-cat pair has not been written
-            fid.write("Cat_"+cat+","+image"\n")
+            fid.write("Cat_"+cat+","+image+"\n")
             written[image][int(cat)] = 1    # Record this image-cat pair
     fid.close()
     print('[ld2] successfully closed cluster table file')
