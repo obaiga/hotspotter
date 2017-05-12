@@ -538,7 +538,7 @@ class HotSpotter(DynStruct):
         #hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
         print("[hs] done clustering")
         ld2.write_clusters(hs, clusterTable, numClusters)
- fpath = os.path.join(hs.dirs.internal_dir, SCORE_MATRIX_NAME)
+ 	fpath = os.path.join(hs.dirs.internal_dir, SCORE_MATRIX_NAME)
         #fpath = os.path.join(hs.dirs.db_dir, '_hsdb', SCORE_MATRIX_NAME)
         #if os.path.isfile(fpath):
             #os.remove(fpath)
