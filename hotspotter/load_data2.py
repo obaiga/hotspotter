@@ -672,12 +672,13 @@ def write_clusters(hs, clusterTable, numClusters):
         os.remove(fpath)
     #import pdb; pdb.set_trace()
 
+    '''
     # write csv files
     fid = open(fpath, "w")
     for cat, image in clusterTable:
         fid.write(cat+","+image+"\n")
     print('[ld2] wrote clusters to cluster table')
-    '''
+    
     (nImgs, nFields) = clusterTable.shape()
     fid = open(fpath, "w")
     for image in range(nImgs):
@@ -685,18 +686,20 @@ def write_clusters(hs, clusterTable, numClusters):
             fid.write(clusterTable[image][field]+",")
         fid.write(clusterTable[image][nFields]+"\n")
     '''
-    #Testy stuff
-    # Keep track of unique image-cat pairs
-    written = {'':[]}                       # Dictionary corresponding to image-cluster pairs
-    if not image in written:                  # Image has not been encountered yet
-        written[image] = [0]*numClusters    # Initialize
-        fid.write("Cat_"+cat+","+image+"\n") # write to csv
-        written[image][int(cat)-1] = 1        
-        
-    else:                                   # Image has been encountered
-        if not written[image][int(cat)]:    # This image-cat pair has not been written
-            fid.write("Cat_"+cat+","+image+"\n")
-            written[image][int(cat)-1] = 1    # Record this image-cat pair
+    fid = open(fpath, "w")
+    for cat, image in clusterTable:
+        #Testy stuff
+        # Keep track of unique image-cat pairs for writing
+        written = {'':[]}                       # Dictionary corresponding to image-cluster pairs
+        if not image in written:                  # Image has not been encountered yet
+            written[image] = [0]*numClusters    # Initialize
+            fid.write("Cat_"+cat+","+image+"\n") # write to csv
+            written[image][int(cat)-1] = 1        
+            
+        else:                                   # Image has been encountered
+            if not written[image][int(cat)-1]:    # This image-cat pair has not been written
+                fid.write("Cat_"+cat+","+image+"\n")
+                written[image][int(cat)-1] = 1    # Record this image-cat pair
     fid.close()
     print('[ld2] successfully closed cluster table file')
 
