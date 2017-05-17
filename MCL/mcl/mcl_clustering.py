@@ -178,17 +178,20 @@ def clusters_to_output(hs, clusters):
                                    
     #Here we are walking through the dict and creating a new one
     #Where we force the chip to belong to one cluster(the cluster with the lower number
+    
     cid_dict = {}
     for k,v in clusters.items():
         for chipID in v:
             if (chipID+1) not in cid_dict.keys():
                 cid_dict[chipID+1] = "cat_"+str(k+1)
             else:
-                cid_dict[chipID+1] = cid_dict[chipID+1] +", cat_"+str(k+1)
-    
+                cid_dict[chipID+1] = cid_dict[chipID+1] +"/cat_"+str(k+1)
+    print("Here is the new list")
+    tempName = cid_dict[266]
+    print tempName
     for k,v in cid_dict.items():
         print('{}, {}'.format(k,v))
-
+    print("Thats the list")
     """
     
     chip_gname = hs.cx2_gname(0)
@@ -252,7 +255,9 @@ def clusters_to_output(hs, clusters):
     for chipobj in hs.get_valid_cxs():
         chipID = hs.cx2_cid(chipobj)
         chipname = cid_dict[chipID]
+        #print chipname
         #chipname = "Cat_"+str(cid_dict[chipID])
+        #chipname = "cat1_cat2"
         hs.change_name(chipobj, chipname)
     
     return imageList, clusterCount
