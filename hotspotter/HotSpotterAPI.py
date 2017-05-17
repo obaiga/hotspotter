@@ -29,12 +29,12 @@ from autochip import autochip as ac
 import pdb
 import autoquery as aq
 import MCL.mcl.mcl_clustering as mcl
-MCL_SELF_LOOP       = 1
-MCL_MULT_FACTOR     = 3
+MCL_SELF_LOOP       = 0
+MCL_MULT_FACTOR     = 2
 MCL_EXPAND_FACTOR   = 3 
-MCL_INFLATE_FACTOR  = 2	# Influences granularity of clusters 
-MCL_MAX_LOOP        = 60
-AC_EXCL_FAC         = 1
+MCL_INFLATE_FACTOR  = 1.25	# Influences granularity of clusters 
+MCL_MAX_LOOP        = 1000
+AC_EXCL_FAC         = .75
 AC_STOP_CRIT        = .45
 
 '''
@@ -471,15 +471,13 @@ class HotSpotter(DynStruct):
     '''
     
     @profile
+    # TODO: Do not allow autoquery unless chips exist.
     def autoquery(hs): 
         scoreMat = aq.makeScoreMat(hs, MCL_SELF_LOOP)         # Autoquery (make score matrix)
         ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
         print("[hs] autoquery done") 
-        print("[hs] clustering...") 
-        hs.cluster(MCL_EXPAND_FACTOR, MCL_INFLATE_FACTOR, MCL_MAX_LOOP, MCL_MULT_FACTOR)
-        print("[hs] done clustering")
         
-        
+       
     @profile
     def prequery(hs):
         mc3.prequery(hs)
@@ -532,15 +530,13 @@ class HotSpotter(DynStruct):
         return mc3.query_dcxs(hs, qcx, gt_cxs, qdat)
 
     #@profile
-    def cluster(hs, expand_factor = 3, inflate_factor = 3, max_loop = 60, mult_factor = 2):
-        SCORE_MATRIX_NAME = 'scores.csv'
-        fpath = os.path.join(hs.dirs.internal_dir, SCORE_MATRIX_NAME)
-        #fpath = os.path.join(hs.dirs.db_dir, '_hsdb', SCORE_MATRIX_NAME)
-        #if os.path.isfile(fpath):
-            #os.remove(fpath)
-        M, G = mcl.get_graph(fpath)
-        M, clusters = mcl.networkx_mcl(G, expand_factor = 3, inflate_factor = 3, max_loop = 60, mult_factor = 2)
-        mcl.clusters_to_output(hs, clusters)
+    def cluster(hs, expand_factor=MCL_EXPAND_FACTOR, inflate_factor=MCL_INFLATE_FACTOR, max_loop=MCL_MAX_LOOP, mult_factor=MCL_MULT_FACTOR):
+        print("[hs] clustering...") 
+        M, G = mcl.get_graph(hs.dirs.internal_dir)
+        M, clusters = mcl.networkx_mcl(G, expand_factor, inflate_factor, max_loop, mult_factor)
+        clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
+        ld2.write_clusters(hs, clusterTable, numClusters)
+        print("[hs] done clustering")
 
     # ---------------
     # Change functions
@@ -651,9 +647,18 @@ class HotSpotter(DynStruct):
     Need to think about rotation during SQ17'''
     @profile # IhavenoideawhatImdoing
     #@helpers.indent_decor('[hs.autochip]') #mine doesn't recognize helpers
+    # TODO: handle nImages!=nTemplates more effectively (GUI popup would be nice)
     def autochip(hs, directoryToTemplates):
+        nImages = len(hs.get_valid_gxs())
+        nTemplates = ac.getNumTemplates(directoryToTemplates)
+        #pdb.set_trace()
+        if nImages != nTemplates:
+            print('ERROR: number of images is unequal to number of templates')
+            return 0
         # use autochip module to do autochipping
-        chipDict = ac.doAutochipping(directoryToTemplates, AC_EXCL_FAC, AC_STOP_CRIT)
+        chipDict = ac.doAutochipping(hs, directoryToTemplates, AC_EXCL_FAC, AC_STOP_CRIT)
+        if not chipDict:
+            print("[hs] No templates found!")
         #print(chipDict) # Print for sanity check
         chipNum = 0;    # Keep track of chips for fun
         # Go through each image in image table

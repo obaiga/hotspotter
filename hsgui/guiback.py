@@ -204,8 +204,8 @@ class MainWindowBackend(QtCore.QObject):
 
         # A list of default internal headers to display
         back.table_headers = {
-            'gxs':  ['gx', 'gname', 'nCxs', 'aif'],
-            'cxs':  ['cid', 'name', 'gname', 'nGt', 'nKpts', 'theta'],
+            'gxs':  ['gx', 'gname', 'nCxs'],#, 'aif'],
+            'cxs':  ['cid', 'name', 'gname'],#, 'nGt', 'nKpts', 'theta'],
             'nxs':  ['nx', 'name', 'nCxs'],
             'res':  ['rank', 'score', 'name', 'cid']
         }
@@ -821,6 +821,13 @@ class MainWindowBackend(QtCore.QObject):
         print('')
         return res
         '''
+
+    'Added by Matt Dioso 5/12/17'
+    @slot_()
+    @blocking
+    @profile
+    def cluster(back):
+        back.hs.cluster()
         
     @slot_()
     @blocking

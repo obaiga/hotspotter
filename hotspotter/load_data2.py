@@ -28,7 +28,7 @@ CHIP_TABLE_FNAME = 'chip_table.csv'
 NAME_TABLE_FNAME = 'name_table.csv'
 IMAGE_TABLE_FNAME = 'image_table.csv'
 SCORE_MATRIX_FNAME = 'scores.csv'
-
+CLUSTER_TABLE_NAME = 'cluster_table.csv'
 # TODO: Allow alternative internal directories
 RDIR_INTERNAL_ALTS = ['.hs_internals']
 RDIR_INTERNAL2 = '_hsdb'
@@ -662,6 +662,46 @@ def make_image_csv(hs):
     column_list   = [gx2_gid, gx2_gname, gx2_aif]
     image_table = make_csv_table(column_labels, column_list, header)
     return image_table
+
+def write_clusters(hs, clusterTable, numClusters):
+    print('[ld2] writing cluster table')
+    internal_dir = hs.dirs.internal_dir
+    fpath = join(internal_dir, CLUSTER_TABLE_NAME)
+    if os.path.isfile(fpath):
+        print('[ld2] deleting old cluster table')
+        os.remove(fpath)
+    #import pdb; pdb.set_trace()
+
+    '''
+    # write csv files
+    fid = open(fpath, "w")
+    for cat, image in clusterTable:
+        fid.write(cat+","+image+"\n")
+    print('[ld2] wrote clusters to cluster table')
+    
+    (nImgs, nFields) = clusterTable.shape()
+    fid = open(fpath, "w")
+    for image in range(nImgs):
+        for field in range(nFields-1):
+            fid.write(clusterTable[image][field]+",")
+        fid.write(clusterTable[image][nFields]+"\n")
+    '''
+    fid = open(fpath, "w")
+    for cat, image in clusterTable:
+        #Testy stuff
+        # Keep track of unique image-cat pairs for writing
+        written = {'':[]}                       # Dictionary corresponding to image-cluster pairs
+        if not image in written:                  # Image has not been encountered yet
+            written[image] = [0]*numClusters    # Initialize
+            fid.write("Cat_"+cat+","+image+"\n") # write to csv
+            written[image][int(cat)-1] = 1        
+            
+        else:                                   # Image has been encountered
+            if not written[image][int(cat)-1]:    # This image-cat pair has not been written
+                fid.write("Cat_"+cat+","+image+"\n")
+                written[image][int(cat)-1] = 1    # Record this image-cat pair
+    fid.close()
+    print('[ld2] successfully closed cluster table file')
 
 def write_score_matrix(hs, scoreMat): # TODO: don't pass the matrix, offload string conversion
     

@@ -156,6 +156,7 @@ def connect_button_signals(front):
     ui.AutoChip.clicked.connect(back.autochip)
     ui.pushButton_3.clicked.connect(back.save_database)
     ui.AutoQuery.clicked.connect(back.autoquery) # uncommented 4/23/17 jb
+    ui.Cluster.clicked.connect(back.cluster) #added MD 5/12/17
 
 def connect_action_signals(front):
     ui = front.ui
@@ -308,6 +309,7 @@ class MainWindowFrontend(QtGui.QMainWindow):
         ui.cxs_TBL.sortByColumn(0, Qt.AscendingOrder)
         ui.res_TBL.sortByColumn(0, Qt.AscendingOrder)
         ui.gxs_TBL.sortByColumn(0, Qt.AscendingOrder)
+	
 
     def print(front, msg):
         print('[*front*] ' + msg)

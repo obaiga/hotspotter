@@ -17,19 +17,22 @@ def makeScoreMat(hs, self_loop=SAME_CHIP_WEIGHT):
     print("[aq] beginning autoquery")
 
     ''' Make score matrix with query results '''
-    for i in hs.get_valid_cxs():  # For each chip
+    for i in hs.get_valid_cxs():    # For each chip
         
-        cid1 = hs.cx2_cid(i)            # Get chip id
-        c1_gname = hs.cx2_gname(i)        # Get image name
+        cid1 = hs.cx2_cid(i)        # Get chip id
+        c1_gname = hs.cx2_gname(i)  # Get image name
         
-        results = hs.query(i)     # Query this chip
-        results = results.cx2_score     # Toss everything except the score
+        results = hs.query(i)                       # Query this chip
+        if isinstance(results, str):                # If query returned no keypoints
+            results = [0]*len(hs.get_valid_cxs())   # Set matches to 0
+        else:                                       # Valid query
+            results = results.cx2_score             # Toss everything except the score
         
         # Normalize scores
         maxScore = max(results)
-        if not maxScore:
+        if not maxScore:                # Don't divide by 0
             results = [0]*len(results)
-        else:
+        else:                           # Normalize
             results = [score/maxScore for score in results]
         
         for j in hs.get_valid_cxs():

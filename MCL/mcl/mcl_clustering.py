@@ -138,9 +138,10 @@ def get_options():
 
     return options, filename
 
-def get_graph(csv_filename):
+def get_graph(csv_filepath, csv_name='scores.csv'):
+    from os.path import join
     import networkx as nx
-
+    csv_filename = join(csv_filepath, csv_name)
     M = []
     for r in open(csv_filename):
         r = r.strip().split(",")
@@ -165,17 +166,18 @@ def clusters_to_output(hs, clusters):
     temp = 0
     for k,v in clusters.items():
         for chipID in v:
-            imageList[temp].append("cat_"+str(k+1))
+            imageList[temp].append(str(k+1))
+            #imageList[temp].append("cat"+str(k+1))
             imageList[temp].append(hs.cx2_gname(chipID))
             temp =  temp +1
-            imageList.append([])
-            
+            imageList.append([])    # Add null entry for future entries
+    imageList.remove([])            # Remove null entries                               
+    #here and return imageList at the bottom
     clusterCount = len(clusters) #how many clusters or cats we have
-    print "clusterCount: " +str(clusterCount)
+    print ("clusterCount: " +str(clusterCount))
                                    
     #Here we are walking through the dict and creating a new one
     #Where we force the chip to belong to one cluster(the cluster with the lower number
-
     cid_dict = {}
     for k,v in clusters.items():
         for chipID in v:
@@ -254,6 +256,7 @@ def clusters_to_output(hs, clusters):
         hs.change_name(chipobj, chipname)
     
     return imageList, clusterCount
+
 
 if __name__ == '__main__':
 
