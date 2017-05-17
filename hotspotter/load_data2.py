@@ -9,6 +9,7 @@ from hscom import __common__
  rrr, profile, printDBG) = __common__.init(__name__, '[ld2]', DEBUG=False)
 # Standard
 from os.path import join, exists, splitext
+from collections import defaultdict
 import os
 import re
 import shutil
@@ -686,12 +687,13 @@ def write_clusters(hs, clusterTable, numClusters):
             fid.write(clusterTable[image][field]+",")
         fid.write(clusterTable[image][nFields]+"\n")
     '''
+    written = defaultdict(list)
     fid = open(fpath, "w")
     for cat, image in clusterTable:
         #Testy stuff
         # Keep track of unique image-cat pairs for writing
-        written = {'':[]}                       # Dictionary corresponding to image-cluster pairs
-        if not image in written:                  # Image has not been encountered yet
+        #written = {'':[]}                       # Dictionary corresponding to image-cluster pairs
+        if image not in written.keys():                  # Image has not been encountered yet
             written[image] = [0]*numClusters    # Initialize
             fid.write("Cat_"+cat+","+image+"\n") # write to csv
             written[image][int(cat)-1] = 1        
