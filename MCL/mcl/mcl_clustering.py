@@ -164,21 +164,27 @@ def clusters_to_output(hs, clusters):
     """
     imageList = [[]]
     temp = 0
+    
     for k,v in clusters.items():
         for chipID in v:
-            imageList[temp].append(str(k+1))
+            imageList[temp].append(str(k+1))                # Cat name
             #imageList[temp].append("cat"+str(k+1))
-            image = hs.cx2_gname(chipID)
-            imageSplit = image.split("__")
-            for i in range(4):
-                imageList[temp].append(imageSplit[i])
-            imageTime = imageSplit[i].split("(")
-            imageList[temp].append(imageTime[0])
-            #imageList[temp].append(hs.cx2_gname(chipID))
+            imageList[temp].append(hs.cx2_gname(chipID))    # Image Name
+            #image = hs.cx2_gname(chipID)
+            imageSplit = hs.cx2_gname(chipID).split("__")   # Parse image info
+            imageSplit[len(imageSplit)-1] = imageSplit[len(imageSplit)-1].split('.')[0] # Cut image type
+            #import pdb; pdb.set_trace()
+            #imageSplit = image.split("__")
+            for i in range(len(imageSplit)-1):          # For all parsed fields (except time)
+                imageList[temp].append(imageSplit[i])   # Record info
+            imageTime = imageSplit[len(imageSplit)-1].split("(")        # Parse out set numeral (from PantheraR)
+            imageList[temp].append(imageTime[0])        # Add time
             temp =  temp +1
             imageList.append([])    # Add null entry for future entries
     imageList.remove([])            # Remove null entries                               
-    #here and return imageList at the bottom
+    
+    
+    # Count and print number of clusters (cats)
     clusterCount = len(clusters) #how many clusters or cats we have
     print ("clusterCount: " +str(clusterCount))
                                    
