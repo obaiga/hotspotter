@@ -168,7 +168,13 @@ def clusters_to_output(hs, clusters):
         for chipID in v:
             imageList[temp].append(str(k+1))
             #imageList[temp].append("cat"+str(k+1))
-            imageList[temp].append(hs.cx2_gname(chipID))
+            image = hs.cx2_gname(chipID)
+            imageSplit = image.split("__")
+            for i in range(4):
+                imageList[temp].append(imageSplit[i])
+            imageTime = imageSplit[i].split("(")
+            imageList[temp].append(imageTime[0])
+            #imageList[temp].append(hs.cx2_gname(chipID))
             temp =  temp +1
             imageList.append([])    # Add null entry for future entries
     imageList.remove([])            # Remove null entries                               
