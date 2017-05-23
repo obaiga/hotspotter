@@ -32,8 +32,8 @@ import MCL.mcl.mcl_clustering as mcl
 MCL_SELF_LOOP       = 0
 MCL_MULT_FACTOR     = 2
 MCL_EXPAND_FACTOR   = 3 
-MCL_INFLATE_FACTOR  = 1.25	# Influences granularity of clusters 
-MCL_MAX_LOOP        = 1000
+MCL_INFLATE_FACTOR  = 1.245	# Influences granularity of clusters 
+MCL_MAX_LOOP        = 2000
 AC_EXCL_FAC         = .75
 AC_STOP_CRIT        = .45
 
