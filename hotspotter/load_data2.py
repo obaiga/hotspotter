@@ -671,22 +671,8 @@ def write_clusters(hs, clusterTable, numClusters):
     if os.path.isfile(fpath):
         print('[ld2] deleting old cluster table')
         os.remove(fpath)
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
 
-    '''
-    # write csv files
-    fid = open(fpath, "w")
-    for cat, image in clusterTable:
-        fid.write(cat+","+image+"\n")
-    print('[ld2] wrote clusters to cluster table')
-    
-    (nImgs, nFields) = clusterTable.shape()
-    fid = open(fpath, "w")
-    for image in range(nImgs):
-        for field in range(nFields-1):
-            fid.write(clusterTable[image][field]+",")
-        fid.write(clusterTable[image][nFields]+"\n")
-    '''
     written = defaultdict(list)
     fid = open(fpath, "w")
     for cat, image in clusterTable:
@@ -705,17 +691,17 @@ def write_clusters(hs, clusterTable, numClusters):
     fid.close()
     print('[ld2] successfully closed cluster table file')
 
-def write_score_matrix(hs, scoreMat): # TODO: don't pass the matrix, offload string conversion
+def write_score_matrix(hs, scoreMat, fileName=SCORE_MATRIX_FNAME): # TODO: don't pass the matrix, offload string conversion
     
     print('[ld2] Writing score matrix')
     internal_dir = hs.dirs.internal_dir
     #CREATE_BACKUP = True  # TODO: Should be a preference
     #if CREATE_BACKUP:
     #    backup_csv_tables(hs, force_backup=True)
-    fpath = join(internal_dir, SCORE_MATRIX_FNAME)
+    fpath = join(internal_dir, fileName)
     if os.path.isfile(fpath):
         print('[ld2] deleting old scores')
-        os.remove(join(internal_dir, SCORE_MATRIX_FNAME))
+        os.remove(join(internal_dir, fileName))
     # write csv files
     size = len(scoreMat)
     fid = open(fpath, "w")

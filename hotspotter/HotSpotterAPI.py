@@ -536,6 +536,7 @@ class HotSpotter(DynStruct):
         M, clusters = mcl.networkx_mcl(G, expand_factor, inflate_factor, max_loop, mult_factor)
         clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
         ld2.write_clusters(hs, clusterTable, numClusters)
+        ld2.write_score_matrix(hs, M, 'markov_scores.csv')
         print("[hs] done clustering")
 
     # ---------------
