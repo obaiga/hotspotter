@@ -683,7 +683,7 @@ def write_clusters(hs, clusterTable, numClusters):
     else:                                            # No study IDs
         fid.write("Cat ID,Image Name, Station, Camera, Date, Time\n")
 
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
 
     for thisChip in clusterTable:                 # Go through each chip's info
         cat = thisChip[0]                          # Get cat and image names
@@ -703,19 +703,6 @@ def write_clusters(hs, clusterTable, numClusters):
                 fid.write(thisChip[i+1]+"\n")           # ...except last one
                 written[image][int(cat)-1] = 1          # Record image-cat pair as seen
        
-    '''
-    for cat, image in clusterTable:
-        # Keep track of unique image-cat pairs for writing
-        if image not in written.keys():                  # Image has not been encountered yet
-            written[image] = [0]*numClusters    # Initialize
-            fid.write("Cat_"+cat+","+image+"\n") # write to csv
-            written[image][int(cat)-1] = 1        
-            
-        else:                                   # Image has been encountered
-            if not written[image][int(cat)-1]:    # This image-cat pair has not been written
-                fid.write("Cat_"+cat+","+image+"\n")
-                written[image][int(cat)-1] = 1    # Record this image-cat pair
-    ''' 
     fid.close()
     print('[ld2] successfully closed cluster table file')
 

@@ -35,7 +35,7 @@ MCL_EXPAND_FACTOR   = 3
 MCL_INFLATE_FACTOR  = 1.245	# Influences granularity of clusters 
 MCL_MAX_LOOP        = 2000
 AC_EXCL_FAC         = .75
-AC_STOP_CRIT        = .45
+AC_STOP_CRIT        = .3
 
 '''
 TODO:

@@ -198,9 +198,6 @@ def clusters_to_output(hs, clusters):
                 cid_dict[chipID+1] = "cat_"+str(k+1)
             else:
                 cid_dict[chipID+1] = cid_dict[chipID+1] +"/cat_"+str(k+1)
-    print("Here is the new list")
-    tempName = cid_dict[266]
-    print tempName
     for k,v in cid_dict.items():
         print('{}, {}'.format(k,v))
     print("Thats the list")
