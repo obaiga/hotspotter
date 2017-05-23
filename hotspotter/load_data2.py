@@ -671,7 +671,7 @@ def write_clusters(hs, clusterTable, numClusters):
     if os.path.isfile(fpath):
         print('[ld2] deleting old cluster table')
         os.remove(fpath)
-    #import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
 
     '''
     # write csv files
