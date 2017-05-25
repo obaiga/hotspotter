@@ -201,6 +201,8 @@ class Ui_mainSkel(object):
         self.nameView.addWidget(self.nxs_TBL)
         self.verticalLayout_8.addLayout(self.nameView)
         self.tablesTabWidget.addTab(self.nameTab, _fromUtf8(""))
+        # Query Results Table
+        '''
         self.tab_6 = QtGui.QWidget()
         self.tab_6.setObjectName(_fromUtf8("tab_6"))
         self.verticalLayout_9 = QtGui.QVBoxLayout(self.tab_6)
@@ -214,6 +216,7 @@ class Ui_mainSkel(object):
         self.queryView.addWidget(self.res_TBL)
         self.verticalLayout_9.addLayout(self.queryView)
         self.tablesTabWidget.addTab(self.tab_6, _fromUtf8(""))
+        '''
         self.verticalLayout_2.addWidget(self.tablesTabWidget)
         self.outputEdit = QtGui.QTextEdit(self.centralwidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Maximum)
@@ -414,7 +417,8 @@ class Ui_mainSkel(object):
         self.Cluster.setText(_translate("mainSkel", "Cluster", None))
         self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.chipTab), _translate("mainSkel", "Chip Table", None))
         self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.nameTab), _translate("mainSkel", "Name View", None))
-        self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.tab_6), _translate("mainSkel", "Query Results Table", None))
+        # Deleted to hide Query Results Table (unused by 17.7)
+        #self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.tab_6), _translate("mainSkel", "Query Results Table", None))
         self.menuFile.setTitle(_translate("mainSkel", "File", None))
         self.menuActions.setTitle(_translate("mainSkel", "Actions", None))
         self.menuBatch.setTitle(_translate("mainSkel", "Batch", None))

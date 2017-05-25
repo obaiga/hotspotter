@@ -327,6 +327,7 @@
         </item>
        </layout>
       </widget>
+      <!--
       <widget class="QWidget" name="tab_6">
        <attribute name="title">
         <string>Query Results Table</string>
@@ -341,6 +342,7 @@
         </item>
        </layout>
       </widget>
+      -->
      </widget>
     </item>
     <item>

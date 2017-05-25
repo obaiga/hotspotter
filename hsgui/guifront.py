@@ -301,13 +301,13 @@ class MainWindowFrontend(QtGui.QMainWindow):
         ui.cxs_TBL.itemChanged.connect(front.chip_tbl_changed)
         ui.gxs_TBL.itemClicked.connect(front.img_tbl_clicked)
         ui.gxs_TBL.itemChanged.connect(front.img_tbl_changed)
-        ui.res_TBL.itemClicked.connect(front.res_tbl_clicked)
-        ui.res_TBL.itemChanged.connect(front.res_tbl_changed)
+        #ui.res_TBL.itemClicked.connect(front.res_tbl_clicked) # Query Results Table
+        #ui.res_TBL.itemChanged.connect(front.res_tbl_changed)
         ui.nxs_TBL.itemClicked.connect(front.name_tbl_clicked)
         # Tab Widget
         ui.tablesTabWidget.currentChanged.connect(front.change_view)
         ui.cxs_TBL.sortByColumn(0, Qt.AscendingOrder)
-        ui.res_TBL.sortByColumn(0, Qt.AscendingOrder)
+        #ui.res_TBL.sortByColumn(0, Qt.AscendingOrder) # Query Results Table
         ui.gxs_TBL.sortByColumn(0, Qt.AscendingOrder)
 	
 
@@ -473,14 +473,15 @@ class MainWindowFrontend(QtGui.QMainWindow):
     def get_imgtbl_header(front, col):
         return front.get_tbl_header(front.ui.gxs_TBL, col)
 
-    def get_restbl_header(front, col):
-        return front.get_tbl_header(front.ui.res_TBL, col)
+    # Query Results Table
+    #def get_restbl_header(front, col):
+    #    return front.get_tbl_header(front.ui.res_TBL, col)
 
     def get_nametbl_header(front, col):
         return front.get_tbl_header(front.ui.nxs_TBL, col)
 
-    def get_restbl_cid(front, row):
-        return int(front.get_header_val(front.ui.res_TBL, 'cid', row))
+    #def get_restbl_cid(front, row):
+    #    return int(front.get_header_val(front.ui.res_TBL, 'cid', row))
 
     def get_chiptbl_cid(front, row):
         return int(front.get_header_val(front.ui.cxs_TBL, 'cid', row))
