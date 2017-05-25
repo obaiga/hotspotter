@@ -5,13 +5,15 @@ import csv
 SAME_IMAGE_WEIGHT = .9
 SAME_SET_WEIGHT =  .9
 SAME_SET_WEIGHT_MIN = 0.25
-SAME_CHIP_WEIGHT = 0
-TIME_DELTA_MAX = 90
+DEFAULT_TIME_DELTA_MAX = 90
 
 #import MCL as mcl
 # Initialize at zero
 
-def makeScoreMat(hs, self_loop=SAME_CHIP_WEIGHT):
+def makeScoreMat(hs):
+    # Get parameters
+    params = hs.prefs.autoquery_cfg
+    
     numChips = hs.get_num_chips()
     scoreMat = np.zeros((numChips, numChips))
     print("[aq] beginning autoquery")
@@ -45,27 +47,27 @@ def makeScoreMat(hs, self_loop=SAME_CHIP_WEIGHT):
                 print(cid1),
                 print(" == "),
                 print(cid2)
-                scoreMat[i][j] = self_loop 
-                scoreMat[j][i] = self_loop 
+                scoreMat[i][j] = params.self_loop_weight
+                scoreMat[j][i] = params.self_loop_weight
 
             # Unique chips
             else:
                 # If chips are from the same image
                 if c1_gname == c2_gname:
-                    scoreMat[i][j] = sameImageScore(results[j])
-                    scoreMat[j][i] = sameImageScore(results[j])
+                    scoreMat[i][j] = sameImageScore(results[j], params)
+                    scoreMat[j][i] = sameImageScore(results[j], params)
                 # If chips are from the same set and this is the first query on this pair
-                elif sameSet(c1_gname, c2_gname) and scoreMat[i][j] == 0.0:
-                    scoreMat[i][j] = sameSetScore(results[j])
-                    scoreMat[j][i] = sameSetScore(results[j])
+                elif sameSet(c1_gname, c2_gname, params.maximum_time_delta) and scoreMat[i][j] == 0.0:
+                    scoreMat[i][j] = sameSetScore(results[j], params)
+                    scoreMat[j][i] = sameSetScore(results[j], params)
 
                 # If chips are from same set and this is second query on this pair
-                elif sameSet(c1_gname, c2_gname) and scoreMat[i][j] != 0.0:
-                    scoreMat[i][j] = sameSetScore((scoreMat[i][j] + results[j])/2)
-                    scoreMat[j][i] = sameSetScore((scoreMat[i][j] + results[j])/2)
+                elif sameSet(c1_gname, c2_gname, params.maximum_time_delta) and scoreMat[i][j] != 0.0:
+                    scoreMat[i][j] = sameSetScore((scoreMat[i][j] + results[j])/2, params)
+                    scoreMat[j][i] = sameSetScore((scoreMat[i][j] + results[j])/2, params)
                 
                 # If not from same set, and first query
-                elif not sameSet(c1_gname, c2_gname) and scoreMat[i][j] == 0.0:
+                elif not sameSet(c1_gname, c2_gname, params.maximum_time_delta) and scoreMat[i][j] == 0.0:
                     scoreMat[i][j] = results[j] 
                     scoreMat[j][i] = results[j]
                 
@@ -76,14 +78,16 @@ def makeScoreMat(hs, self_loop=SAME_CHIP_WEIGHT):
     print("[aq] autoquery done")
     return scoreMat
     
-def sameImageScore(newScore):
-    return SAME_IMAGE_WEIGHT
+def sameImageScore(score, params):
+    newScore = params.same_image_score
+    return newScore
 
-def sameSetScore(score):
-    return max((score + SAME_SET_WEIGHT)/2, SAME_SET_WEIGHT_MIN)
+def sameSetScore(score, params):
+    newScore = max((score + params.same_set_boost)/2, params.same_set_boost)
+    return newScore
 
 ''' Everything below is 100% Noah '''
-def sameSet(chip1, chip2):
+def sameSet(chip1, chip2, dt=DEFAULT_TIME_DELTA_MAX):
     
     #if in same location
     if getLoc(chip1) == getLoc(chip2):
@@ -92,7 +96,7 @@ def sameSet(chip1, chip2):
             #print "same location and date"
             
             #if close time
-            if np.abs(getTime(chip1) - getTime(chip2)) <= TIME_DELTA_MAX:
+            if np.abs(getTime(chip1) - getTime(chip2)) <= dt:
                     #print "within TIME_DELTA_MAX"
                     return True
             else:

@@ -34,8 +34,8 @@ MCL_MULT_FACTOR     = 2
 MCL_EXPAND_FACTOR   = 3 
 MCL_INFLATE_FACTOR  = 1.245	# Influences granularity of clusters 
 MCL_MAX_LOOP        = 2000
-AC_EXCL_FAC         = .75
-AC_STOP_CRIT        = .3
+AC_EXCL_FAC         = .75   # Deprecated
+AC_STOP_CRIT        = .3    #
 
 '''
 TODO:
@@ -235,6 +235,11 @@ class HotSpotter(DynStruct):
         hs.test_sample_cx    = None
         hs.indexed_sample_cx = None
         #
+        hs.ac_done = 0
+        hs.aq_done = 0
+        hs.prev_ac_exclFac = 0
+        hs.prev_ac_stopCrit = 0
+        #
         pref_fpath = join(io.GLOBAL_CACHE_DIR, 'prefs')
         hs.prefs = Pref('root', fpath=pref_fpath)
         if hs.args.nocache_prefs:
@@ -249,6 +254,10 @@ class HotSpotter(DynStruct):
         hs.qdat = ds.QueryData()  # Query Data
         if db_dir is not None:
             hs.load_tables(db_dir=db_dir)
+        
+        hs.prev_ac_exclFac = hs.prefs.autochip_cfg.exclusion_factor
+        hs.prev_ac_stopCrit = hs.prefs.autochip_cfg.stopping_criterion
+ 
         #printDBG(r'[/hs] Created HotSpotter API')
 
     def rrr(hs):
@@ -278,10 +287,13 @@ class HotSpotter(DynStruct):
     @profile
     def default_preferences(hs):
         print('[hs] defaulting preferences')
-        hs.prefs.display_cfg = Config.default_display_cfg()
-        hs.prefs.chip_cfg  = Config.default_chip_cfg()
-        hs.prefs.feat_cfg  = Config.default_feat_cfg(hs)
-        hs.prefs.query_cfg = Config.default_vsmany_cfg(hs)
+        hs.prefs.display_cfg    = Config.default_display_cfg()
+        hs.prefs.chip_cfg       = Config.default_chip_cfg()
+        hs.prefs.feat_cfg       = Config.default_feat_cfg(hs)
+        hs.prefs.query_cfg      = Config.default_vsmany_cfg(hs)
+        hs.prefs.autochip_cfg   = Config.default_autochip_cfg(hs)
+        hs.prefs.autoquery_cfg  = Config.default_autoquery_cfg(hs)
+        hs.prefs.cluster_cfg    = Config.default_cluster_cfg(hs)
 
     def fix_prefs(hs):
         # When loading some pointers may become broken. Fix them.
@@ -473,10 +485,13 @@ class HotSpotter(DynStruct):
     @profile
     # TODO: Do not allow autoquery unless chips exist.
     def autoquery(hs): 
-        scoreMat = aq.makeScoreMat(hs, MCL_SELF_LOOP)         # Autoquery (make score matrix)
-        ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
-        print("[hs] autoquery done") 
-        
+        if hs.ac_done:
+            scoreMat = aq.makeScoreMat(hs)         # Autoquery (make score matrix)
+            ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
+            print("[hs] autoquery done") 
+            hs.aq_done = 1
+        else:
+            print('[hs] cannot autoquery until autochipping is done')
        
     @profile
     def prequery(hs):
@@ -531,13 +546,16 @@ class HotSpotter(DynStruct):
 
     #@profile
     def cluster(hs, expand_factor=MCL_EXPAND_FACTOR, inflate_factor=MCL_INFLATE_FACTOR, max_loop=MCL_MAX_LOOP, mult_factor=MCL_MULT_FACTOR):
-        print("[hs] clustering...") 
-        M, G = mcl.get_graph(hs.dirs.internal_dir)
-        M, clusters = mcl.networkx_mcl(G, expand_factor, inflate_factor, max_loop, mult_factor)
-        clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
-        ld2.write_clusters(hs, clusterTable, numClusters)
-        ld2.write_score_matrix(hs, M, 'markov_scores.csv')
-        print("[hs] done clustering")
+        if hs.ac_done and hs.aq_done:
+            print("[hs] clustering...") 
+            M, G = mcl.get_graph(hs.dirs.internal_dir)
+            M, clusters = mcl.networkx_mcl(G, expand_factor, inflate_factor, max_loop, mult_factor)
+            clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
+            ld2.write_clusters(hs, clusterTable, numClusters)
+            ld2.write_score_matrix(hs, M, 'markov_scores.csv')
+            print("[hs] done clustering")
+        else:
+            print('[hs] will not cluster until autochipping and autoquerying are both done')
 
     # ---------------
     # Change functions
@@ -650,17 +668,44 @@ class HotSpotter(DynStruct):
     #@helpers.indent_decor('[hs.autochip]') #mine doesn't recognize helpers
     # TODO: handle nImages!=nTemplates more effectively (GUI popup would be nice)
     def autochip(hs, directoryToTemplates):
+        #import pdb; pdb.set_trace()
+
+        # If we've already done autochipping
+        if hs.ac_done:
+            
+            # If stopping criterion has changed
+            if (hs.prev_ac_exclFac != hs.prefs.autochip_cfg.exclusion_factor) or (hs.prev_ac_stopCrit != hs.prefs.autochip_cfg.stopping_criterion):
+                # Update ac parameter history
+                hs.prev_ac_exclFac = hs.prefs.autochip_cfg.exclusion_factor
+                hs.prev_ac_stopCrit = hs.prefs.autochip_cfg.stopping_criterion
+                # delete old chips
+                print('[hs] deleting old chips')
+                for cx in hs.get_valid_cxs():
+                    hs.delete_chip(cx)  #delete chips
+                print('[hs] old chips deleted')
+                
+                # Do autochipping
+                hs._doAutochipping(directoryToTemplates, hs.prefs.autochip_cfg.exclusion_factor, hs.prefs.autochip_cfg.stopping_criterion)
+        
+        # Autochipping has not been done yet
+        else:
+            # Do autochipping
+            hs._doAutochipping(directoryToTemplates, hs.prefs.autochip_cfg.exclusion_factor, hs.prefs.autochip_cfg.stopping_criterion)
+
+        hs.ac_done = 1  # Record autochipping as complete
+        return hs.ac_done #don't think this is needed -MD
+
+    @profile
+    def _doAutochipping(hs, directoryToTemplates, exclFac, stopCrit):
         nImages = len(hs.get_valid_gxs())
         nTemplates = ac.getNumTemplates(directoryToTemplates)
-        #pdb.set_trace()
         if nImages != nTemplates:
             print('ERROR: number of images is unequal to number of templates')
             return 0
         # use autochip module to do autochipping
-        chipDict = ac.doAutochipping(hs, directoryToTemplates, AC_EXCL_FAC, AC_STOP_CRIT)
+        chipDict = ac.doAutochipping(hs, directoryToTemplates, exclFac, stopCrit)
         if not chipDict:
             print("[hs] No templates found!")
-        #print(chipDict) # Print for sanity check
         chipNum = 0;    # Keep track of chips for fun
         # Go through each image in image table
         for imageNum in range(0, len(hs.tables.gx2_gname)):
@@ -668,10 +713,10 @@ class HotSpotter(DynStruct):
             (imageName, dummy) = os.path.splitext(hs.tables.gx2_gname[imageNum])
             # Use image name from table to reference chip dict
             for chip in chipDict[imageName]:
-                cx = hs.add_chip(imageNum, chip) # IDK what to do with the rest of the parameters.
+                cx = hs.add_chip(imageNum, chip) # IDK what to do with the rest of the parameters
                 chipNum = chipNum+1 # This is ultimately somewhat useless.
         print('[hs.autochip] added %d chips' % chipNum) # Sanity check
-        return chipNum #don't think this is needed -MD
+        return chipNum
 
     @profile
     def add_images(hs, fpath_list, move_images=True):

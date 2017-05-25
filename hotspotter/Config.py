@@ -356,6 +356,28 @@ class FeatureConfig(ConfigBase):
     def get_uid(feat_cfg):
         return ''.join(feat_cfg.get_uid_list())
 
+class AutochipConfig(ConfigBase):
+    def __init__(autochip_cfg,hs=None, **kwargs):
+        super(AutochipConfig, autochip_cfg).__init__(name='autochip_cfg')
+        autochip_cfg.exclusion_factor   = 0.75
+        autochip_cfg.stopping_criterion = 0.3 
+
+class AutoqueryConfig(ConfigBase):
+    def __init__(autoquery_cfg, hs=None, **kwargs):
+        super(AutoqueryConfig, autoquery_cfg).__init__(name='autoquery_cfg')
+        autoquery_cfg.self_loop_weight          = 0
+        autoquery_cfg.same_image_score          = 0.9
+        autoquery_cfg.same_set_boost            = 0.8
+        autoquery_cfg.maximum_time_delta        = 90
+        autoquery_cfg.minimum_same_set_weight   = 0.25
+
+class ClusterConfig(ConfigBase):
+    def __init__(cluster_cfg, hs=None, **kwargs):
+        super(ClusterConfig, cluster_cfg).__init__(name='cluster_cfg')
+        cluster_cfg.inflation_factor            = 1.245
+        cluster_cfg.maximum_iterations          = 2000
+        cluster_cfg.expansion_factor            = 3
+        cluster_cfg.multiplication_factor       = 2
 
 class ChipConfig(ConfigBase):
     def __init__(cc_cfg, **kwargs):
@@ -427,6 +449,19 @@ def default_vsmany_cfg(hs, **kwargs):
     query_cfg = QueryConfig(hs, **kwargs)
     return query_cfg
 
+def default_autochip_cfg(hs, **kwargs):
+    autochip_cfg = AutochipConfig(hs, **kwargs)
+    hs.prev_ac_exclFac = autochip_cfg.exclusion_factor
+    hs.prev_ac_stopCrit = autochip_cfg.stopping_criterion
+    return autochip_cfg
+
+def default_autoquery_cfg(hs, **kwargs):
+    autoquery_cfg = AutoqueryConfig(hs, *kwargs)
+    return autoquery_cfg
+
+def default_cluster_cfg(hs, **kwargs):
+    cluster_cfg = ClusterConfig(hs, **kwargs)
+    return cluster_cfg
 
 def default_vsone_cfg(hs, **kwargs):
     kwargs['query_type'] = 'vsone'
