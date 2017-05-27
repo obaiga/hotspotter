@@ -360,7 +360,7 @@ class AutochipConfig(ConfigBase):
     def __init__(autochip_cfg,hs=None, **kwargs):
         super(AutochipConfig, autochip_cfg).__init__(name='autochip_cfg')
         autochip_cfg.exclusion_factor   = 0.75
-        autochip_cfg.stopping_criterion = 0.3 
+        autochip_cfg.stopping_criterion = 0.6 
 
 class AutoqueryConfig(ConfigBase):
     def __init__(autoquery_cfg, hs=None, **kwargs):

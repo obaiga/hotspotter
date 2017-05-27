@@ -100,18 +100,20 @@ def autochip(template, exclFac = 1, skip = 8, stopCrit = 1, crit = [0,0,1], minS
     import math
     
     templateMod = template.copy()    # Get a template to mess around with
-    #import pdb; pdb.set_trace()
     chipBounds = [];                # Initialize chip bounds
+    stopCrit = abs(stopCrit)    # Make sure we don't try to mess with negatives
     
     ''' Work '''
-    stopCrit = abs(stopCrit)    # Make sure we don't try to mess with negatives
+    
     # If we're running until we capture a certain percentage
-    #pdb.set_trace()
     if stopCrit < 1:    
-        templateCoverage = template.sum()*1.0    # Use this for finding our stop criteria
-        # run until we've covered x% of the template
-        while ( ( templateMod.sum() * 1.0 ) / templateCoverage ) > ( 1 - stopCrit ):
-            
+        templateArea = (template>0).sum()*1.0    # Use this for finding our stop criteria
+        chipArea = 0                         #
+
+        # Run until we've covered x% of the template
+        while chipArea/templateArea < stopCrit:
+        #while ( ( templateMod.sum() * 1.0 ) / templateArea ) > ( 1 - stopCrit ):
+ 
             # Get the bounds of the next chip
             R = findLargestRects(templateMod, crit, minSize, skip)
             chipBounds.append([R['bounds']])    # Get first chip bounds as tuple, store in list
@@ -121,7 +123,10 @@ def autochip(template, exclFac = 1, skip = 8, stopCrit = 1, crit = [0,0,1], minS
             row = R['bounds'][1]
             width = R['bounds'][2]
             height = R['bounds'][3]
-    
+
+            # Get new chip area
+            chipArea = chipArea+width*height*1.0
+
             # Get bounds for rectangle to remove from future searches
             if exclFac > 0 and exclFac <= 1:    
                 rmWidth = int(math.floor(width*exclFac))    # Determine width of rect to remove
@@ -143,10 +148,11 @@ def autochip(template, exclFac = 1, skip = 8, stopCrit = 1, crit = [0,0,1], minS
 
             # Cut out some part of template for next search
             templateMod[rmRow:rmRow+rmHeight+1,rmCol:rmCol+rmWidth+1] = 0;
-    
+        print '[ac] {0:.1f}% of the template covered'.format(chipArea/templateArea*100)
+
     # If we're running until we get a certain number of chips
     elif stopCrit > 1:
-        for q in range(0,int(round(stopCrit))):
+        for q in range(0,int(stopCrit)):
             # Get the bounds of the next chip
             R = findLargestRects(templateMod, crit, minSize, skip)
             chipBounds.append([R['bounds']])    # Get first chip bounds as tuple, store in list
