@@ -82,6 +82,7 @@ def mcl(M, expand_factor = 2, inflate_factor = 2, max_loop = 10 , mult_factor = 
 
 def networkx_mcl(G, expand_factor = 2, inflate_factor = 2, max_loop = 10 , mult_factor = 1):
     import networkx as nx
+    #import pdb; pdb.set_trace()
     A = nx.adjacency_matrix(G)
     return mcl(np.array(A.todense()), expand_factor, inflate_factor, max_loop, mult_factor)
 

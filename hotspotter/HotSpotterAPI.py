@@ -485,13 +485,13 @@ class HotSpotter(DynStruct):
     @profile
     # TODO: Do not allow autoquery unless chips exist.
     def autoquery(hs): 
-        if hs.ac_done:
+        if len(hs.get_valid_cxs()) > 1:
             scoreMat = aq.makeScoreMat(hs)         # Autoquery (make score matrix)
             ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
             print("[hs] autoquery done") 
             hs.aq_done = 1
         else:
-            print('[hs] cannot autoquery until autochipping is done')
+            print('[hs] cannot autoquery until at least two chips have been found')
        
     @profile
     def prequery(hs):
@@ -545,17 +545,25 @@ class HotSpotter(DynStruct):
         return mc3.query_dcxs(hs, qcx, gt_cxs, qdat)
 
     #@profile
-    def cluster(hs, expand_factor=MCL_EXPAND_FACTOR, inflate_factor=MCL_INFLATE_FACTOR, max_loop=MCL_MAX_LOOP, mult_factor=MCL_MULT_FACTOR):
-        if hs.ac_done and hs.aq_done:
+    def cluster(hs):
+        import os.path
+        params = hs.prefs.cluster_cfg
+        if os.path.isfile(os.path.join(hs.dirs.internal_dir,'scores.csv')):
             print("[hs] clustering...") 
             M, G = mcl.get_graph(hs.dirs.internal_dir)
-            M, clusters = mcl.networkx_mcl(G, expand_factor, inflate_factor, max_loop, mult_factor)
+            M, clusters = mcl.networkx_mcl(
+                G,
+                params.expansion_factor,
+                params.inflation_factor,
+                params.maximum_iterations,
+                params.multiplication_factor)
+
             clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
             ld2.write_clusters(hs, clusterTable, numClusters)
             ld2.write_score_matrix(hs, M, 'markov_scores.csv')
             print("[hs] done clustering")
         else:
-            print('[hs] will not cluster until autochipping and autoquerying are both done')
+            print('[hs] will not cluster until autoquerying is done')
 
     # ---------------
     # Change functions

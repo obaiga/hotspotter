@@ -374,7 +374,7 @@ class AutoqueryConfig(ConfigBase):
 class ClusterConfig(ConfigBase):
     def __init__(cluster_cfg, hs=None, **kwargs):
         super(ClusterConfig, cluster_cfg).__init__(name='cluster_cfg')
-        cluster_cfg.inflation_factor            = 1.245
+        cluster_cfg.inflation_factor            = 1.23
         cluster_cfg.maximum_iterations          = 2000
         cluster_cfg.expansion_factor            = 3
         cluster_cfg.multiplication_factor       = 2
