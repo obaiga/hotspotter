@@ -677,15 +677,15 @@ class HotSpotter(DynStruct):
     # TODO: handle nImages!=nTemplates more effectively (GUI popup would be nice)
     def autochip(hs, directoryToTemplates):
         #import pdb; pdb.set_trace()
-
+        params = hs.prefs.autochip_cfg
         # If we've already done autochipping
         if hs.ac_done:
             
             # If stopping criterion has changed
-            if (hs.prev_ac_exclFac != hs.prefs.autochip_cfg.exclusion_factor) or (hs.prev_ac_stopCrit != hs.prefs.autochip_cfg.stopping_criterion):
+            if (hs.prev_ac_exclFac != params.exclusion_factor) or (hs.prev_ac_stopCrit != params.stopping_criterion):
                 # Update ac parameter history
-                hs.prev_ac_exclFac = hs.prefs.autochip_cfg.exclusion_factor
-                hs.prev_ac_stopCrit = hs.prefs.autochip_cfg.stopping_criterion
+                hs.prev_ac_exclFac = params.exclusion_factor
+                hs.prev_ac_stopCrit = params.stopping_criterion
                 # delete old chips
                 print('[hs] deleting old chips')
                 for cx in hs.get_valid_cxs():
@@ -693,12 +693,12 @@ class HotSpotter(DynStruct):
                 print('[hs] old chips deleted')
                 
                 # Do autochipping
-                hs._doAutochipping(directoryToTemplates, hs.prefs.autochip_cfg.exclusion_factor, hs.prefs.autochip_cfg.stopping_criterion)
+                hs._doAutochipping(directoryToTemplates, params.exclusion_factor, params.stopping_criterion)
         
         # Autochipping has not been done yet
         else:
             # Do autochipping
-            hs._doAutochipping(directoryToTemplates, hs.prefs.autochip_cfg.exclusion_factor, hs.prefs.autochip_cfg.stopping_criterion)
+            hs._doAutochipping(directoryToTemplates, params.exclusion_factor, params.stopping_criterion)
 
         hs.ac_done = 1  # Record autochipping as complete
         return hs.ac_done #don't think this is needed -MD
