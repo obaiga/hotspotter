@@ -414,6 +414,7 @@ def run_main_loop(app, is_root=True, back=None, **kwargs):
         #exec_core_event_loop(app)
     else:
         print('[*guitools] using roots main loop')
+        exec_core_app_loop(app)
 
 
 @profile
