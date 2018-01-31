@@ -32,6 +32,8 @@ import MCL.mcl.mcl_clustering as mcl
 import time
 import sort_into_folders as sif
 import log_filing as lf
+import show_matrices as sm
+
 MCL_SELF_LOOP       = 0
 MCL_MULT_FACTOR     = 2
 MCL_EXPAND_FACTOR   = 3
@@ -587,6 +589,15 @@ class HotSpotter(DynStruct):
 
         else:
             print('[hs] will not cluster until autoquerying is done')
+
+    def show_matrices(hs):
+        import os.path
+        if os.path.isfile(os.path.join(hs.dirs.internal_dir,'scores.csv')) and \
+        os.path.isfile(os.path.join(hs.dirs.internal_dir,'markov_scores.csv')):
+            sm.draw_and_export(hs.dirs.internal_dir)
+            print('[hs] score visualization shown')
+        else:
+            print('[hs] will not draw visualization until clustering is done')
 
     # ---------------
     # Change functions
