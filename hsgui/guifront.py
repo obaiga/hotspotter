@@ -158,6 +158,7 @@ def connect_button_signals(front):
     ui.AutoQuery.clicked.connect(back.autoquery) # uncommented 4/23/17 jb
     ui.Cluster.clicked.connect(back.cluster) #added MD 5/12/17
     ui.ShowMatrices.clicked.connect(back.show_matrices) # added TN 1/28/18
+    ui.SortToFolders.clicked.connect(back.folders_srt) # added TM 2/12/18
 
 
 def connect_action_signals(front):

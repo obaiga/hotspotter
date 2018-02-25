@@ -590,6 +590,8 @@ class HotSpotter(DynStruct):
         else:
             print('[hs] will not cluster until autoquerying is done')
 
+    # Tim Nguyen 1/28/18
+    # function to trigger show_matrices module
     def show_matrices(hs):
         import os.path
         if os.path.isfile(os.path.join(hs.dirs.internal_dir,'scores.csv')) and \
@@ -598,6 +600,11 @@ class HotSpotter(DynStruct):
             print('[hs] score visualization shown')
         else:
             print('[hs] will not draw visualization until clustering is done')
+
+    # Tim Nguyen 2/12/18
+    # function to trigger image sorting module
+    def folders_srt(hs):
+        print('[hs] is sorting the images into corresponding cat-folders...')
 
     # ---------------
     # Change functions

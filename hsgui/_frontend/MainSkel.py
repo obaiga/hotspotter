@@ -189,6 +189,11 @@ class Ui_mainSkel(object):
         self.ShowMatrices.setObjectName(_fromUtf8("Show Matrices"))
         self.horizontalLayout_5.addWidget(self.ShowMatrices)
 
+        ''' Added by Tim Nguyen 2/12/18 '''
+        self.SortToFolders = QtGui.QPushButton(self.horizontalGroupBox2)
+        self.SortToFolders.setObjectName(_fromUtf8("Sort to Folders"))
+        self.horizontalLayout_5.addWidget(self.SortToFolders)
+
         self.verticalLayout_7.addWidget(self.horizontalGroupBox2)
         self.tablesTabWidget.addTab(self.chipTab, _fromUtf8(""))
         self.nameTab = QtGui.QWidget()
@@ -422,6 +427,7 @@ class Ui_mainSkel(object):
         self.AutoQuery.setText(_translate("mainSkel", "AutoQuery", None))
         self.Cluster.setText(_translate("mainSkel", "Cluster", None))
         self.ShowMatrices.setText(_translate("mainSkel", "Show Matrices", None)) # added by TN 1/28/18
+        self.SortToFolders.setText(_translate("mainSkel", "Sort to Folders", None)) # added by TN 2/12/18
 
         self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.chipTab), _translate("mainSkel", "Chip Table", None))
         self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.nameTab), _translate("mainSkel", "Name View", None))

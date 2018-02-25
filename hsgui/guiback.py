@@ -836,6 +836,13 @@ class MainWindowBackend(QtCore.QObject):
     def show_matrices(back):
         back.hs.show_matrices()
 
+    '''Added by Tim Nguyen 2/12/18'''
+    @slot_()
+    @blocking
+    @profile
+    def folders_srt(back):
+        back.hs.folders_srt()
+
     @slot_()
     @blocking
     @profile
