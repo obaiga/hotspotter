@@ -44,4 +44,3 @@ hsviz/*.c
 *.pyo
 logs
 logs2
-hstest/*
