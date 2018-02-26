@@ -29,6 +29,7 @@ hsviz/*.c
 *.png
 *.prof
 *.profile.txt
+*.pyc
 *.shelf
 *.sift
 *.so
