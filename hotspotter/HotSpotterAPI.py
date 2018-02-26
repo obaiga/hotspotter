@@ -29,13 +29,20 @@ import autochip as ac
 import pdb
 import autoquery as aq
 import MCL.mcl.mcl_clustering as mcl
+import time
+import sort_into_folders as sif
+import log_filing as lf
 MCL_SELF_LOOP       = 0
 MCL_MULT_FACTOR     = 2
-MCL_EXPAND_FACTOR   = 3 
-MCL_INFLATE_FACTOR  = 1.245	# Influences granularity of clusters 
+MCL_EXPAND_FACTOR   = 3
+MCL_INFLATE_FACTOR  = 1.245	# Influences granularity of clusters
 MCL_MAX_LOOP        = 2000
 AC_EXCL_FAC         = .75   # Deprecated
 AC_STOP_CRIT        = .3    #
+
+AC_RUNTIME = 0
+AQ_RUNTIME = 0
+MCL_RUNTIME = 0
 
 '''
 TODO:
@@ -106,6 +113,7 @@ def _datatup_cols(hs, tblname, cx2_score=None):
     cx2_kpts  = hs.feats.cx2_kpts
     # Return requested columns
     if tblname == 'nxs':
+        print('loading nxs')
         cols = {
             'nx':    lambda nxs: nxs,
             'name':  lambda nxs: [nx2_name[nx] for nx in iter(nxs)],
@@ -113,6 +121,7 @@ def _datatup_cols(hs, tblname, cx2_score=None):
             'nCxs':  lambda nxs: [len(nx2_cxs[nx]) for nx in iter(nxs)],
         }
     elif tblname == 'gxs':
+        print('loading gxs')
         cols = {
             'gx':    lambda gxs: gxs,
             'aif':   lambda gxs: [gx2_aif[gx] for gx in iter(gxs)],
@@ -124,6 +133,7 @@ def _datatup_cols(hs, tblname, cx2_score=None):
     elif tblname in ['cxs', 'res']:
         # Tau is the future. Unfortunately society is often stuck in the past.
         # (tauday.com)
+        print('loading cxs')
         FUTURE = False
         tau = (2 * np.pi)
         taustr = 'tau' if FUTURE else '2pi'
@@ -254,10 +264,10 @@ class HotSpotter(DynStruct):
         hs.qdat = ds.QueryData()  # Query Data
         if db_dir is not None:
             hs.load_tables(db_dir=db_dir)
-        
+
         hs.prev_ac_exclFac = hs.prefs.autochip_cfg.exclusion_factor
         hs.prev_ac_stopCrit = hs.prefs.autochip_cfg.stopping_criterion
- 
+
         #printDBG(r'[/hs] Created HotSpotter API')
 
     def rrr(hs):
@@ -476,27 +486,33 @@ class HotSpotter(DynStruct):
     #---------------
     # Query Functions
     #---------------
-    
+
     ''' Under construction '''
     ''' UPDATE: does not populate matrix properly
         TODO: maybe populate matrix for all scores, not just matches
     '''
-    
+
     @profile
     # TODO: Do not allow autoquery unless chips exist.
-    def autoquery(hs): 
+    def autoquery(hs):
         if len(hs.get_valid_cxs()) > 1:
+            print("********** AUTOQUERY HAS STARTED **********")
+            aqstart = time.time()
             scoreMat = aq.makeScoreMat(hs)         # Autoquery (make score matrix)
             ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
-            print("[hs] autoquery done") 
+            print("[hs] autoquery done")
+            aqend = time.time()
+            global AQ_RUNTIME
+            AQ_RUNTIME = (aqend-aqstart)
+            print("********** AUTOQUERY TOOK " + str(AQ_RUNTIME) + " SECONDS TO RUN **********")
             hs.aq_done = 1
         else:
             print('[hs] cannot autoquery until at least two chips have been found')
-       
+
     @profile
     def prequery(hs):
         mc3.prequery(hs)
-        
+
     @profile
     def query(hs, qcx, *args, **kwargs):
         return hs.query_database(qcx, *args, **kwargs)
@@ -549,7 +565,8 @@ class HotSpotter(DynStruct):
         import os.path
         params = hs.prefs.cluster_cfg
         if os.path.isfile(os.path.join(hs.dirs.internal_dir,'scores.csv')):
-            print("[hs] clustering...") 
+            print("[hs] clustering...")
+            tstart = time.time()
             M, G = mcl.get_graph(hs.dirs.internal_dir)
             M, clusters = mcl.networkx_mcl(
                 G,
@@ -561,7 +578,13 @@ class HotSpotter(DynStruct):
             clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
             ld2.write_clusters(hs, clusterTable, numClusters)
             ld2.write_score_matrix(hs, M, 'markov_scores.csv')
+            sif.sort_into_folders()
+            global MCL_RUNTIME
+            MCL_RUNTIME = (time.time() - tstart)
+            lf.add_to_log()
+            print("Clustering took " + str(MCL_RUNTIME) + " seconds to run")
             print("[hs] done clustering")
+
         else:
             print('[hs] will not cluster until autoquerying is done')
 
@@ -634,7 +657,7 @@ class HotSpotter(DynStruct):
 
     @profile
     def add_chip(hs, gx, roi, nx=0, theta=0, props={}, dochecks=True):
-        
+
         # TODO: Restructure for faster adding (preallocate and double size)
         # OR just make all the tables python lists
         print('[hs] adding chip to gx=%r' % gx)
@@ -653,7 +676,7 @@ class HotSpotter(DynStruct):
             hs.tables.cx2_roi = np.vstack((hs.tables.cx2_roi, roi))
         else: # This is the case that HotSpotter was originally designed for:
             hs.tables.cx2_roi   = np.vstack((hs.tables.cx2_roi, [roi]))
-            
+
         hs.tables.cx2_theta = np.concatenate((hs.tables.cx2_theta, [theta]))
         prop_dict = hs.tables.prop_dict
         for key in prop_dict.iterkeys():
@@ -665,10 +688,10 @@ class HotSpotter(DynStruct):
             # Remove any conflicts from memory
             hs.unload_cxdata(cx)
             hs.delete_queryresults_dir()  # Query results are now invalid
-        return cx     
+        return cx
 
     '''Edited 3//7/17 by Matt Dioso'''
-    ''' Added 3/5/17 by Joshua Beard 
+    ''' Added 3/5/17 by Joshua Beard
     I'm sure it needs more work
     Make sure to replace <tabs> with four <spaces>
     Need to think about rotation during SQ17'''
@@ -680,7 +703,7 @@ class HotSpotter(DynStruct):
         params = hs.prefs.autochip_cfg
         # If we've already done autochipping
         if hs.ac_done:
-            
+
             # If stopping criterion has changed
             if (hs.prev_ac_exclFac != params.exclusion_factor) or (hs.prev_ac_stopCrit != params.stopping_criterion):
                 # Update ac parameter history
@@ -691,15 +714,19 @@ class HotSpotter(DynStruct):
                 for cx in hs.get_valid_cxs():
                     hs.delete_chip(cx)  #delete chips
                 print('[hs] old chips deleted')
-                
+
                 # Do autochipping
                 hs._doAutochipping(directoryToTemplates, params.exclusion_factor, params.stopping_criterion)
-        
+
         # Autochipping has not been done yet
         else:
             # Do autochipping
+            acstart = time.time()
             hs._doAutochipping(directoryToTemplates, params.exclusion_factor, params.stopping_criterion)
-
+            acend = time.time()
+            global AC_RUNTIME
+            AC_RUNTIME = (acend-acstart)
+        print("********** AUTOCHIPPING TOOK " + str(AC_RUNTIME) + " SECONDS TO RUN **********")
         hs.ac_done = 1  # Record autochipping as complete
         return hs.ac_done #don't think this is needed -MD
 
@@ -1280,3 +1307,15 @@ class HotSpotter(DynStruct):
             passed = False
         if passed:
             print('[hs.dbg] cx2_kpts is OK')
+
+    def getACruntime(self):
+    #    print("AC_RUNTIME: " + str(AC_RUNTIME))
+        return AC_RUNTIME
+
+    def getAQruntime(self):
+    #    print("AQ_RUNTIME: " + str(AQ_RUNTIME))
+        return AQ_RUNTIME
+
+    def getMCLruntime(self):
+    #    print("MCL_RUNTIME: " + str(MCL_RUNTIME))
+        return MCL_RUNTIME
