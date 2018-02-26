@@ -580,10 +580,9 @@ class HotSpotter(DynStruct):
             clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
             ld2.write_clusters(hs, clusterTable, numClusters)
             ld2.write_score_matrix(hs, M, 'markov_scores.csv')
-            sif.sort_into_folders()
             global MCL_RUNTIME
             MCL_RUNTIME = (time.time() - tstart)
-            lf.add_to_log()
+            lf.add_to_log(hs)
             print("Clustering took " + str(MCL_RUNTIME) + " seconds to run")
             print("[hs] done clustering")
 
@@ -604,7 +603,7 @@ class HotSpotter(DynStruct):
     # Tim Nguyen 2/12/18
     # function to trigger image sorting module
     def folders_srt(hs):
-        print('[hs] is sorting the images into corresponding cat-folders...')
+        sif.sort_into_folders(hs)
 
     # ---------------
     # Change functions
