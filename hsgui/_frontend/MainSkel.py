@@ -145,9 +145,9 @@ class Ui_mainSkel(object):
         self.pushButton = QtGui.QPushButton(self.horizontalGroupBox1)
         self.pushButton.setObjectName(_fromUtf8("pushButton"))
         self.horizontalLayout_4.addWidget(self.pushButton)
-        self.pushButton_2 = QtGui.QPushButton(self.horizontalGroupBox1)
-        self.pushButton_2.setObjectName(_fromUtf8("pushButton_2"))
-        self.horizontalLayout_4.addWidget(self.pushButton_2)
+        #self.pushButton_2 = QtGui.QPushButton(self.horizontalGroupBox1)
+        #self.pushButton_2.setObjectName(_fromUtf8("pushButton_2"))
+        #self.horizontalLayout_4.addWidget(self.pushButton_2)
 
         self.AutoChip = QtGui.QPushButton(self.horizontalGroupBox1)
         self.AutoChip.setObjectName(_fromUtf8("AutoChip"))
@@ -173,9 +173,9 @@ class Ui_mainSkel(object):
         self.horizontalGroupBox2.setObjectName(_fromUtf8("horizontalGroupBox2"))
         self.horizontalLayout_5 = QtGui.QHBoxLayout(self.horizontalGroupBox2)
         self.horizontalLayout_5.setObjectName(_fromUtf8("horizontalLayout_5"))
-        self.pushButton_3 = QtGui.QPushButton(self.horizontalGroupBox2)
-        self.pushButton_3.setObjectName(_fromUtf8("pushButton_3"))
-        self.horizontalLayout_5.addWidget(self.pushButton_3)
+        #self.pushButton_3 = QtGui.QPushButton(self.horizontalGroupBox2)
+        #self.pushButton_3.setObjectName(_fromUtf8("pushButton_3"))
+        #self.horizontalLayout_5.addWidget(self.pushButton_3)
 
         self.AutoQuery = QtGui.QPushButton(self.horizontalGroupBox2)
         self.AutoQuery.setObjectName(_fromUtf8("AutoQuery"))
@@ -420,10 +420,10 @@ class Ui_mainSkel(object):
     def retranslateUi(self, mainSkel):
         mainSkel.setWindowTitle(_translate("mainSkel", "mainSkel", None))
         self.pushButton.setText(_translate("mainSkel", "Import Image(s)", None))
-        self.pushButton_2.setText(_translate("mainSkel", "Save Database", None))
+        #self.pushButton_2.setText(_translate("mainSkel", "Save Database", None))
         self.AutoChip.setText(_translate("mainSkel", "AutoChip", None))
         self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.imageTab), _translate("mainSkel", "Image Table", None))
-        self.pushButton_3.setText(_translate("mainSkel", "Save Database", None))
+        #self.pushButton_3.setText(_translate("mainSkel", "Save Database", None))
         self.AutoQuery.setText(_translate("mainSkel", "AutoQuery", None))
         self.Cluster.setText(_translate("mainSkel", "Cluster", None))
         self.ShowMatrices.setText(_translate("mainSkel", "Show Matrices", None)) # added by TN 1/28/18

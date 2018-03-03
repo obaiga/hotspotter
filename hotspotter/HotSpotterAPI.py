@@ -42,10 +42,6 @@ MCL_MAX_LOOP        = 2000
 AC_EXCL_FAC         = .75   # Deprecated
 AC_STOP_CRIT        = .3    #
 
-AC_RUNTIME = 0
-AQ_RUNTIME = 0
-MCL_RUNTIME = 0
-
 '''
 TODO:
 Autoquery
@@ -270,6 +266,10 @@ class HotSpotter(DynStruct):
         hs.prev_ac_exclFac = hs.prefs.autochip_cfg.exclusion_factor
         hs.prev_ac_stopCrit = hs.prefs.autochip_cfg.stopping_criterion
 
+        hs.ac_runtime = 0
+        hs.aq_runtime = 0
+        hs.cl_runtime = 0
+
         #printDBG(r'[/hs] Created HotSpotter API')
 
     def rrr(hs):
@@ -472,7 +472,7 @@ class HotSpotter(DynStruct):
 
     @profile
     def delete_cxdata(hs, cx):
-        'deletes features and chips. not tables'
+        # deletes features and chips. not tables
         hs.unload_cxdata(cx)
         print('[hs] delete_cxdata(cx=%r)' % cx)
         cid = hs.tables.cx2_cid[cx]
@@ -499,14 +499,14 @@ class HotSpotter(DynStruct):
     def autoquery(hs):
         if len(hs.get_valid_cxs()) > 1:
             print("********** AUTOQUERY HAS STARTED **********")
-            aqstart = time.time()
+            aqstart = time.time() # start time - logging feature
             scoreMat = aq.makeScoreMat(hs)         # Autoquery (make score matrix)
             ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
             print("[hs] autoquery done")
-            aqend = time.time()
-            global AQ_RUNTIME
-            AQ_RUNTIME = (aqend-aqstart)
-            print("********** AUTOQUERY TOOK " + str(AQ_RUNTIME) + " SECONDS TO RUN **********")
+            # Save database
+            hs.save_database()
+            hs.aq_runtime = (time.time() - aqstart)
+            print("********** AUTOQUERY TOOK " + str(hs.aq_runtime) + " SECONDS TO RUN **********")
             hs.aq_done = 1
         else:
             print('[hs] cannot autoquery until at least two chips have been found')
@@ -568,7 +568,7 @@ class HotSpotter(DynStruct):
         params = hs.prefs.cluster_cfg
         if os.path.isfile(os.path.join(hs.dirs.internal_dir,'scores.csv')):
             print("[hs] clustering...")
-            tstart = time.time()
+            clstart = time.time() # start time - logging feature
             M, G = mcl.get_graph(hs.dirs.internal_dir)
             M, clusters = mcl.networkx_mcl(
                 G,
@@ -580,10 +580,11 @@ class HotSpotter(DynStruct):
             clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
             ld2.write_clusters(hs, clusterTable, numClusters)
             ld2.write_score_matrix(hs, M, 'markov_scores.csv')
-            global MCL_RUNTIME
-            MCL_RUNTIME = (time.time() - tstart)
-            lf.add_to_log(hs)
-            print("Clustering took " + str(MCL_RUNTIME) + " seconds to run")
+            # Save database
+            hs.save_database()
+            hs.cl_runtime = (time.time() - clstart) # logging feature
+            lf.add_to_log(hs) # logging feature
+            print("Clustering took " + str(hs.cl_runtime) + " seconds to run")
             print("[hs] done clustering")
 
         else:
@@ -707,23 +708,36 @@ class HotSpotter(DynStruct):
             hs.delete_queryresults_dir()  # Query results are now invalid
         return cx
 
-    '''Edited 3//7/17 by Matt Dioso'''
+    '''Edited 3/3/17 by Tim Nguyen'''
+    '''Edited 3/7/17 by Matt Dioso'''
     ''' Added 3/5/17 by Joshua Beard
     I'm sure it needs more work
     Make sure to replace <tabs> with four <spaces>
     Need to think about rotation during SQ17'''
     @profile # IhavenoideawhatImdoing
     #@helpers.indent_decor('[hs.autochip]') #mine doesn't recognize helpers
-    # TODO: handle nImages!=nTemplates more effectively (GUI popup would be nice)
+    # TODO: ECE17.7
+    # handle nImages!=nTemplates more effectively (GUI popup would be nice)
+    # TODO: Tim Nguyen - 03/03
+    # Check if chips already exist. There are three cases:
+    # 1) If chips already exist and parameters for autochip are changed, remove
+    # old chips and start doing autochip
+    # 2) If chips already exist and parameters for autochip are the same,
+    # don't allow autochip to run, and notify user.
+    # 3) If there are none chips, do autoChipping right away.
+
     def autochip(hs, directoryToTemplates):
         #import pdb; pdb.set_trace()
         params = hs.prefs.autochip_cfg
-        # If we've already done autochipping
-        if hs.ac_done:
 
-            # If stopping criterion has changed
+        # If autochipping is already done (chips already exist)
+        if len(hs.get_valid_cxs()) > 1:
+            print('********** There are ' + str(len(hs.get_valid_cxs())) + ' chips exist **********')
+
+            # If parameters have been changed
             if (hs.prev_ac_exclFac != params.exclusion_factor) or (hs.prev_ac_stopCrit != params.stopping_criterion):
                 # Update ac parameter history
+                print('[hs] [ac] parameter(s) changed')
                 hs.prev_ac_exclFac = params.exclusion_factor
                 hs.prev_ac_stopCrit = params.stopping_criterion
                 # delete old chips
@@ -733,19 +747,26 @@ class HotSpotter(DynStruct):
                 print('[hs] old chips deleted')
 
                 # Do autochipping
+                print('[ac] is running again')
                 hs._doAutochipping(directoryToTemplates, params.exclusion_factor, params.stopping_criterion)
+                # Save database
+                hs.save_database()
+                
+            else:
+                print('[ac] is already ran. Change parameter(s) to re-run')
 
-        # Autochipping has not been done yet
+        # If autochipping has not been done yet
         else:
             # Do autochipping
-            acstart = time.time()
+            acstart = time.time() # start time - logging feature
             hs._doAutochipping(directoryToTemplates, params.exclusion_factor, params.stopping_criterion)
-            acend = time.time()
-            global AC_RUNTIME
-            AC_RUNTIME = (acend-acstart)
-        print("********** AUTOCHIPPING TOOK " + str(AC_RUNTIME) + " SECONDS TO RUN **********")
+            # Save database
+            hs.save_database()
+            hs.ac_runtime = (time.time() - acstart)
+
+        print("********** AUTOCHIPPING TOOK " + str(hs.ac_runtime) + " SECONDS TO RUN **********")
         hs.ac_done = 1  # Record autochipping as complete
-        return hs.ac_done #don't think this is needed -MD
+        #return hs.ac_done #don't think this is needed -MD
 
     @profile
     def _doAutochipping(hs, directoryToTemplates, exclFac, stopCrit):
@@ -814,6 +835,8 @@ class HotSpotter(DynStruct):
         hs.tables.gx2_gname = np.array(gx2_gname + new_gnames)
         hs.tables.gx2_aif   = np.array(gx2_aif   + new_aifs)
         hs.update_samples()
+        # Write computed data to csv files
+        ld2.write_csv_tables(hs)
         return nNewImages
 
     # ---------------
@@ -1324,15 +1347,3 @@ class HotSpotter(DynStruct):
             passed = False
         if passed:
             print('[hs.dbg] cx2_kpts is OK')
-
-    def getACruntime(self):
-    #    print("AC_RUNTIME: " + str(AC_RUNTIME))
-        return AC_RUNTIME
-
-    def getAQruntime(self):
-    #    print("AQ_RUNTIME: " + str(AQ_RUNTIME))
-        return AQ_RUNTIME
-
-    def getMCLruntime(self):
-    #    print("MCL_RUNTIME: " + str(MCL_RUNTIME))
-        return MCL_RUNTIME
