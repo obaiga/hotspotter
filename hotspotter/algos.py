@@ -12,7 +12,7 @@ import textwrap
 # Matplotlib
 #import matplotlib.pyplot as plt
 # Scientific
-import pyflann
+from hstpl.extern_feat import pyflann
 #import sklearn.decomposition
 #import sklearn.preprocessing
 #import sklearn

@@ -1,6 +1,7 @@
-from __future__ import print_function, division
+from __future__ import absolute_import, division, print_function
 from os.path import join, exists, dirname, normpath
 import sys
+import os
 import ctypes as C
 
 
@@ -8,17 +9,19 @@ import ctypes as C
 # general ctypes interface
 #============================
 
+__DEBUG_CLIB__ = '--debug' in sys.argv or '--debug-clib' in sys.argv
+
 
 def get_lib_fname_list(libname):
-    '''
+    """
     input <libname>: library name (e.g. 'hesaff', not 'libhesaff')
     returns <libnames>: list of plausible library file names
-    '''
-    if sys.platform == 'win32':
+    """
+    if sys.platform.startswith('win32'):
         libnames = ['lib' + libname + '.dll', libname + '.dll']
-    elif sys.platform == 'darwin':
+    elif sys.platform.startswith('darwin'):
         libnames = ['lib' + libname + '.dylib']
-    elif sys.platform == 'linux2':
+    elif sys.platform.startswith('linux'):
         libnames = ['lib' + libname + '.so']
     else:
         raise Exception('Unknown operating system: %s' % sys.platform)
@@ -26,10 +29,10 @@ def get_lib_fname_list(libname):
 
 
 def get_lib_dpath_list(root_dir):
-    '''
+    """
     input <root_dir>: deepest directory to look for a library (dll, so, dylib)
     returns <libnames>: list of plausible directories to look.
-    '''
+    """
     'returns possible lib locations'
     get_lib_dpath_list = [root_dir,
                           join(root_dir, 'lib'),
@@ -39,7 +42,7 @@ def get_lib_dpath_list(root_dir):
 
 
 def find_lib_fpath(libname, root_dir, recurse_down=True, verbose=False):
-    'Search for the library'
+    """ Search for the library """
     lib_fname_list = get_lib_fname_list(libname)
     tried_fpaths = []
     while root_dir is not None:
@@ -49,7 +52,8 @@ def find_lib_fpath(libname, root_dir, recurse_down=True, verbose=False):
                 if exists(lib_fpath):
                     if verbose:
                         print('\n[c] Checked: '.join(tried_fpaths))
-                    print('using: %r' % lib_fpath)
+                    if __DEBUG_CLIB__:
+                        print('using: %r' % lib_fpath)
                     return lib_fpath
                 else:
                     # Remember which candiate library fpaths did not exist
@@ -72,7 +76,7 @@ def find_lib_fpath(libname, root_dir, recurse_down=True, verbose=False):
 
 
 def load_clib(libname, root_dir):
-    '''
+    """
     Does the work.
     Args:
         libname:  library name (e.g. 'hesaff', not 'libhesaff')
@@ -81,18 +85,34 @@ def load_clib(libname, root_dir):
                   library file (dll, dylib, or so).
     Returns:
         clib: a ctypes object used to interface with the library
-    '''
+    """
+    os.environ['PATH'] = os.path.dirname(__file__) + ';' + os.environ['PATH']
+    print (os.environ['PATH'])
+    print('successfully added hesaff to path')
     lib_fpath = find_lib_fpath(libname, root_dir)
+    name = "libhesaff.dll"
+    #lib_fpath = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + name
     try:
-        clib = C.cdll[lib_fpath]
+        clib = C.cdll['libhesaff.dll']
+        #print('loading libhesaff.dll')
+        #clib = C.windll['C:\Users\Matt\Desktop\code\hotspotter\hstpl\extern_feat\libhesaff.dll']
 
         def def_cfunc(return_type, func_name, arg_type_list):
             'Function to define the types that python needs to talk to c'
             cfunc = getattr(clib, func_name)
             cfunc.restype = return_type
             cfunc.argtypes = arg_type_list
+        clib.__LIB_FPATH__ = lib_fpath
+        return clib, def_cfunc, lib_fpath
+    except OSError as ex:
+        print('[C!] Caught OSError:\n%s' % ex)
+        errsuffix = 'Is there a missing dependency?'
     except Exception as ex:
-        print('[C!] Caught exception: %r' % ex)
-        print('[C!] load_clib(libname=%r root_dir=%r)' % (libname, root_dir))
-        raise ImportError('[C] Cannot LOAD dynamic library. Did you compile HESAFF?')
-    return clib, def_cfunc
+        print('[C!] Caught Exception:\n%s' % ex)
+        errsuffix = 'Was the library correctly compiled?'
+    print('[C!] cwd=%r' % os.getcwd())
+    print('[C!] load_clib(libname=%r root_dir=%r)' % (libname, root_dir))
+    print('[C!] lib_fpath = %r' % lib_fpath)
+    errmsg = '[C] Cannot LOAD %r dynamic library. ' % (libname,) + errsuffix
+    print(errmsg)
+    raise ImportError(errmsg)
