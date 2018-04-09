@@ -338,13 +338,13 @@ class MainWindowBackend(QtCore.QObject):
 
     def update_window_title(back):
         if back.hs is None:
-            title = 'Hotspotter - NULL database'
+            title = 'HotSpotter - NULL database'
         if back.hs.dirs is None:
-            title = 'Hotspotter - invalid database'
+            title = 'HotSpotter - invalid database'
         else:
             db_dir = back.hs.dirs.db_dir
             db_name = split(db_dir)[1]
-            title = 'Hotspotter - %r - %s' % (db_name, db_dir)
+            title = 'HotSpotter - %r - %s' % (db_name, db_dir)
         back.front.setWindowTitle(title)
 
     def connect_api(back, hs):
@@ -744,7 +744,7 @@ class MainWindowBackend(QtCore.QObject):
         #fpath = back.get_work_directory() + '/Demo_Data/templates'
         #fpath = os.getcwd() + '/matFiles'
         back.hs.autochip(fpath)
-        back.populate_tables()
+        back.populate_tables(res=False)
         print('')
 
     @slot_()
@@ -828,6 +828,7 @@ class MainWindowBackend(QtCore.QObject):
     @profile
     def cluster(back):
         back.hs.cluster()
+        back.populate_tables(res=False)
 
     '''Added by Tim Nguyen 1/28/18'''
     @slot_()
@@ -902,6 +903,7 @@ class MainWindowBackend(QtCore.QObject):
         gx = back.hs.cx2_gx(cx)
         back.hs.delete_chip(cx)
         back.populate_tables()
+        back.hs.save_database()
         back.select_gx(gx)
         print('[back] deleted cx=%r\n' % cx)
         print('')

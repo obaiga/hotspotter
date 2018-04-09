@@ -44,3 +44,6 @@ hsviz/*.c
 *.pyo
 logs
 logs2
+*.pyc
+*.pyc
+hotspotter/autochip.pyc
