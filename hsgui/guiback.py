@@ -689,6 +689,7 @@ class MainWindowBackend(QtCore.QObject):
         print('[*back] selected %r' % img_dpath)
         fpath_list = helpers.list_images(img_dpath, fullpath=True)
         back.hs.add_images(fpath_list)
+        back.hs.add_templates(img_dpath)
         back.populate_image_table()
         print('')
 
@@ -737,7 +738,7 @@ class MainWindowBackend(QtCore.QObject):
     @blocking
     @profile
     def autochip(back):
-        # ASSUME images are in PWD/DB/images   
+        # ASSUME images are in PWD/DB/images
         fpath = join(back.hs.dirs.db_dir, 'images/templates') # Added 4/27/17 jb
         #fpath = back.get_work_directory() + '/' + back.hs.get_db_name() +'/images/templates' # JB
         #fpath = back.get_work_directory() + '/test_autochip/templates'
@@ -793,19 +794,19 @@ class MainWindowBackend(QtCore.QObject):
         back.hs.autoquery(fpath)
         back.populate_tables()
         print('')
-        
+
         # From query
         # Action -> Query
         #prevBlock = back.front.blockSignals(True)
         print('[**back] autoquery")
         cx = back.get_selected_cx() if cid is None else back.hs.cid2_cx(cid)
         print('[**back.query()] cx = %r)' % cx)
-        
+
         #This should be unnecessary due to autopilot style
         #if cx is None:
         #    back.user_info('Cannot query. No chip selected')
         #    return
-        
+
         try:
             res = back.hs.query(cx)
         except Exception as ex:
@@ -827,8 +828,22 @@ class MainWindowBackend(QtCore.QObject):
     @blocking
     @profile
     def cluster(back):
-        back.hs.cluster()
-        
+        #back.hs.mcl_cluster()
+        back.hs.linkage_cluster()
+    '''Added by Tim Nguyen 1/28/18'''
+    @slot_()
+    @blocking
+    @profile
+    def show_matrices(back):
+        back.hs.show_matrices()
+
+    '''Added by Tim Nguyen 2/12/18'''
+    @slot_()
+    @blocking
+    @profile
+    def folders_srt(back):
+        back.hs.folders_srt()
+
     @slot_()
     @blocking
     @profile

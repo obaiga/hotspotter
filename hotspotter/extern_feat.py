@@ -59,8 +59,8 @@ def precompute_hesaff(rchip_fpath, feat_fpath, dict_args):
 # Work functions which call the external feature detectors
 # Helper function to call commands
 try:        # NOTE: pyhesaff lives in ~/code/hesaff as of 4/21/17
-    #from hstpl.extern_feat import pyhesaff
-    import pyhesaff # Replaces line above
+    from hstpl.extern_feat import pyhesaff
+    #import pyhesaff # Replaces line above
             
     def detect_kpts_new(rchip_fpath, dict_args):
         print('using new')

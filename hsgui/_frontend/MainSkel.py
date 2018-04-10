@@ -133,7 +133,7 @@ class Ui_mainSkel(object):
         self.gxs_TBL.horizontalHeader().setDefaultSectionSize(250)
 	#self.gxs_TBL.setVisible(False)
 	#self.gxs_TBL.resizeColumnsToContents()
-	#self.gxs_TBL.setVisible(True)        
+	#self.gxs_TBL.setVisible(True)
 	#self.gxs_TBL.horizontalHeader().setResizeMode(QHeaderView.Stretch)
         self.imageView.addWidget(self.gxs_TBL)
         self.verticalLayout_6.addLayout(self.imageView)
@@ -145,10 +145,10 @@ class Ui_mainSkel(object):
         self.pushButton = QtGui.QPushButton(self.horizontalGroupBox1)
         self.pushButton.setObjectName(_fromUtf8("pushButton"))
         self.horizontalLayout_4.addWidget(self.pushButton)
-        self.pushButton_2 = QtGui.QPushButton(self.horizontalGroupBox1)
-        self.pushButton_2.setObjectName(_fromUtf8("pushButton_2"))
-        self.horizontalLayout_4.addWidget(self.pushButton_2)
-        
+        #self.pushButton_2 = QtGui.QPushButton(self.horizontalGroupBox1)
+        #self.pushButton_2.setObjectName(_fromUtf8("pushButton_2"))
+        #self.horizontalLayout_4.addWidget(self.pushButton_2)
+
         self.AutoChip = QtGui.QPushButton(self.horizontalGroupBox1)
         self.AutoChip.setObjectName(_fromUtf8("AutoChip"))
         self.horizontalLayout_4.addWidget(self.AutoChip)
@@ -173,16 +173,27 @@ class Ui_mainSkel(object):
         self.horizontalGroupBox2.setObjectName(_fromUtf8("horizontalGroupBox2"))
         self.horizontalLayout_5 = QtGui.QHBoxLayout(self.horizontalGroupBox2)
         self.horizontalLayout_5.setObjectName(_fromUtf8("horizontalLayout_5"))
-        self.pushButton_3 = QtGui.QPushButton(self.horizontalGroupBox2)
-        self.pushButton_3.setObjectName(_fromUtf8("pushButton_3"))
-        self.horizontalLayout_5.addWidget(self.pushButton_3)
-        
+        #self.pushButton_3 = QtGui.QPushButton(self.horizontalGroupBox2)
+        #self.pushButton_3.setObjectName(_fromUtf8("pushButton_3"))
+        #self.horizontalLayout_5.addWidget(self.pushButton_3)
+
         self.AutoQuery = QtGui.QPushButton(self.horizontalGroupBox2)
         self.AutoQuery.setObjectName(_fromUtf8("AutoQuery"))
         self.horizontalLayout_5.addWidget(self.AutoQuery)
         self.Cluster = QtGui.QPushButton(self.horizontalGroupBox2)
         self.Cluster.setObjectName(_fromUtf8("Cluster"))
         self.horizontalLayout_5.addWidget(self.Cluster)
+
+        ''' Added by Tim Nguyen 1/28/18 '''
+        self.ShowMatrices = QtGui.QPushButton(self.horizontalGroupBox2)
+        self.ShowMatrices.setObjectName(_fromUtf8("Show Matrices"))
+        self.horizontalLayout_5.addWidget(self.ShowMatrices)
+
+        ''' Added by Tim Nguyen 2/12/18 '''
+        self.SortToFolders = QtGui.QPushButton(self.horizontalGroupBox2)
+        self.SortToFolders.setObjectName(_fromUtf8("Sort to Folders"))
+        self.horizontalLayout_5.addWidget(self.SortToFolders)
+
         self.verticalLayout_7.addWidget(self.horizontalGroupBox2)
         self.tablesTabWidget.addTab(self.chipTab, _fromUtf8(""))
         self.nameTab = QtGui.QWidget()
@@ -197,7 +208,7 @@ class Ui_mainSkel(object):
         self.nxs_TBL.setRowCount(0)
         self.nxs_TBL.horizontalHeader().setStretchLastSection(True)
         self.nxs_TBL.horizontalHeader().setDefaultSectionSize(150)
-        
+
         self.nameView.addWidget(self.nxs_TBL)
         self.verticalLayout_8.addLayout(self.nameView)
         self.tablesTabWidget.addTab(self.nameTab, _fromUtf8(""))
@@ -409,12 +420,15 @@ class Ui_mainSkel(object):
     def retranslateUi(self, mainSkel):
         mainSkel.setWindowTitle(_translate("mainSkel", "mainSkel", None))
         self.pushButton.setText(_translate("mainSkel", "Import Image(s)", None))
-        self.pushButton_2.setText(_translate("mainSkel", "Save Database", None))
+        #self.pushButton_2.setText(_translate("mainSkel", "Save Database", None))
         self.AutoChip.setText(_translate("mainSkel", "AutoChip", None))
         self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.imageTab), _translate("mainSkel", "Image Table", None))
-        self.pushButton_3.setText(_translate("mainSkel", "Save Database", None))
+        #self.pushButton_3.setText(_translate("mainSkel", "Save Database", None))
         self.AutoQuery.setText(_translate("mainSkel", "AutoQuery", None))
         self.Cluster.setText(_translate("mainSkel", "Cluster", None))
+        self.ShowMatrices.setText(_translate("mainSkel", "Show Matrices", None)) # added by TN 1/28/18
+        self.SortToFolders.setText(_translate("mainSkel", "Sort to Folders", None)) # added by TN 2/12/18
+
         self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.chipTab), _translate("mainSkel", "Chip Table", None))
         self.tablesTabWidget.setTabText(self.tablesTabWidget.indexOf(self.nameTab), _translate("mainSkel", "Name View", None))
         # Deleted to hide Query Results Table (unused by 17.7)
@@ -435,7 +449,7 @@ class Ui_mainSkel(object):
         self.actionImport_Img_file.setText(_translate("mainSkel", "Import Images (Select file(s))", None))
         self.actionImport_Img_file.setShortcut(QtGui.QApplication.translate("mainSkel", "Ctrl+I", None, QtGui.QApplication.UnicodeUTF8))
         self.actionImport_Img_dir.setText(_translate("mainSkel", "Import Images (Select Directory)", None))
-        
+
         self.actionQuit.setText(_translate("mainSkel", "Quit", None))
         self.actionAdd_Chip.setText(_translate("mainSkel", "Add Chip", None))
         self.actionAdd_Chip.setShortcut(QtGui.QApplication.translate("mainSkel", "A", None, QtGui.QApplication.UnicodeUTF8))
@@ -452,7 +466,7 @@ class Ui_mainSkel(object):
         self.actionDelete_Chip.setText(_translate("mainSkel", "Delete Chip", None))
         self.actionDelete_Chip.setShortcut(QtGui.QApplication.translate("mainSkel", "Ctrl+Del", None, QtGui.QApplication.UnicodeUTF8))
         self.actionDelete_Image.setText(_translate("mainSkel", "Delete Image", None))
-        
+
         self.actionPrecompute_Chips_Features.setText(_translate("mainSkel", "Precompute Chips/Features", None))
         self.actionPrecomputeChipsFeatures.setShortcut(QtGui.QApplication.translate("mainSkel", "Ctrl+Return", None, QtGui.QApplication.UnicodeUTF8))
         self.actionPrecompute_Queries.setText(_translate("mainSkel", "Precompute Queries", None))
