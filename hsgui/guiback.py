@@ -824,12 +824,13 @@ class MainWindowBackend(QtCore.QObject):
         '''
 
     'Added by Matt Dioso 5/12/17'
+    'Modified by Ross Hartley 3/28/18'
     @slot_()
     @blocking
     @profile
     def cluster(back):
-        #back.hs.mcl_cluster()
-        back.hs.linkage_cluster()
+        back.hs.mcl_cluster()
+        #back.hs.linkage_cluster()
     '''Added by Tim Nguyen 1/28/18'''
     @slot_()
     @blocking
