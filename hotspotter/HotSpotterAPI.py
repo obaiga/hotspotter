@@ -42,6 +42,10 @@ MCL_MAX_LOOP        = 2000
 AC_EXCL_FAC         = .75   # Deprecated
 AC_STOP_CRIT        = .3    #
 
+AC_RUNTIME = 0
+AQ_RUNTIME = 0
+MCL_RUNTIME = 0
+
 '''
 TODO:
 Autoquery
@@ -265,11 +269,7 @@ class HotSpotter(DynStruct):
 
         hs.prev_ac_exclFac = hs.prefs.autochip_cfg.exclusion_factor
         hs.prev_ac_stopCrit = hs.prefs.autochip_cfg.stopping_criterion
-
-        hs.ac_runtime = 0
-        hs.aq_runtime = 0
-        hs.cl_runtime = 0
-
+        
         #printDBG(r'[/hs] Created HotSpotter API')
 
     def rrr(hs):
@@ -499,14 +499,14 @@ class HotSpotter(DynStruct):
     def autoquery(hs):
         if len(hs.get_valid_cxs()) > 1:
             print("********** AUTOQUERY HAS STARTED **********")
-            aqstart = time.time() # start time - logging feature
+            aqstart = time.time()
             scoreMat = aq.makeScoreMat(hs)         # Autoquery (make score matrix)
             ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
             print("[hs] autoquery done")
-            # Save database
-            hs.save_database()
-            hs.aq_runtime = (time.time() - aqstart)
-            print("********** AUTOQUERY TOOK " + str(hs.aq_runtime) + " SECONDS TO RUN **********")
+            aqend = time.time()
+            global AQ_RUNTIME
+            AQ_RUNTIME = (aqend-aqstart)
+            print("********** AUTOQUERY TOOK " + str(AQ_RUNTIME) + " SECONDS TO RUN **********")
             hs.aq_done = 1
         else:
             print('[hs] cannot autoquery until at least two chips have been found')
@@ -568,7 +568,8 @@ class HotSpotter(DynStruct):
         params = hs.prefs.cluster_cfg
         if os.path.isfile(os.path.join(hs.dirs.internal_dir,'scores.csv')):
             print("[hs] clustering...")
-            clstart = time.time() # start time - logging feature
+
+            tstart = time.time()
             M, G = mcl.get_graph(hs.dirs.internal_dir)
             M, clusters = mcl.networkx_mcl(
                 G,
@@ -580,11 +581,12 @@ class HotSpotter(DynStruct):
             clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
             ld2.write_clusters(hs, clusterTable, numClusters)
             ld2.write_score_matrix(hs, M, 'markov_scores.csv')
-            # Save database
-            hs.save_database()
-            hs.cl_runtime = (time.time() - clstart) # logging feature
-            lf.add_to_log(hs) # logging feature
-            print("Clustering took " + str(hs.cl_runtime) + " seconds to run")
+
+            sif.sort_into_folders()
+            global MCL_RUNTIME
+            MCL_RUNTIME = (time.time() - tstart)
+            lf.add_to_log()
+            print("Clustering took " + str(MCL_RUNTIME) + " seconds to run")
             print("[hs] done clustering")
 
         else:
@@ -725,6 +727,7 @@ class HotSpotter(DynStruct):
             hs.delete_queryresults_dir()  # Query results are now invalid
         return cx
 
+
     '''Edited 3/3/17 by Tim Nguyen'''
     '''Edited 3/7/17 by Matt Dioso'''
     ''' Added 3/5/17 by Joshua Beard
@@ -752,6 +755,7 @@ class HotSpotter(DynStruct):
             print('********** There are ' + str(len(hs.get_valid_cxs())) + ' chips exist **********')
 
             # If parameters have been changed
+
             if (hs.prev_ac_exclFac != params.exclusion_factor) or (hs.prev_ac_stopCrit != params.stopping_criterion):
                 # Update ac parameter history
                 print('[hs] [ac] parameter(s) changed')
@@ -1375,3 +1379,15 @@ class HotSpotter(DynStruct):
             passed = False
         if passed:
             print('[hs.dbg] cx2_kpts is OK')
+
+    def getACruntime(self):
+    #    print("AC_RUNTIME: " + str(AC_RUNTIME))
+        return AC_RUNTIME
+
+    def getAQruntime(self):
+    #    print("AQ_RUNTIME: " + str(AQ_RUNTIME))
+        return AQ_RUNTIME
+
+    def getMCLruntime(self):
+    #    print("MCL_RUNTIME: " + str(MCL_RUNTIME))
+        return MCL_RUNTIME
