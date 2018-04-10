@@ -689,6 +689,7 @@ class MainWindowBackend(QtCore.QObject):
         print('[*back] selected %r' % img_dpath)
         fpath_list = helpers.list_images(img_dpath, fullpath=True)
         back.hs.add_images(fpath_list)
+        back.hs.add_templates(img_dpath)
         back.populate_image_table()
         print('')
 
@@ -823,13 +824,14 @@ class MainWindowBackend(QtCore.QObject):
         '''
 
     'Added by Matt Dioso 5/12/17'
+    'Modified by Ross Hartley 3/28/18'
     @slot_()
     @blocking
     @profile
     def cluster(back):
-        back.hs.cluster()
+        back.hs.mcl_cluster()
         back.populate_tables(res=False)
-
+        #back.hs.linkage_cluster()
     '''Added by Tim Nguyen 1/28/18'''
     @slot_()
     @blocking

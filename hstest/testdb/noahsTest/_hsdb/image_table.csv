@@ -2,6 +2,7 @@
 # NumData 3
 #   gid,                                                gname,    aif
 <<<<<<< HEAD
+<<<<<<< HEAD
       1,   01__Station5__Camera1__2012-06-14__18-38-10(2).JPG,  False
       2,   01__Station5__Camera1__2012-06-14__18-38-12(6).JPG,  False
       3,  01__Station5__Camera1__2012-06-14__18-38-23(13).JPG,  False
@@ -10,3 +11,8 @@
       2,   01__Station5__Camera1__2012-06-14__18-38-12(6).JPG,  False
       3,   01__Station5__Camera1__2012-06-14__18-38-10(2).JPG,  False
 >>>>>>> tims_update
+=======
+      1,  01__Station5__Camera1__2012-06-14__18-38-23(13).JPG,  False
+      2,   01__Station5__Camera1__2012-06-14__18-38-12(6).JPG,  False
+      3,   01__Station5__Camera1__2012-06-14__18-38-10(2).JPG,  False
+>>>>>>> ross

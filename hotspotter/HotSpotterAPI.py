@@ -33,7 +33,7 @@ import time
 import sort_into_folders as sif
 import log_filing as lf
 import show_matrices as sm
-
+import linkage_clustering as lnk
 MCL_SELF_LOOP       = 0
 MCL_MULT_FACTOR     = 2
 MCL_EXPAND_FACTOR   = 3
@@ -568,7 +568,7 @@ class HotSpotter(DynStruct):
         return mc3.query_dcxs(hs, qcx, gt_cxs, qdat)
 
     #@profile
-    def cluster(hs):
+    def mcl_cluster(hs):
         import os.path
         params = hs.prefs.cluster_cfg
         if os.path.isfile(os.path.join(hs.dirs.internal_dir,'scores.csv')):
@@ -581,7 +581,7 @@ class HotSpotter(DynStruct):
                 params.inflation_factor,
                 params.maximum_iterations,
                 params.multiplication_factor)
-
+            mcl.draw(G, M, clusters)
             clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
             ld2.write_clusters(hs, clusterTable, numClusters)
             ld2.write_score_matrix(hs, M, 'markov_scores.csv')
@@ -611,6 +611,39 @@ class HotSpotter(DynStruct):
     def folders_srt(hs):
         sif.sort_into_folders(hs)
         hs.back.user_info('Images are sorted into folders')
+
+    # Ross Hartley 3/28/2018
+    # Integration of linkage clustering into HotSpotter
+    def linkage_cluster(hs):
+        print("[hs] clustering...")
+        clstart = time.time() # start time - logging feature
+        clusters = lnk.do_clustering(hs, 'single')
+        clusterTable, numClusters = lnk.clusters_to_output(hs, clusters)
+        ld2.write_clusters(hs, clusterTable, numClusters)
+        #ld2.write_score_matrix(hs, M, 'markov_scores.csv')
+        # Save database
+        hs.save_database()
+        hs.cl_runtime = (time.time() - clstart) # logging feature
+        lf.add_to_log(hs) # logging feature
+        print("Clustering took " + str(hs.cl_runtime) + " seconds to run")
+        print("[hs] done clustering")
+
+
+    # Tim Nguyen 1/28/18
+    # function to trigger show_matrices module
+    def show_matrices(hs):
+        import os.path
+        if os.path.isfile(os.path.join(hs.dirs.internal_dir,'scores.csv')) and \
+        os.path.isfile(os.path.join(hs.dirs.internal_dir,'markov_scores.csv')):
+            sm.draw_and_export(hs.dirs.internal_dir)
+            print('[hs] score visualization shown')
+        else:
+            print('[hs] will not draw visualization until clustering is done')
+
+    # Tim Nguyen 2/12/18
+    # function to trigger image sorting module
+    def folders_srt(hs):
+        sif.sort_into_folders(hs)
 
     # ---------------
     # Change functions
@@ -761,6 +794,8 @@ class HotSpotter(DynStruct):
                 # Do autochipping
                 print('[ac] is running again')
                 hs._doAutochipping(directoryToTemplates, params.exclusion_factor, params.stopping_criterion)
+                # Save database
+                hs.save_database()
 
             else:
                 print('\n[ac] is already ran. Change parameter(s) to re-run')
@@ -770,7 +805,7 @@ class HotSpotter(DynStruct):
         # If autochipping has not been done yet
         else:
             # Do autochipping
-            acstart = time.time()
+            acstart = time.time() # start time - logging feature
             hs._doAutochipping(directoryToTemplates, params.exclusion_factor, params.stopping_criterion)
 
 
@@ -870,6 +905,17 @@ class HotSpotter(DynStruct):
         # Write computed data to csv files
         ld2.write_csv_tables(hs)
         return nNewImages
+
+    def add_templates(hs, fpath):
+        dest_path = os.path.join(hs.dirs.img_dir, 'templates')
+        src_path = os.path.join(fpath, 'templates')
+        print('Source: %(src)r\nDestination: %(dest)r' % {'src':src_path, 'dest': dest_path})
+        if(not(exists(src_path))):
+            print('[hs] templates not found in given directory, please add them manually.')
+        else:
+            print('[hs] copying templates...')
+            shutil.copytree(src_path, dest_path)
+            print('[hs] done copying templates.')
 
     # ---------------
     # Deleting functions
