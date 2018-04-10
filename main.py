@@ -125,7 +125,8 @@ def main(defaultdb='NAUTS', usedbcache=False, default_load_all=True):
         hs.prefs.query_cfg.update_cfg(**cfg_dict)
         hs.prefs.save()
         #hs.prefs.printme()
-        #hs.default_preferences()
+        # load default preferences
+        hs.default_preferences()
 
     # Load all data if needed now, otherwise be lazy
     try:

@@ -28,10 +28,28 @@ def add_to_log(hs):
         if(os.stat(log_path).st_size == 0):
             writer.writerow(column_labels)
         # Once columns have labels, append a row of parameters
+<<<<<<< HEAD
         column_list = [[chip_params.exclusion_factor], [chip_params.stopping_criterion],
             [autoquery_params.self_loop_weight], [autoquery_params.same_image_score], [autoquery_params.same_set_boost], [autoquery_params.maximum_time_delta], [autoquery_params.minimum_same_set_weight],
             [cluster_params.inflation_factor], [cluster_params.maximum_iterations], [cluster_params.expansion_factor], [cluster_params.multiplication_factor],
             [hs.getACruntime()], [hs.getAQruntime()], [hs.getMCLruntime()], [str(datetime.now())]]
+=======
+        column_list = [[chip_params.exclusion_factor],
+                        [chip_params.stopping_criterion],
+                        [autoquery_params.self_loop_weight],
+                        [autoquery_params.same_image_score],
+                        [autoquery_params.same_set_boost],
+                        [autoquery_params.maximum_time_delta],
+                        [autoquery_params.minimum_same_set_weight],
+                        [cluster_params.inflation_factor],
+                        [cluster_params.maximum_iterations],
+                        [cluster_params.expansion_factor],
+                        [cluster_params.multiplication_factor],
+                        [hs.ac_runtime],
+                        [hs.aq_runtime],
+                        [hs.cl_runtime],
+                        [str(datetime.now())]]
+>>>>>>> tims_update
         writer.writerow(column_list)
 '''
 def load_from_log(hs):

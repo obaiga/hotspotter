@@ -150,13 +150,14 @@ def connect_file_signals(front):
 #function for new functionalities -MD
 def connect_button_signals(front):
     ui = front.ui
-    back= front.back
+    back = front.back
     ui.pushButton.clicked.connect(back.import_images_from_dir)
-    ui.pushButton_2.clicked.connect(back.save_database)
     ui.AutoChip.clicked.connect(back.autochip)
-    ui.pushButton_3.clicked.connect(back.save_database)
     ui.AutoQuery.clicked.connect(back.autoquery) # uncommented 4/23/17 jb
     ui.Cluster.clicked.connect(back.cluster) #added MD 5/12/17
+    ui.ShowMatrices.clicked.connect(back.show_matrices) # added TN 1/28/18
+    ui.SortToFolders.clicked.connect(back.folders_srt) # added TM 2/12/18
+
 
 def connect_action_signals(front):
     ui = front.ui
@@ -309,7 +310,7 @@ class MainWindowFrontend(QtGui.QMainWindow):
         ui.cxs_TBL.sortByColumn(0, Qt.AscendingOrder)
         #ui.res_TBL.sortByColumn(0, Qt.AscendingOrder) # Query Results Table
         ui.gxs_TBL.sortByColumn(0, Qt.AscendingOrder)
-	
+
 
     def print(front, msg):
         print('[*front*] ' + msg)
