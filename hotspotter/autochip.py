@@ -31,7 +31,7 @@ def doAutochipping(hs, directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8
     else:
         fileNames = os.listdir(directoryToTemplates)
         multi = partial(multithreaded, directoryToTemplates, exclFac, stopCrit, skip, crit, minSize)
-        pool = mp.Pool()
+        pool = mp.Pool(max(1, mp.cpu_count() - 2))  # cores - 2 (leave two cores free)
         chippedImages = pool.map(multi, fileNames)
         pool.close() 
         pool.join()
