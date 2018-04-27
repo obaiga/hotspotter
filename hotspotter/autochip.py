@@ -29,6 +29,10 @@ def doAutochipping(hs, directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8
     if os.listdir(directoryToTemplates) == []:
         return 0
     else:
+        try:
+            os.remove(directoryToTemplates + '\\Thumbs.db')  #added to delete windows auto created Thumbs.db file whick will break AutoChipping
+        except OSError:
+            pass        
         fileNames = os.listdir(directoryToTemplates)
         multi = partial(multithreaded, directoryToTemplates, exclFac, stopCrit, skip, crit, minSize)
         pool = mp.Pool(max(1, mp.cpu_count() - 2))  # cores - 2 (leave two cores free)
