@@ -1,0 +1,4 @@
+exclusion_factor,stopping_criterion,self_loop_weight,same_image_score,same_set_boost,maximum_time_delta,minimum_same_set_weight,inflation_factor,maximum_iterations,expansion_factor,multiplication_factor,autochip_runtime,autoquery_runtime,clustering_runtime,AutoChip done,AutoQuery done,Clustering done,Date/Time
+2.0,0.6000000238418579,0,0.9,0.8,90,0.25,1.23,2000,3,2,88.34460401535034,0,0,1,0,0,2018-04-24 17:12:22.709502
+2.0,0.6000000238418579,0,0.9,0.8,90,0.25,1.23,2000,3,2,0,4.868572950363159,0,['1'],1,['0'],2018-04-24 22:07:15.631785
+2.0,0.6000000238418579,0,0.9,0.8,90,0.25,1.23,2000,3,2,0,0.022763967514038086,0,0,1,0,2018-04-24 22:07:50.671697

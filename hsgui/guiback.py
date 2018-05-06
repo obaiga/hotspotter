@@ -744,7 +744,6 @@ class MainWindowBackend(QtCore.QObject):
         #fpath = back.get_work_directory() + '/Demo_Data/templates'
         #fpath = os.getcwd() + '/matFiles'
         back.hs.autochip(fpath)
-        back.populate_tables(res=False)
         print('')
 
     @slot_()
@@ -828,7 +827,6 @@ class MainWindowBackend(QtCore.QObject):
     @profile
     def cluster(back):
         back.hs.cluster()
-        back.populate_tables(res=False)
 
     '''Added by Tim Nguyen 1/28/18'''
     @slot_()

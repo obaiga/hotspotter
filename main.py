@@ -126,7 +126,6 @@ def main(defaultdb='NAUTS', usedbcache=False, default_load_all=True):
         hs.prefs.save()
         #hs.prefs.printme()
         # load default preferences
-        hs.default_preferences()
 
     # Load all data if needed now, otherwise be lazy
     try:
