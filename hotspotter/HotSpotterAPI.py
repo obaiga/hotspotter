@@ -33,6 +33,7 @@ import time
 import sort_into_folders as sif
 import log_filing as lf
 import show_matrices as sm
+import linkage_clustering as lnk
 import get_params as prevprefs
 
 MCL_SELF_LOOP       = 0
@@ -42,6 +43,10 @@ MCL_INFLATE_FACTOR  = 1.245	# Influences granularity of clusters
 MCL_MAX_LOOP        = 2000
 AC_EXCL_FAC         = .75   # Deprecated
 AC_STOP_CRIT        = .3    #
+
+AC_RUNTIME = 0
+AQ_RUNTIME = 0
+MCL_RUNTIME = 0
 
 '''
 TODO:
@@ -709,6 +714,39 @@ class HotSpotter(DynStruct):
         sif.sort_into_folders(hs)
         hs.back.user_info('Images are sorted into folders')
 
+    # Ross Hartley 3/28/2018
+    # Integration of linkage clustering into HotSpotter
+    def linkage_cluster(hs):
+        print("[hs] clustering...")
+        clstart = time.time() # start time - logging feature
+        clusters = lnk.do_clustering(hs, 'single')
+        clusterTable, numClusters = lnk.clusters_to_output(hs, clusters)
+        ld2.write_clusters(hs, clusterTable, numClusters)
+        #ld2.write_score_matrix(hs, M, 'markov_scores.csv')
+        # Save database
+        hs.save_database()
+        hs.cl_runtime = (time.time() - clstart) # logging feature
+        lf.add_to_log(hs) # logging feature
+        print("Clustering took " + str(hs.cl_runtime) + " seconds to run")
+        print("[hs] done clustering")
+
+
+    # Tim Nguyen 1/28/18
+    # function to trigger show_matrices module
+    def show_matrices(hs):
+        import os.path
+        if os.path.isfile(os.path.join(hs.dirs.internal_dir,'scores.csv')) and \
+        os.path.isfile(os.path.join(hs.dirs.internal_dir,'markov_scores.csv')):
+            sm.draw_and_export(hs.dirs.internal_dir)
+            print('[hs] score visualization shown')
+        else:
+            print('[hs] will not draw visualization until clustering is done')
+
+    # Tim Nguyen 2/12/18
+    # function to trigger image sorting module
+    def folders_srt(hs):
+        sif.sort_into_folders(hs)
+
     # ---------------
     # Change functions
     # ---------------
@@ -989,6 +1027,17 @@ class HotSpotter(DynStruct):
         # Write computed data to csv files
         ld2.write_csv_tables(hs)
         return nNewImages
+
+    def add_templates(hs, fpath):
+        dest_path = os.path.join(hs.dirs.img_dir, 'templates')
+        src_path = os.path.join(fpath, 'templates')
+        print('Source: %(src)r\nDestination: %(dest)r' % {'src':src_path, 'dest': dest_path})
+        if(not(exists(src_path))):
+            print('[hs] templates not found in given directory, please add them manually.')
+        else:
+            print('[hs] copying templates...')
+            shutil.copytree(src_path, dest_path)
+            print('[hs] done copying templates.')
 
     # ---------------
     # Deleting functions
@@ -1498,3 +1547,15 @@ class HotSpotter(DynStruct):
             passed = False
         if passed:
             print('[hs.dbg] cx2_kpts is OK')
+
+    def getACruntime(self):
+    #    print("AC_RUNTIME: " + str(AC_RUNTIME))
+        return AC_RUNTIME
+
+    def getAQruntime(self):
+    #    print("AQ_RUNTIME: " + str(AQ_RUNTIME))
+        return AQ_RUNTIME
+
+    def getMCLruntime(self):
+    #    print("MCL_RUNTIME: " + str(MCL_RUNTIME))
+        return MCL_RUNTIME

@@ -5,6 +5,9 @@ Contributor: Taz Bales-Heisterkamp
 Last Edited: 3/29/17
 '''
 
+import multiprocessing as mp
+from functools import partial
+
 EXTENSION ='.bmp'
 TEMPLATE_MAX_VAL = 255
 MIN_SIZE = 32   # Minimum sided length of extracted chips
@@ -17,32 +20,48 @@ def doAutochipping(hs, directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8
     C: 2/27/17
     '''
     ''' Initialization '''
-    print('[ac] doing autochipping')
+        
+    print('[ac-mt] doing autochipping')
     import os
     chippedImages = {};
 
     # If templates directory is empty, bounce out
     if os.listdir(directoryToTemplates) == []:
         return 0
-
     else:
-        for fileName in os.listdir(directoryToTemplates):   # For each template
-            if fileName.endswith(EXTENSION):                # If it ends with extension name
-                # get template and autochip
-                print('[ac] getting template: %s' % fileName)
-                try:
-                    template = getTemplate(directoryToTemplates, fileName, EXTENSION)
-                    print('[ac] getting chips...')
-                    #import pdb; pdb.set_trace()
-                    chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
-                    print('[ac] got %i chips:' % len(chips))
-                    print('[ac]'),
-                    print(chips)
-                    chippedImages[fileName[0:len(fileName)-len(EXTENSION)]] = chips
-                except:
-                    print("[ac] Unable to get template. Maybe wrong name or corrupt file? Maybe something wrong with autochipping?")
+        try:
+            os.remove(directoryToTemplates + '\\Thumbs.db')  #added to delete windows auto created Thumbs.db file whick will break AutoChipping
+        except OSError:
+            pass        
+        fileNames = os.listdir(directoryToTemplates)
+        multi = partial(multithreaded, directoryToTemplates, exclFac, stopCrit, skip, crit, minSize)
+        pool = mp.Pool(max(1, mp.cpu_count() - 2))  # cores - 2 (leave two cores free)
+        chippedImages = pool.map(multi, fileNames)
+        pool.close() 
+        pool.join()
+    chippedImages = dict(chippedImages)
+    #print(chippedImages)    
     return chippedImages
 #/doAutochipping
+
+
+''' wrapper for multi-threading '''
+def multithreaded(directoryToTemplates, exclFac, stopCrit, skip, crit, minSize, fileName):
+    if fileName.endswith(EXTENSION):                # If it ends with extension name
+        # get template and autochip
+        print('[ac-mt] getting template: %s' % fileName)
+        try:
+            template = getTemplate(directoryToTemplates, fileName, EXTENSION)
+            print('[ac-mt] getting chips...')
+            #import pdb; pdb.set_trace()
+            chips = autochip(template, exclFac, skip, stopCrit, crit, minSize)
+            print('[ac-mt] got %i chips:' % len(chips))
+            print('[ac-mt]'),
+            return fileName[0:len(fileName)-len(EXTENSION)], chips
+        except:
+            print("[ac-mt] Unable to get template. Maybe wrong name or corrupt file? Maybe something wrong with autochipping?")
+#/multithreaded
+                
 
 ''' autochip '''
 def autochip(template, exclFac = 1, skip = 8, stopCrit = 1, crit = [0,0,1], minSize = [1,1]):

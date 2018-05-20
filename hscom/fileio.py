@@ -386,7 +386,7 @@ def read_exif_list(fpath_list, **kwargs):
 @profile
 def imread(img_fpath):
     try:
-        imgBGR = cv2.imread(img_fpath, cv2.IMREAD_COLOR)  
+        imgBGR = cv2.imread(img_fpath, cv2.IMREAD_COLOR)
         return imgBGR
     except Exception as ex:
         print('[io] Caught Exception: %r' % ex)

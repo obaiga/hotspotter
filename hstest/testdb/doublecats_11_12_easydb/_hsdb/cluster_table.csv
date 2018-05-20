@@ -1,4 +1,5 @@
 Cat ID,Image Name,Study ID, Station, Camera, Date, Time
+<<<<<<< HEAD
 Cat_1,02__Station13__Camera1__2012-07-18__19-47-04(7).JPG,02,Station13,Camera1,2012-07-18,19-47-04
 Cat_1,02__Station13__Camera1__2012-07-18__19-47-08(13).JPG,02,Station13,Camera1,2012-07-18,19-47-08
 Cat_1,02__Station13__Camera1__2012-07-18__19-46-58(3).JPG,02,Station13,Camera1,2012-07-18,19-46-58
@@ -127,3 +128,19 @@ Cat_8,01__Station14__Camera1__2012-08-31__05-08-13(8).JPG,01,Station14,Camera1,2
 Cat_8,01__Station14__Camera1__2012-08-31__05-08-13(7).JPG,01,Station14,Camera1,2012-08-31,05-08-13
 Cat_8,01__Station14__Camera1__2012-08-31__05-08-17(12).JPG,01,Station14,Camera1,2012-08-31,05-08-17
 Cat_8,01__Station14__Camera1__2012-08-31__05-08-20(18).JPG,01,Station14,Camera1,2012-08-31,05-08-20
+=======
+Cat_1,02__Station12__Camera2__2012-5-4__22-22-36(6).JPG,02,Station12,Camera2,2012-5-4,22-22-36
+Cat_1,02__Station12__Camera2__2012-5-4__22-22-36(7).JPG,02,Station12,Camera2,2012-5-4,22-22-36
+Cat_1,02__Station12__Camera2__2012-5-4__22-22-36(8).JPG,02,Station12,Camera2,2012-5-4,22-22-36
+Cat_1,02__Station12__Camera2__2012-5-4__22-22-38(9).JPG,02,Station12,Camera2,2012-5-4,22-22-38
+Cat_1,02__Station12__Camera2__2012-5-4__22-22-40(0).JPG,02,Station12,Camera2,2012-5-4,22-22-40
+Cat_1,02__Station12__Camera2__2012-5-4__22-22-50(0).JPG,02,Station12,Camera2,2012-5-4,22-22-50
+Cat_1,02__Station12__Camera2__2012-5-4__22-22-50(1).JPG,02,Station12,Camera2,2012-5-4,22-22-50
+Cat_1,02__Station12__Camera2__2012-5-4__22-22-52(2).JPG,02,Station12,Camera2,2012-5-4,22-22-52
+Cat_1,02__Station12__Camera2__2012-5-4__22-23-2(3).JPG,02,Station12,Camera2,2012-5-4,22-23-2
+Cat_1,02__Station12__Camera2__2012-5-4__22-23-2(4).JPG,02,Station12,Camera2,2012-5-4,22-23-2
+Cat_1,02__Station12__Camera2__2012-5-4__22-23-4(5).JPG,02,Station12,Camera2,2012-5-4,22-23-4
+Cat_1,02__Station12__Camera2__2012-5-4__22-23-6(6).JPG,02,Station12,Camera2,2012-5-4,22-23-6
+Cat_1,02__Station12__Camera2__2012-5-4__22-23-6(7).JPG,02,Station12,Camera2,2012-5-4,22-23-6
+Cat_1,02__Station22__Camera1__2012-5-4__2-4-48(9).JPG,02,Station22,Camera1,2012-5-4,2-4-48
+>>>>>>> ross
