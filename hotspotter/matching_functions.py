@@ -177,15 +177,15 @@ def filter_neighbors(hs, qcx2_nns, filt2_weights, qdat):
         # Get a numeric score score and valid flag for each feature match
         qfx2_score, qfx2_valid = _apply_filter_scores(qcx, qfx2_nn, filt2_weights, filt2_tw)
         qfx2_cx = dx2_cx[qfx2_nn]
-        print('[mf] * %d assignments are invalid by thresh' % ((True - qfx2_valid).sum()))
+        print('[mf] * %d assignments are invalid by thresh' % ((True ^ qfx2_valid).sum()))
         # Remove Impossible Votes:
         # dont vote for yourself or another chip in the same image
         qfx2_notsamechip = qfx2_cx != qcx
         cant_match_self = True
         if cant_match_self:
             ####DBG
-            nChip_all_invalid = ((True - qfx2_notsamechip)).sum()
-            nChip_new_invalid = (qfx2_valid * (True - qfx2_notsamechip)).sum()
+            nChip_all_invalid = ((True ^ qfx2_notsamechip)).sum()
+            nChip_new_invalid = (qfx2_valid * (True ^ qfx2_notsamechip)).sum()
             print('[mf] * %d assignments are invalid by self' % nChip_all_invalid)
             print('[mf] * %d are newly invalided by self' % nChip_new_invalid)
             ####
@@ -193,8 +193,8 @@ def filter_neighbors(hs, qcx2_nns, filt2_weights, qdat):
         if cant_match_sameimg:
             qfx2_notsameimg  = hs.tables.cx2_gx[qfx2_cx] != hs.tables.cx2_gx[qcx]
             ####DBG
-            nImg_all_invalid = ((True - qfx2_notsameimg)).sum()
-            nImg_new_invalid = (qfx2_valid * (True - qfx2_notsameimg)).sum()
+            nImg_all_invalid = ((True ^ qfx2_notsameimg)).sum()
+            nImg_new_invalid = (qfx2_valid * (True ^ qfx2_notsameimg)).sum()
             print('[mf] * %d assignments are invalid by gx' % nImg_all_invalid)
             print('[mf] * %d are newly invalided by gx' % nImg_new_invalid)
             ####
@@ -202,13 +202,13 @@ def filter_neighbors(hs, qcx2_nns, filt2_weights, qdat):
         if cant_match_samename:
             qfx2_notsamename = hs.tables.cx2_nx[qfx2_cx] != hs.tables.cx2_nx[qcx]
             ####DBG
-            nName_all_invalid = ((True - qfx2_notsamename)).sum()
-            nName_new_invalid = (qfx2_valid * (True - qfx2_notsamename)).sum()
+            nName_all_invalid = ((True ^ qfx2_notsamename)).sum()
+            nName_new_invalid = (qfx2_valid * (True ^ qfx2_notsamename)).sum()
             print('[mf] * %d assignments are invalid by nx' % nName_all_invalid)
             print('[mf] * %d are newly invalided by nx' % nName_new_invalid)
             ####
             qfx2_valid = np.logical_and(qfx2_valid, qfx2_notsamename)
-        print('[mf] * Marking %d assignments as invalid' % ((True - qfx2_valid).sum()))
+        print('[mf] * Marking %d assignments as invalid' % ((True ^ qfx2_valid).sum()))
         qcx2_nnfilter[qcx] = (qfx2_score, qfx2_valid)
     end_progress()
     return qcx2_nnfilter

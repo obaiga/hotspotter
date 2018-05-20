@@ -876,7 +876,7 @@ class HotSpotter(DynStruct):
         print("[hs] ********** AUTOCHIPPING **********")
 
         # Update ac previous parameters to current
-        hs.prev_ac_params[0] = appendparams.exclusion_factor
+        hs.prev_ac_params[0] = params.exclusion_factor
         hs.prev_ac_params[1] = params.stopping_criterion
 
         acstart = time.time() # start time - logging feature
