@@ -376,7 +376,7 @@ class ClusterConfig(ConfigBase):
         super(ClusterConfig, cluster_cfg).__init__(name='cluster_cfg')
         cluster_cfg.inflation_factor            = float(2)
         cluster_cfg.maximum_iterations          = 2000
-        cluster_cfg.expansion_factor            = int32(3)
+        cluster_cfg.expansion_factor            = int(3)
         cluster_cfg.multiplication_factor       = 2
 
 class ChipConfig(ConfigBase):
