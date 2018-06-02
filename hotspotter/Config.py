@@ -359,24 +359,24 @@ class FeatureConfig(ConfigBase):
 class AutochipConfig(ConfigBase):
     def __init__(autochip_cfg,hs=None, **kwargs):
         super(AutochipConfig, autochip_cfg).__init__(name='autochip_cfg')
-        autochip_cfg.exclusion_factor   = 0.75
-        autochip_cfg.stopping_criterion = 0.6
+        autochip_cfg.exclusion_factor   = float(0.75)
+        autochip_cfg.stopping_criterion = float(0.6)
 
 class AutoqueryConfig(ConfigBase):
     def __init__(autoquery_cfg, hs=None, **kwargs):
         super(AutoqueryConfig, autoquery_cfg).__init__(name='autoquery_cfg')
-        autoquery_cfg.self_loop_weight          = 0
-        autoquery_cfg.same_image_score          = 0.9
-        autoquery_cfg.same_set_boost            = 0.8
-        autoquery_cfg.maximum_time_delta        = 90
-        autoquery_cfg.minimum_same_set_weight   = 0.25
+        autoquery_cfg.self_loop_weight          = float(1)
+        autoquery_cfg.same_image_score          = float(0.9)
+        autoquery_cfg.same_set_boost            = float(0.8)
+        autoquery_cfg.maximum_time_delta        = 900
+        autoquery_cfg.minimum_same_set_weight   = float(0.25)
 
 class ClusterConfig(ConfigBase):
     def __init__(cluster_cfg, hs=None, **kwargs):
         super(ClusterConfig, cluster_cfg).__init__(name='cluster_cfg')
-        cluster_cfg.inflation_factor            = 1.23
+        cluster_cfg.inflation_factor            = float(2)
         cluster_cfg.maximum_iterations          = 2000
-        cluster_cfg.expansion_factor            = 3
+        cluster_cfg.expansion_factor            = float(3)
         cluster_cfg.multiplication_factor       = 2
 
 class ChipConfig(ConfigBase):

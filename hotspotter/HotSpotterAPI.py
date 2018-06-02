@@ -290,14 +290,14 @@ class HotSpotter(DynStruct):
     def load_preferences(hs):
         print('[hs] load preferences')
         hs.default_preferences()
-        prefmsg = hs.prefs.load()
-        was_loaded = prefmsg is True
-        print('[hs] Able to load prefs? ...%r' % was_loaded)
-        if was_loaded:
-            hs.fix_prefs()
-        else:
-            print('[hs]' + prefmsg)
-            hs.default_preferences()
+        #prefmsg = hs.prefs.load()
+        #was_loaded = prefmsg is True
+        #print('[hs] Able to load prefs? ...%r' % was_loaded)
+        #if was_loaded:
+        #    hs.fix_prefs()
+        #else:
+        #    print('[hs]' + prefmsg)
+        #    hs.default_preferences()
         hs.assert_prefs()
 
     @profile
@@ -747,7 +747,7 @@ class HotSpotter(DynStruct):
             hs.delete_queryresults_dir()  # Query results are now invalid
         return cx
 
-    '''Edited 3/3/17 by Tim Nguyen'''
+    '''Edited 3/3/18 by Tim Nguyen'''
     '''Edited 3/7/17 by Matt Dioso'''
     ''' Added 3/5/17 by Joshua Beard
     I'm sure it needs more work
@@ -835,6 +835,8 @@ class HotSpotter(DynStruct):
         nImages = len(hs.get_valid_gxs())
         nTemplates = ac.getNumTemplates(directoryToTemplates)
         if nImages != nTemplates:
+            print(nImages)
+            print(nTemplates)
             print('ERROR: number of images is unequal to number of templates')
             return 0
         # use autochip module to do autochipping
