@@ -1,1 +1,8 @@
 # name table
+# NumData 5
+#   nid,   name
+      2,  cat_5
+      3,  cat_1
+      4,  cat_2
+      5,  cat_3
+      6,  cat_4
