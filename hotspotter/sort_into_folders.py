@@ -16,11 +16,6 @@ def sort_into_folders(hs):
     dest_path = join(hs.dirs.db_dir, "Sorted_Images")
     img_path = hs.dirs.img_dir
 
-
-    # TODO:
-    #   Put some images into the "Unkown" folder
-    #   TL;DR- This code needs to be integrated with HotSpotter, have the API call it and whatnot.
-
     if(not exists(name_path)):
         print('[hs.sort_images] Clustering has not been completed, cannot sort images.')
     else:

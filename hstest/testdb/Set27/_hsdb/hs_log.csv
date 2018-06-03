@@ -1,0 +1,2 @@
+exclusion_factor,stopping_criterion,self_loop_weight,same_image_score,same_set_boost,maximum_time_delta,minimum_same_set_weight,inflation_factor,maximum_iterations,expansion_factor,multiplication_factor,autochip_runtime,autoquery_runtime,clustering_runtime,Date/Time
+[0.75],[0.6],[1.0],[0.9],[0.8],[900],[0.25],[2.0],[2000],[3],[2],[1076.646999835968],[87.43600010871887],[0.3399999141693115],['2018-06-02 16:24:11.832000']

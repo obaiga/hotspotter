@@ -563,8 +563,6 @@ def getTemplate(pathTo, templateFileName, ext = EXTENSION):
 def getNumTemplates(directoryToTemplates, ext = EXTENSION):
     import os
     dirlist = os.listdir(directoryToTemplates)
-    print(directoryToTemplates)
-    print(dirlist)
     numTemplates = 0
     for item in dirlist:
         if item.endswith(ext):

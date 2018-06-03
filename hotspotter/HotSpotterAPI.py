@@ -581,7 +581,7 @@ class HotSpotter(DynStruct):
                 params.inflation_factor,
                 params.maximum_iterations,
                 params.multiplication_factor)
-            mcl.draw(G, M, clusters)
+            #mcl.draw(G, M, clusters)
             clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
             ld2.write_clusters(hs, clusterTable, numClusters)
             ld2.write_score_matrix(hs, M, 'markov_scores.csv')
