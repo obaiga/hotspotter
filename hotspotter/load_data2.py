@@ -676,7 +676,7 @@ def write_clusters(hs, clusterTable, numClusters):
 
     written = defaultdict(list)
     fid = open(fpath, "w")  # Open file for writing
-    
+
     # Write headers at top
     if clusterTable[0][3].startswith('Station'):    # If using study IDs
         fid.write("Cat ID,Image Name,Study ID, Station, Camera, Date, Time\n")
@@ -688,7 +688,7 @@ def write_clusters(hs, clusterTable, numClusters):
     for thisChip in clusterTable:                 # Go through each chip's info
         cat = thisChip[0]                          # Get cat and image names
         image = thisChip[1]                        #
-        if image not in written.keys():            # If image hasn't been seen yet    
+        if image not in written.keys():            # If image hasn't been seen yet
             written[image] = [0]*numClusters        # Initialize
             fid.write("Cat_"+cat+","+image+",")     # Write cat ID and image
             for i in range (2, len(thisChip)-1):    # For all other fields to write
@@ -702,12 +702,12 @@ def write_clusters(hs, clusterTable, numClusters):
                     fid.write(thisChip[i]+",")           # Separate fields with commas...
                 fid.write(thisChip[i+1]+"\n")           # ...except last one
                 written[image][int(cat)-1] = 1          # Record image-cat pair as seen
-       
+
     fid.close()
     print('[ld2] successfully closed cluster table file')
 
 def write_score_matrix(hs, scoreMat, fileName=SCORE_MATRIX_FNAME): # TODO: don't pass the matrix, offload string conversion
-    
+
     print('[ld2] Writing score matrix')
     internal_dir = hs.dirs.internal_dir
     #CREATE_BACKUP = True  # TODO: Should be a preference
