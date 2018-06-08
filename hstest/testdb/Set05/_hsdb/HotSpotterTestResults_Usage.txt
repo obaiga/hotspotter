@@ -1,0 +1,26 @@
+HotSpotterTestResults.ps1 is a script to take the hotspotter result .csv files and extract the results then match them up with the xlsx provided by Rana so accuracy can be measured.
+
+Usage requirements:
+
+30_Sets_Truth_Table.xlsx "Info sheet" exported to 30_Sets_Truth_Table.csv using the save as feature in excel
+make sure to select CSV (Comma delimited) not CSV UTF-8 (Comma delimited)
+
+Three hotspotter csv files:
+chip_table.csv
+image_table.csv
+name_table.csv
+
+
+The script will expect all four files in the current directory it is run from
+
+It will output: DB_Large_Labels_And_Hotspotter.csv with the combined test data
+
+to enable the running of scripts in powershell run powershell as administrator then enter:
+set-executionpolicy unrestricted
+
+select A
+
+after that is complete you can run ./HotSpotterTestResults.ps1
+
+
+Alternativly you can just copy the contents out of the script file and paste it directly into powershell if don't want to enable scripts.
