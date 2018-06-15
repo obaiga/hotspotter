@@ -8,7 +8,9 @@ Last Edited: 3/29/17
 import multiprocessing as mp
 from functools import partial
 
+
 EXTENSION ='.BMP'
+
 TEMPLATE_MAX_VAL = 255
 MIN_SIZE = 32   # Minimum sided length of extracted chips
 ''' Do autochipping '''
@@ -32,15 +34,19 @@ def doAutochipping(hs, directoryToTemplates, exclFac = 1, stopCrit = 3, skip = 8
         try:
             os.remove(directoryToTemplates + '\\Thumbs.db')  #added to delete windows auto created Thumbs.db file whick will break AutoChipping
         except OSError:
+
             pass
+
         fileNames = os.listdir(directoryToTemplates)
         multi = partial(multithreaded, directoryToTemplates, exclFac, stopCrit, skip, crit, minSize)
         pool = mp.Pool(max(1, mp.cpu_count() - 2))  # cores - 2 (leave two cores free)
         chippedImages = pool.map(multi, fileNames)
+
         pool.close()
         pool.join()
     chippedImages = dict(chippedImages)
     #print(chippedImages)
+
     return chippedImages
 #/doAutochipping
 
