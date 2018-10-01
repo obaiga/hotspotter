@@ -34,6 +34,7 @@ import sort_into_folders as sif
 import log_filing as lf
 import show_matrices as sm
 import linkage_clustering as lnk
+import get_params as prevprefs
 
 MCL_SELF_LOOP       = 0
 MCL_MULT_FACTOR     = 2
@@ -268,10 +269,23 @@ class HotSpotter(DynStruct):
         if db_dir is not None:
             hs.load_tables(db_dir=db_dir)
 
-        hs.prev_ac_exclFac = hs.prefs.autochip_cfg.exclusion_factor
-        hs.prev_ac_stopCrit = hs.prefs.autochip_cfg.stopping_criterion
+        # Indentifiers to keep track of last ran parameters
+        # AutoChip
+        hs.prev_ac_params = [None, None]
+        # AutoQuery
+        hs.prev_aq_params = [None, None, None, None, None]
+        # Clustering
+        hs.prev_cl_params = [None, None, None, None]
 
+        # Identifiers to keep track of last ran status (1 for ran, 0 for not yet)
+        hs.ac_stat = 0
+        hs.aq_stat = 0
+        hs.cl_stat = 0
 
+        # Identifier to indicate if hs_log.csv is loaded in or not (1 for loaded, 0 for not yet)
+        hs.loaded_from_disk = 0
+
+        # Identifiers to keep track of runtime
         hs.ac_runtime = 0
         hs.aq_runtime = 0
         hs.cl_runtime = 0
@@ -292,14 +306,14 @@ class HotSpotter(DynStruct):
     def load_preferences(hs):
         print('[hs] load preferences')
         hs.default_preferences()
-        #prefmsg = hs.prefs.load()
-        #was_loaded = prefmsg is True
-        #print('[hs] Able to load prefs? ...%r' % was_loaded)
-        #if was_loaded:
-        #    hs.fix_prefs()
-        #else:
-        #    print('[hs]' + prefmsg)
-        #    hs.default_preferences()
+        prefmsg = hs.prefs.load()
+        was_loaded = prefmsg is True
+        print('[hs] Able to load prefs? ...%r' % was_loaded)
+        if was_loaded:
+            hs.fix_prefs()
+        else:
+            print('[hs]' + prefmsg)
+            hs.default_preferences()
         hs.assert_prefs()
 
     @profile
@@ -501,23 +515,66 @@ class HotSpotter(DynStruct):
     '''
 
     @profile
-
-    # TODO: Do not allow autoquery unless chips exist.
+    # TODO: don't run [aq] if
+    # 1) there is less than 2 chips existed
+    # 2) if aq is done and all parameters still the same
     def autoquery(hs):
-        if len(hs.get_valid_cxs()) > 1:
-            print("[hs] ********** AUTOQUERYING **********")
-            aqstart = time.time() # start time - logging feature
-            scoreMat = aq.makeScoreMat(hs)         # Autoquery (make score matrix)
-            ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
-            # Save database
-            hs.save_database()
-            hs.aq_runtime = (time.time() - aqstart)
-            print("********** AUTOQUERY TOOK " + str(hs.aq_runtime) + " SECONDS TO RUN **********")
-            hs.aq_done = 1
-            hs.back.user_info('AutoQuerying is done')
-        else:
+
+        params = hs.prefs.autoquery_cfg
+
+        # If hs_log is not loaded in, then load it in; Assuming that hs_log.csv always exists
+        if hs.loaded_from_disk == 0:
+            hs.prev_ac_params, hs.prev_aq_params, hs.prev_cl_params, hs.ac_stat, hs.aq_stat, hs.cl_stat = prevprefs.get_params(hs.dirs.internal_dir)
+            hs.loaded_from_disk = 1
+
+        if len(hs.get_valid_cxs()) < 2:
             print('[hs] cannot autoquery until at least two chips have been found')
             hs.back.user_info('Cannot AutoQuery until at least two chips have been found')
+        elif (hs.aq_stat == 1                                    and
+              hs.prev_aq_params[0] == params.self_loop_weight    and
+              hs.prev_aq_params[1] == params.same_image_score    and
+              hs.prev_aq_params[2] == params.same_set_boost      and
+              hs.prev_aq_params[3] == params.maximum_time_delta  and
+              hs.prev_aq_params[4] == params.minimum_same_set_weight):
+            print('\n[aq] is already ran. Change parameter(s) to re-run')
+            hs.back.user_info('AutoQuerying is already ran. Change parameter(s) to re-run')
+        else:
+            if hs.aq_stat == 1:
+                hs.reset_internal_tables()
+
+            hs._doAutoquerying(params)
+
+    @profile
+    def _doAutoquerying(hs, params):
+        print("[hs] ********** AUTOQUERYING **********")
+
+        # Update prev aq parameters
+        hs.prev_aq_params[0] == params.self_loop_weight
+        hs.prev_aq_params[1] == params.same_image_score
+        hs.prev_aq_params[2] == params.same_set_boost
+        hs.prev_aq_params[3] == params.maximum_time_delta
+        hs.prev_aq_params[4] == params.minimum_same_set_weight
+
+        # Mark start time for logging runtime
+        aqstart = time.time()
+
+        # Autoquery (make score matrix)
+        scoreMat = aq.makeScoreMat(hs)
+        ld2.write_score_matrix(hs, scoreMat)    # Write score matrix (lives in database)
+
+        # Save database
+        hs.save_database()
+
+        hs.aq_runtime = (time.time() - aqstart)
+
+        # Change aq_stat to 1 to indicate aq is ran
+        hs.aq_stat = 1
+
+        # Write parameters and status of processes to hs_log
+        lf.add_to_log(hs)
+
+        print("********** AUTOQUERY TOOK " + str(hs.aq_runtime) + " SECONDS TO RUN **********")
+        hs.back.user_info('AutoQuerying is done')
 
     @profile
     def prequery(hs):
@@ -570,34 +627,74 @@ class HotSpotter(DynStruct):
         print('[mc3] len(gt_cxs) = %r' % (gt_cxs,))
         return mc3.query_dcxs(hs, qcx, gt_cxs, qdat)
 
+    @profile
+    # TODO: don't run [cl] if
+    # 1) AutoQuery is not done
+    # 2) if clustering is done and all parameters still the same
 
-    #@profile
-    def mcl_cluster(hs):
-        import os.path
+    def cluster(hs):
+
         params = hs.prefs.cluster_cfg
-        if os.path.isfile(os.path.join(hs.dirs.internal_dir,'scores.csv')):
-            print("[hs] ********** CLUSTERING **********")
-            clstart = time.time() # start time - logging feature
-            M, G = mcl.get_graph(hs.dirs.internal_dir)
-            M, clusters = mcl.networkx_mcl(
-                G,
-                params.expansion_factor,
-                params.inflation_factor,
-                params.maximum_iterations,
-                params.multiplication_factor)
-            #mcl.draw(G, M, clusters)
-            clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
-            ld2.write_clusters(hs, clusterTable, numClusters)
-            ld2.write_score_matrix(hs, M, 'markov_scores.csv')
-            # Save database
-            hs.save_database()
-            hs.cl_runtime = (time.time() - clstart) # logging feature
-            lf.add_to_log(hs) # logging feature
-            print("********** CLUSTERING TOOK " + str(hs.cl_runtime) + " SECONDS TO RUN **********")
-            hs.back.user_info('Clustering is done')
-        else:
+
+        # If hs_log is not loaded in, then load it in; Assuming that hs_log.csv always exists
+        if hs.loaded_from_disk == 0:
+            hs.prev_ac_params, hs.prev_aq_params, hs.prev_cl_params, hs.ac_stat, hs.aq_stat, hs.cl_stat = prevprefs.get_params(hs.dirs.internal_dir)
+            hs.loaded_from_disk = 1
+
+        if (hs.aq_stat == 0):
             print('[hs] will not cluster until autoquerying is done')
             hs.back.user_info('Cannot cluster until AutoQuerying is done')
+        elif (hs.cl_stat == 1                                   and
+              hs.prev_cl_params[0] == params.inflation_factor   and
+              hs.prev_cl_params[1] == params.maximum_iterations and
+              hs.prev_cl_params[2] == params.expansion_factor   and
+              hs.prev_cl_params[3] == params.multiplication_factor):
+            print('\n[cl] is already ran. Change parameter(s) to re-run')
+            hs.back.user_info('Clustering is already ran. Change parameter(s) to re-run')
+        else:
+            hs._doClustering(params)
+
+    @profile
+    def _doClustering(hs, params):
+        print("[hs] ********** CLUSTERING **********")
+
+        # Update prev cl parameters
+        hs.prev_cl_params[0] = params.inflation_factor
+        hs.prev_cl_params[1] = params.maximum_iterations
+        hs.prev_cl_params[2] = params.expansion_factor
+        hs.prev_cl_params[3] = params.multiplication_factor
+
+        # Mark start time for logging runtime
+        clstart = time.time()
+
+        # Clustering
+        M, G = mcl.get_graph(hs.dirs.internal_dir)
+        M, clusters = mcl.networkx_mcl(
+            G,
+            params.expansion_factor,
+            params.inflation_factor,
+            params.maximum_iterations,
+            params.multiplication_factor)
+
+        clusterTable, numClusters = mcl.clusters_to_output(hs, clusters)
+        ld2.write_clusters(hs, clusterTable, numClusters)
+        ld2.write_score_matrix(hs, M, 'markov_scores.csv')
+
+        # Save database
+        hs.save_database()
+
+        # Update the runtime parameter, change cl_stat to 1 to indicate that cl is ran
+        hs.cl_runtime = (time.time() - clstart) # logging feature
+        hs.cl_stat = 1
+
+        # Write parameters and status of processes to hs_log
+        lf.add_to_log(hs)
+
+        # Update tables of the GUI
+        hs.back.populate_tables(res=False)
+
+        print("********** CLUSTERING TOOK " + str(hs.cl_runtime) + " SECONDS TO RUN **********")
+        hs.back.user_info('Clustering is done')
 
 
     # Tim Nguyen 1/28/18
@@ -752,9 +849,7 @@ class HotSpotter(DynStruct):
             hs.delete_queryresults_dir()  # Query results are now invalid
         return cx
 
-
-    '''Edited 3/3/18 by Tim Nguyen'''
-
+    '''Edited 3/3/17 by Tim Nguyen'''
     '''Edited 3/7/17 by Matt Dioso'''
     ''' Added 3/5/17 by Joshua Beard
     I'm sure it needs more work
@@ -764,8 +859,7 @@ class HotSpotter(DynStruct):
     #@helpers.indent_decor('[hs.autochip]') #mine doesn't recognize helpers
     # TODO: ECE17.7
     # handle nImages!=nTemplates more effectively (GUI popup would be nice)
-
-    # TODO: Tim Nguyen - 03/03
+    # TODO: ECE 18.7
     # Check if chips already exist. There are three cases:
     # 1) If chips already exist and parameters for autochip are changed, remove
     # old chips and start doing autochip
@@ -776,81 +870,57 @@ class HotSpotter(DynStruct):
 
         params = hs.prefs.autochip_cfg
 
-
-        # If autochipping is already done (chips already exist)
+        # If chips already exist, we know that previous parameters have been
+        # written to hs_log, so load parameters from hs_log and compare
         if (len(hs.get_valid_cxs()) > 1):
 
+            # If hs_log is not loaded in, then load it in
+            if hs.loaded_from_disk == 0:
+                hs.prev_ac_params, hs.prev_aq_params, hs.prev_cl_params, hs.ac_stat, hs.aq_stat, hs.cl_stat = prevprefs.get_params(hs.dirs.internal_dir)
+                hs.loaded_from_disk = 1
+
             # If parameters have been changed
-            if (hs.prev_ac_exclFac != params.exclusion_factor) or (hs.prev_ac_stopCrit != params.stopping_criterion):
-                # Update ac parameter history
+            if ((hs.prev_ac_params[0] != params.exclusion_factor) or
+                (hs.prev_ac_params[1] != params.stopping_criterion)):
                 print('[hs] [ac] parameter(s) changed')
-                hs.prev_ac_exclFac = params.exclusion_factor
-                hs.prev_ac_stopCrit = params.stopping_criterion
+
                 # delete old chips
                 print('[hs] deleting old chips and associated data')
-                # for cx in range(hs.tables.cx2_cid.max()):
-                #     print(cx)
-                #     hs.delete_chip(cx)  #delete chips using chip index
-                # print('[hs] old chips deleted')
                 hs.delete_cache()
-                hs.reset_internal_tables(ac=True)
-                # Save database
+                hs.reset_internal_tables()
+
+                # Save database after removing all previously calculated data
                 hs.save_database()
                 hs.back.populate_tables(res=False)
 
-
+                # Print out to make sure all old chips are removed
                 print('There is now ' + str(len(hs.get_valid_cxs())) + ' chips exist')
 
                 # Do autochipping
                 print('[ac] is running again')
-
-                hs._doAutochipping(directoryToTemplates, params.exclusion_factor, params.stopping_criterion)
-                # Save database
-                hs.save_database()
-
+                hs._doAutochipping(directoryToTemplates, params)
 
             else:
                 print('\n[ac] is already ran. Change parameter(s) to re-run')
                 hs.back.user_info('AutoChipping is already ran. Change parameter(s) to re-run')
 
-
-
         # If autochipping has not been done yet
         else:
-            # Do autochipping
-            acstart = time.time() # start time - logging feature
-            hs._doAutochipping(directoryToTemplates, params.exclusion_factor, params.stopping_criterion)
-
-
-        hs.ac_done = 1  # Record autochipping as complete
-        #return hs.ac_done #don't think this is needed -MD
-
-    def reset_internal_tables(hs, ac=False):
-        # Reset internal tables (a partial copy of constructor of
-        # HotspotterTables class)
-        if ac:
-            hs.tables.nx2_name      = np.array(['____', '____'], dtype=str)
-            hs.tables.cx2_cid       = np.array([], dtype=np.int32)
-            hs.tables.cx2_nx        = np.array([], dtype=np.int32)
-            hs.tables.cx2_gx        = np.array([], dtype=np.int32)
-            hs.tables.cx2_roi       = np.array([], dtype=np.int32)
-            hs.tables.cx2_roi.shape = (hs.tables.cx2_roi.size // 4, 4)
-            hs.tables.cx2_theta     = np.array([], dtype=np.float32)
-            hs.tables.prop_dict     = {}
-        else:
-            hs.tables.nx2_name      = np.array(['____', '____'], dtype=str)
-            hs.tables.cx2_nx        = np.array([], dtype=np.int32)
+            # AutoChip never been ran before, so just do it
+            hs._doAutochipping(directoryToTemplates, params)
 
     @profile
-    def _doAutochipping(hs, directoryToTemplates, exclFac, stopCrit):
+    def _doAutochipping(hs, directoryToTemplates, params):
         print("[hs] ********** AUTOCHIPPING **********")
+
+        # Update ac previous parameters to current
+        hs.prev_ac_params[0] = params.exclusion_factor
+        hs.prev_ac_params[1] = params.stopping_criterion
 
         acstart = time.time() # start time - logging feature
         nImages = len(hs.get_valid_gxs())
         nTemplates = ac.getNumTemplates(directoryToTemplates)
         if nImages != nTemplates:
-            print(nImages)
-            print(nTemplates)
             print('ERROR: number of images is unequal to number of templates')
             return 0
         # use autochip module to do autochipping
@@ -870,7 +940,19 @@ class HotSpotter(DynStruct):
 
         # Save database
         hs.save_database()
-        hs.ac_runtime = (time.time() - acstart) # logging feature
+
+        # logging feature
+        hs.ac_runtime = (time.time() - acstart)
+
+        # Update tables in GUI
+        hs.back.populate_tables(res=False)
+
+        # Update ac_stat to 1 to indicate ac is ran
+        hs.ac_stat = 1
+
+        # Write parameters and status of processes to hs_log
+        lf.add_to_log(hs)
+
         print("********** AUTOCHIPPING TOOK " + str(hs.ac_runtime) + " SECONDS TO RUN **********")
         hs.back.user_info('AutoChipping is done')
 

@@ -570,8 +570,15 @@ def getNumTemplates(directoryToTemplates, ext = EXTENSION):
     import os
     dirlist = os.listdir(directoryToTemplates)
     numTemplates = 0
+    extU = ext.upper()
+    print(extU)
+    extL = ext.lower()
+    print(extL)
+    extC = extL[0] + extL[1].swapcase() + extL[2:]
+    print(extC)
+    templateExtention = (extU, extL, extC)
     for item in dirlist:
-        if item.endswith(ext):
+        if item.endswith(templateExtention):
             numTemplates = numTemplates + 1;
     return numTemplates
 

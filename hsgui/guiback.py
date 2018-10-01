@@ -739,13 +739,12 @@ class MainWindowBackend(QtCore.QObject):
     @profile
     def autochip(back):
         # ASSUME images are in PWD/DB/images
-        fpath = join(back.hs.dirs.img_dir, 'templates')
+        fpath = join(back.hs.dirs.db_dir, 'images/templates') # Added 4/27/17 jb
         #fpath = back.get_work_directory() + '/' + back.hs.get_db_name() +'/images/templates' # JB
         #fpath = back.get_work_directory() + '/test_autochip/templates'
         #fpath = back.get_work_directory() + '/Demo_Data/templates'
         #fpath = os.getcwd() + '/matFiles'
         back.hs.autochip(fpath)
-        back.populate_tables(res=False)
         print('')
 
     @slot_()
@@ -829,9 +828,8 @@ class MainWindowBackend(QtCore.QObject):
     @blocking
     @profile
     def cluster(back):
-        back.hs.mcl_cluster()
-        back.populate_tables(res=False)
-        #back.hs.linkage_cluster()
+        back.hs.cluster()
+
     '''Added by Tim Nguyen 1/28/18'''
     @slot_()
     @blocking
