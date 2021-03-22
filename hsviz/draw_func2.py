@@ -10,7 +10,8 @@ from hscom import __common__
 (print, print_, print_on, print_off, rrr, profile,
  printDBG) = __common__.init(__name__, '[df2]', DEBUG=False, initmpl=True)
 # Python
-from itertools import izip
+# from itertools import izip
+izip = zip
 from os.path import splitext, split, join, normpath, exists
 import colorsys
 import itertools
@@ -26,17 +27,28 @@ from matplotlib.collections import PatchCollection, LineCollection
 from matplotlib.font_manager import FontProperties
 from matplotlib.patches import Rectangle, Circle, FancyArrow
 from matplotlib.transforms import Affine2D
-from matplotlib.backends import backend_qt4
 import matplotlib.pyplot as plt
 # Qt
-from PyQt4 import QtCore, QtGui
-from PyQt4.QtCore import Qt
+if 0:
+    from matplotlib.backends import backend_qt4 as backend_qt
+    from PyQt4 import QtCore, QtGui
+    from PyQt4.QtCore import Qt
+    QtGui = QtWidgets
+else:
+    from matplotlib.backends import backend_qt5 as backend_qt
+    from PyQt5 import QtCore
+    from PyQt5 import QtGui
+    from PyQt5.QtCore import *
+    from PyQt5.QtGui import *
+    from PyQt5.QtWidgets import *
+    from PyQt5 import QtWidgets
+
 # Scientific
 import numpy as np
 import scipy.stats
 import cv2
 # HotSpotter
-from hscom import helpers
+from hscom import helpers as util
 from hscom import tools
 from hscom.Printable import DynStruct
 
@@ -67,9 +79,10 @@ FONTS.largebold = FontProperties(weight='bold', size=LARGE)
 
 FONTS.legend   = FONTS.small
 FONTS.figtitle = FONTS.med
-FONTS.axtitle  = FONTS.med
+FONTS.axtitle  = FONTS.small
 FONTS.subtitle = FONTS.med
-FONTS.xlabel   = FONTS.smaller
+#FONTS.xlabel   = FONTS.smaller
+FONTS.xlabel   = FONTS.small
 FONTS.ylabel   = FONTS.small
 FONTS.relative = FONTS.smaller
 
@@ -92,13 +105,29 @@ DARK_YELLOW  = np.array((127,  127,   0, 255)) / 255.0
 PURPLE = np.array((102,   0, 153, 255)) / 255.0
 UNKNOWN_PURP = PURPLE
 
-# FIGURE GEOMETRY
 
+# GOLDEN RATIOS
+PHI_numer = 1 + np.sqrt(5)
+PHI_denom = 2.0
+PHI = PHI_numer / PHI_denom
+
+
+def golden_wh2(sz):
+    return (PHI * sz, sz)
+
+
+def golden_wh(x):
+    'returns a width / height with a golden aspect ratio'
+    return map(int, map(round, (x * .618, x * .312)))
+
+
+# FIGURE GEOMETRY
 DPI = 80
 #DPI = 160
 #FIGSIZE = (24) # default windows fullscreen
 FIGSIZE_MED = (12, 6)
 FIGSIZE_SQUARE = (12, 12)
+FIGSIZE_GOLD = golden_wh2(8)
 FIGSIZE_BIGGER = (24, 12)
 FIGSIZE_HUGE = (32, 16)
 
@@ -106,10 +135,6 @@ FIGSIZE = FIGSIZE_MED
 # Quality drawings
 #FIGSIZE = FIGSIZE_SQUARE
 #DPI = 120
-
-tile_within = (-1, 30, 969, 1041)
-if helpers.get_computer_name() == 'Ooo':
-    TILE_WITHIN = (-1912, 30, -969, 1071)
 
 # DEFAULTS. (TODO: Can these be cleaned up?)
 
@@ -123,8 +148,8 @@ else:
     ELL_ALPHA  = .4
     LINE_ALPHA = .4
 
-LINE_ALPHA_OVERRIDE = helpers.get_arg('--line-alpha-override', type_=float, default=None)
-ELL_ALPHA_OVERRIDE = helpers.get_arg('--ell-alpha-override', type_=float, default=None)
+LINE_ALPHA_OVERRIDE = util.get_arg('--line-alpha-override', type_=float, default=None)
+ELL_ALPHA_OVERRIDE = util.get_arg('--ell-alpha-override', type_=float, default=None)
 #LINE_ALPHA_OVERRIDE = None
 #ELL_ALPHA_OVERRIDE = None
 ELL_COLOR  = BLUE
@@ -218,7 +243,9 @@ def add_alpha(colors):
     return [list(color) + [1] for color in colors]
 
 
-def _axis_xy_width_height(ax, xaug=0, yaug=0, waug=0, haug=0):
+def _axis_xy_width_height(ax=None, xaug=0, yaug=0, waug=0, haug=0):
+    if ax is None:
+        ax = gca()
     'gets geometry of a subplot'
     autoAxis = ax.axis()
     xy     = (autoAxis[0] + xaug, autoAxis[2] + yaug)
@@ -288,25 +315,6 @@ def draw_roi(roi, label=None, bbox_color=(1, 0, 0),
 
 
 # ---- GENERAL FIGURE COMMANDS ----
-def sanatize_img_fname(fname):
-    fname_clean = fname
-    search_replace_list = [(' ', '_'), ('\n', '--'), ('\\', ''), ('/', '')]
-    for old, new in search_replace_list:
-        fname_clean = fname_clean.replace(old, new)
-    fname_noext, ext = splitext(fname_clean)
-    fname_clean = fname_noext + ext.lower()
-    # Check for correct extensions
-    if not ext.lower() in helpers.IMG_EXTENSIONS:
-        fname_clean += '.png'
-    return fname_clean
-
-
-def sanatize_img_fpath(fpath):
-    [dpath, fname] = split(fpath)
-    fname_clean = sanatize_img_fname(fname)
-    fpath_clean = join(dpath, fname_clean)
-    fpath_clean = normpath(fpath_clean)
-    return fpath_clean
 
 
 def set_geometry(fnum, x, y, w, h):
@@ -324,8 +332,7 @@ def get_geometry(fnum):
 
 
 def get_screen_info():
-    from PyQt4 import Qt, QtGui  # NOQA
-    desktop = QtGui.QDesktopWidget()
+    desktop = QtWidgets.QDesktopWidget()
     mask = desktop.mask()  # NOQA
     layout_direction = desktop.layoutDirection()  # NOQA
     screen_number = desktop.screenNumber()  # NOQA
@@ -333,7 +340,7 @@ def get_screen_info():
     num_screens = desktop.screenCount()  # NOQA
     avail_rect = desktop.availableGeometry()  # NOQA
     screen_rect = desktop.screenGeometry()  # NOQA
-    QtGui.QDesktopWidget().availableGeometry().center()  # NOQA
+    QtWidgets.QDesktopWidget().availableGeometry().center()  # NOQA
     normal_geometry = desktop.normalGeometry()  # NOQA
 
 
@@ -371,22 +378,34 @@ def all_figures_tight_layout():
         time.sleep(.1)
 
 
+def ensure_app_is_running():
+    from hsgui import guitools
+    app, is_root = guitools.init_qtapp()
+
+
 def get_monitor_geom(monitor_num=0):
-    from PyQt4 import QtGui  # NOQA
-    desktop = QtGui.QDesktopWidget()
-    rect = desktop.availableGeometry()
+    ensure_app_is_running()
+    desktop = QtWidgets.QDesktopWidget()
+    rect = desktop.availableGeometry(screen=monitor_num)
     geom = (rect.x(), rect.y(), rect.width(), rect.height())
     return geom
 
 
-def golden_wh(x):
-    'returns a width / height with a golden aspect ratio'
-    return map(int, map(round, (x * .618, x * .312)))
+def get_monitor_geometries():
+    ensure_app_is_running()
+    monitor_geometries = {}
+    desktop = QtWidgets.QDesktopWidget()
+    for screenx in xrange(desktop.numScreens()):
+        rect = desktop.availableGeometry(screen=screenx)
+        geom = (rect.x(), rect.y(), rect.width(), rect.height())
+        monitor_geometries[screenx] = geom
+    return monitor_geometries
 
 
-def all_figures_tile(num_rc=(3, 4), wh=1000, xy_off=(0, 0), wh_off=(0, 10),
+def all_figures_tile(num_rc=None, wh=400, xy_off=(0, 0), wh_off=(0, 0),
                      row_first=True, no_tile=False, override1=False):
     'Lays out all figures in a grid. if wh is a scalar, a golden ratio is used'
+    print('[df2] all_figures_tile()')
     # RCOS TODO:
     # I want this function to layout all the figures and qt windows within the
     # bounds of a rectangle. (taken from the get_monitor_geom, or specified by
@@ -411,39 +430,99 @@ def all_figures_tile(num_rc=(3, 4), wh=1000, xy_off=(0, 0), wh_off=(0, 10),
 
     #nFigs = len(all_figures) + len(all_qt4_wins)
 
-    num_rows, num_cols = num_rc
+    # Win7 Areo
+    win7_sizes = {
+        'os_border_x':   20,
+        'os_border_y':   35,
+        'os_border_h':   30,
+        'win_border_x':  17,
+        'win_border_y':  10,
+        'mpl_toolbar_y': 10,
+    }
+
+    # Ubuntu (Medeterrainian Dark)
+    gnome3_sizes = {
+        'os_border_x':    0,
+        'os_border_y':   35,  # for gnome3 title bar
+        'os_border_h':    0,
+        'win_border_x':   5,
+        'win_border_y':  30,
+        'mpl_toolbar_y':  0,
+    }
 
     w, h = wh
     x_off, y_off = xy_off
     w_off, h_off = wh_off
     x_pad, y_pad = (0, 0)
+    # Good offset measurements for...
+    #Windows 7
+    if sys.platform.startswith('win32'):
+        stdpxls = win7_sizes
+    elif sys.platform.startswith('linux'):
+        stdpxls = gnome3_sizes
+    else:
+        stdpxls = gnome3_sizes
+    x_off +=  0
+    y_off +=  0
+    w_off +=  stdpxls['win_border_x']
+    h_off +=  stdpxls['win_border_y'] + stdpxls['mpl_toolbar_y']
+    # Pads are applied to all windows
+    x_pad +=  stdpxls['os_border_x']
+    y_pad +=  stdpxls['os_border_y']
+
+    effective_w = w + w_off
+    effective_h = h + h_off
+    startx = 0
+    starty = 0
+
+    if num_rc is None:
+        monitor_geometries = get_monitor_geometries()
+        printDBG('[df2] monitor_geometries = %r' % (monitor_geometries,))
+        geom = monitor_geometries[0]
+        # Use all of monitor 0
+        available_geom = (geom[0], geom[1], geom[2] - stdpxls['os_border_h'], geom[3])
+        startx = available_geom[0]
+        starty = available_geom[1]
+        avail_width = available_geom[2] - available_geom[0]
+        avail_height = available_geom[3] - available_geom[1]
+        printDBG('[df2] available_geom = %r' % (available_geom,))
+        printDBG('[df2] avail_width = %r' % (avail_width,))
+        printDBG('[df2] avail_height = %r' % (avail_height,))
+
+        nRows = int(avail_height // (effective_h))
+        nCols = int(avail_width // (effective_w))
+    else:
+        nRows, nCols = num_rc
+
     printDBG('[df2] Tile all figures: ')
     printDBG('[df2]     wh = %r' % ((w, h),))
     printDBG('[df2]     xy_offsets = %r' % ((x_off, y_off),))
     printDBG('[df2]     wh_offsets = %r' % ((w_off, h_off),))
+    printDBG('[df2]     wh_effective = %r' % ((effective_w, effective_h),))
     printDBG('[df2]     xy_pads = %r' % ((x_pad, y_pad),))
-    if sys.platform == 'win32':
-        h_off +=   0
-        w_off +=  40
-        x_off +=  40
-        y_off +=  40
-        x_pad +=   0
-        y_pad += 100
+    printDBG('[df2]     nRows, nCols = %r' % ((nRows, nCols),))
 
-    def position_window(i, win):
-        isqt4_mpl = isinstance(win, backend_qt4.MainWindow)
-        isqt4_back = isinstance(win, QtGui.QMainWindow)
+    def position_window(ix, win):
+        isqt4_mpl = isinstance(win, backend_qt.MainWindow)
+        isqt4_back = isinstance(win, QtWidgets.QMainWindow)
         if not isqt4_mpl and not isqt4_back:
-            raise NotImplementedError('%r-th Backend %r is not a Qt Window' % (i, win))
+            raise NotImplementedError('%r-th Backend %r is not a Qt Window' %
+                                      (ix, win))
         if row_first:
-            y = (i % num_rows) * (h + h_off) + 40
-            x = (int(i / num_rows)) * (w + w_off) + x_pad
+            rowx = ix % nRows
+            colx = int(ix // nRows)
         else:
-            x = (i % num_cols) * (w + w_off) + 40
-            y = (int(i / num_cols)) * (h + h_off) + y_pad
-        x += x_off
-        y += y_off
-        win.setGeometry(x, y, w, h)
+            colx = (ix % nCols)
+            rowx = int(ix // nCols)
+        x = startx + colx * (effective_w)
+        y = starty + rowx * (effective_h)
+        printDBG('ix=%r) rowx=%r colx=%r, x=%r y=%r, w=%r, h=%r' %
+                 (ix, rowx, colx, x, y, w, h))
+        try:
+            #(x, y, w1, h1) = win.getGeometry()
+            win.setGeometry(x + x_pad, y + y_pad, w, h)
+        except Exception as ex:
+            print(ex)
     ioff = 0
     for i, win in enumerate(all_qt4wins):
         position_window(i, win)
@@ -510,20 +589,19 @@ def present(*args, **kwargs):
         all_figures_show()
         all_figures_bring_to_front()
     # Return an exec string
-    execstr = helpers.ipython_execstr()
+    execstr = util.ipython_execstr()
     execstr += textwrap.dedent('''
     if not embedded:
-        print('[df2] Presenting in normal shell.')
-        print('[df2] ... plt.show()')
+        if not '--quiet' in sys.argv:
+            print('[df2] Presenting in normal shell.')
+            print('[df2] ... plt.show()')
         plt.show()
     ''')
     return execstr
 
 
-def save_figure(fnum=None, fpath=None, usetitle=False, overwrite=True):
-    #import warnings
-    #warnings.simplefilter("error")
-    # Find the figure
+def prepare_figure_for_save(fnum):
+    # Resizes the figure for quality saving
     if fnum is None:
         fig = gcf()
     else:
@@ -531,6 +609,31 @@ def save_figure(fnum=None, fpath=None, usetitle=False, overwrite=True):
     # Enforce inches and DPI
     fig.set_size_inches(FIGSIZE[0], FIGSIZE[1])
     fnum = fig.number
+    return fig, fnum
+
+
+def sanatize_img_fname(fname, defaultext='.jpg'):
+    fname_clean = fname
+    search_replace_list = [(' ', '_'), ('\n', '--'), ('\\', ''), ('/', '')]
+    for old, new in search_replace_list:
+        fname_clean = fname_clean.replace(old, new)
+    fname_noext, ext = splitext(fname_clean)
+    fname_clean = fname_noext + ext.lower()
+    # Check for correct extensions
+    if not ext.lower() in util.IMG_EXTENSIONS:
+        fname_clean += defaultext
+    return fname_clean
+
+
+def sanatize_img_fpath(fpath, defaultext):
+    [dpath, fname] = split(fpath)
+    fname_clean = sanatize_img_fname(fname, defaultext)
+    fpath_clean = join(dpath, fname_clean)
+    fpath_clean = normpath(fpath_clean)
+    return fpath_clean
+
+
+def prepare_figure_fpath(fig, fpath, fnum, usetitle, defaultext):
     if fpath is None:
         # Find the title
         fpath = sanatize_img_fname(fig.canvas.get_window_title())
@@ -542,14 +645,23 @@ def save_figure(fnum=None, fpath=None, usetitle=False, overwrite=True):
     size_suffix = '_DPI=%r_FIGSIZE=%d,%d' % (DPI, FIGSIZE[0], FIGSIZE[1])
     fpath = fpath_noext + size_suffix + ext
     # Sanatize the filename
-    fpath_clean = sanatize_img_fpath(fpath)
+    fpath_clean = sanatize_img_fpath(fpath, defaultext)
+    return fpath_clean
+
+
+def save_figure(fnum=None, fpath=None, usetitle=False, overwrite=True,
+                defaultext='.jpg'):
+    fig, fnum = prepare_figure_for_save(fnum)
+    fpath_clean = prepare_figure_fpath(fig, fpath, fnum, usetitle, defaultext)
     #fname_clean = split(fpath_clean)[1]
-    print('[df2] save_figure() %r' % (fpath_clean,))
     #adjust_subplots()
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', category=DeprecationWarning)
-        if not exists(fpath_clean) or overwrite:
+        if overwrite or not exists(fpath_clean):
+            print('[df2] save_figure() %r' % (fpath_clean,))
             fig.savefig(fpath_clean, dpi=DPI)
+        else:
+            print('[df2] not overwriteing')
 
 
 def set_ticks(xticks, yticks):
@@ -574,7 +686,7 @@ def set_xlabel(lbl, ax=None):
     ax.set_xlabel(lbl, fontproperties=FONTS.xlabel)
 
 
-def set_title(title, ax=None):
+def set_title(title='', ax=None):
     if ax is None:
         ax = gca()
     ax.set_title(title, fontproperties=FONTS.axtitle)
@@ -585,8 +697,73 @@ def set_ylabel(lbl):
     ax.set_ylabel(lbl, fontproperties=FONTS.xlabel)
 
 
+def get_good_logyscale_kwargs(y_data):
+    # Attempts to detect knee points by looking for
+    # log derivatives way past the normal standard deviations
+    # The input data is assumed to be sorted and y_data
+    basey = 10
+    nStdDevs_thresh = 10
+    # Take the log of the data
+    logy = np.log(y_data)
+    logy[np.isnan(logy)] = 0
+    logy[np.isinf(logy)] = 0
+    # Find the derivative of data
+    dy = np.diff(logy)
+    dy_sortx = dy.argsort()
+    # Get mean and standard deviation
+    dy_stats = util.mystats(dy)
+    dy_sorted = dy[dy_sortx]
+    # Find the number of standard deveations past the mean each datapoint is
+    nStdDevs = np.abs(dy_sorted - dy_stats['mean']) / dy_stats['std']
+    # Mark any above a threshold as knee points
+    knee_indexes = np.where(nStdDevs > nStdDevs_thresh)[0]
+    knee_mag = nStdDevs[knee_indexes]
+    knee_points = dy_sortx[knee_indexes]
+    print('[df2] knee_points = %r' % (knee_points,))
+    # Check to see that we have found a knee
+    if len(knee_points) > 0:
+        # Use linear scaling up the the knee points and
+        # scale it by the magnitude of the knee
+        kneex = knee_points.argmin()
+        linthreshx = knee_points[kneex] + 1
+        linthreshy = y_data[linthreshx] * basey
+        linscaley = min(2, max(1, (knee_mag[kneex] / (basey * 2))))
+    else:
+        linthreshx = 1E-15
+        linthreshy = 1E-15
+        linscaley = 1
+    logscale_kwargs = {
+        'basey': basey,
+        'nonposx': 'clip',
+        'nonposy': 'clip',
+        'linthreshy': linthreshy,
+        'linthreshx': linthreshx,
+        'linscalex': 1,
+        'linscaley': linscaley,
+    }
+    #print(logscale_kwargs)
+    return logscale_kwargs
+
+
+def set_logyscale_from_data(y_data):
+    logscale_kwargs = get_good_logyscale_kwargs(y_data)
+    ax = gca()
+    ax.set_yscale('symlog', **logscale_kwargs)
+
+
 def plot(*args, **kwargs):
-    return plt.plot(*args, **kwargs)
+    yscale = kwargs.pop('yscale', 'linear')
+    xscale = kwargs.pop('xscale', 'linear')
+    logscale_kwargs = kwargs.pop('logscale_kwargs', {'nonposx': 'clip'})
+    plot = plt.plot(*args, **kwargs)
+    ax = plt.gca()
+
+    yscale_kwargs = logscale_kwargs if yscale in ['log', 'symlog'] else {}
+    xscale_kwargs = logscale_kwargs if xscale in ['log', 'symlog'] else {}
+
+    ax.set_yscale(yscale, **yscale_kwargs)
+    ax.set_xscale(xscale, **xscale_kwargs)
+    return plot
 
 
 def plot2(x_data, y_data, marker='o', title_pref='', x_label='x', y_label='y', *args,
@@ -614,8 +791,7 @@ def plot2(x_data, y_data, marker='o', title_pref='', x_label='x', y_label='y', *
     ax.set_aspect('equal')
     ax.set_xlabel(x_label, fontproperties=FONTS.xlabel)
     ax.set_ylabel(y_label, fontproperties=FONTS.xlabel)
-    ax.set_title(title_pref + ' ' + x_label + ' vs ' + y_label,
-                 fontproperties=FONTS.axtitle)
+    set_title(title_pref + ' ' + x_label + ' vs ' + y_label, ax=None)
 
 
 def adjust_subplots_xlabels():
@@ -626,8 +802,21 @@ def adjust_subplots_xylabels():
     adjust_subplots(left=.03, right=1, bottom=.1, top=.9, hspace=.15)
 
 
-def adjust_subplots_safe(left=.1, right=.9, bottom=.1, top=.9, wspace=.3, hspace=.5):
-    adjust_subplots(left, bottom, right, top, wspace, hspace)
+SAFE_POS = {
+    'left': .1,
+    'right': .9,
+    'top': .9,
+    'bottom': .1,
+    'wspace': .3,
+    'hspace': .5,
+}
+
+
+def adjust_subplots_safe(**kwargs):
+    for key in SAFE_POS.iterkeys():
+        if not key in kwargs:
+            kwargs[key] = SAFE_POS[key]
+    adjust_subplots(**kwargs)
 
 
 def adjust_subplots(left=0.02,  bottom=0.02,
@@ -745,12 +934,13 @@ def set_figtitle(figtitle, subtitle='', forcefignum=True, incanvas=True):
     if incanvas:
         if subtitle != '':
             subtitle = '\n' + subtitle
-        fig.suptitle(figtitle + subtitle, fontsize=14, fontweight='bold')
-        #fig.suptitle(figtitle, x=.5, y=.98, fontproperties=FONTS.figtitle)
+        #fig.suptitle(figtitle + subtitle, fontsize=14, fontweight='bold')
+        fig.suptitle(figtitle + subtitle, fontproperties=FONTS.figtitle)
         #fig_relative_text(.5, .96, subtitle, fontproperties=FONTS.subtitle)
     else:
         fig.suptitle('')
     window_figtitle = ('fig(%d) ' % fig.number) + figtitle
+    window_figtitle = window_figtitle.replace('\n', ' ')
     fig.canvas.set_window_title(window_figtitle)
 
 
@@ -776,7 +966,7 @@ def convert_keypress_event_mpl_to_qt4(mevent):
     if sys.platform == 'darwin':
         mpl2qtkey.update({'super': Qt.Key_Control, 'control': Qt.Key_Meta, })
 
-    # Try to reconstruct QtGui.KeyEvent
+    # Try to reconstruct QtWidgets.KeyEvent
     type_ = QtCore.QEvent.Type(QtCore.QEvent.KeyPress)  # The type should always be KeyPress
     text = ''
     # Try to extract the original modifiers
@@ -823,7 +1013,7 @@ def convert_keypress_event_mpl_to_qt4(mevent):
     print('[df2] autorep = %r' % autorep)
     print('[df2] count = %r ' % count)
     print('----------------')
-    qevent = QtGui.QKeyEvent(type_, key_, modifiers, text, autorep, count)
+    qevent = QtWidgets.QKeyEvent(type_, key_, modifiers, text, autorep, count)
     return qevent
 
 
@@ -844,7 +1034,7 @@ def test_build_qkeyevent():
     #key_ = ord('A')  # Qt works with uppercase keys
     #autorep = False  # default false
     #count   = 1  # default 1
-    #qevent = QtGui.QKeyEvent(type_, key_, modifiers, text, autorep, count)
+    #qevent = QtWidgets.QKeyEvent(type_, key_, modifiers, text, autorep, count)
     return qevent
 
 
@@ -860,7 +1050,7 @@ def on_key_press_event(event):
         print('[df2] attempting to send qevent to qtwin')
         app.sendEvent(qtwin, qevent)
         # TODO: FINISH ME
-        #PyQt4.QtGui.QKeyEvent
+        #PyQt4.QtWidgets.QKeyEvent
         #qtwin.keyPressEvent(event)
         #fig.canvas.manager.window.keyPressEvent()
 
@@ -972,7 +1162,7 @@ def figure(fnum=None, docla=False, title=None, pnum=(1, 1, 1), figtitle=None,
     # Set the title
     if not title is None:
         ax = gca()
-        ax.set_title(title, fontproperties=FONTS.axtitle)
+        set_title(title, ax=ax)
         # Add title to figure
         if figtitle is None and pnum == (1, 1, 1):
             figtitle = title
@@ -988,6 +1178,11 @@ def plot_pdf(data, draw_support=True, scale_to=None, label=None, color=0,
     data = np.array(data)
     if len(data) == 0:
         warnstr = '[df2] ! Warning: len(data) = 0. Cannot visualize pdf'
+        warnings.warn(warnstr)
+        draw_text(warnstr)
+        return
+    if len(data) == 1:
+        warnstr = '[df2] ! Warning: len(data) = 1. Cannot visualize pdf'
         warnings.warn(warnstr)
         draw_text(warnstr)
         return
@@ -1083,7 +1278,7 @@ def plot_sift_signature(sift, title='', fnum=None, pnum=None):
     ax.set_ylim(0, 256)
     space_xticks(9, 16)
     space_yticks(5, 64)
-    ax.set_title(title)
+    set_title(title, ax=ax)
     dark_background(ax)
     return ax
 
@@ -1152,6 +1347,20 @@ def phantom_legend_label(label, color, loc='upper right'):
     #plt.legend(*zip(*legend_tups), framealpha=.2)
     #legend_tups = []
     #legend_tups.append((phantom_actor, label))
+
+
+LEGEND_LOCATION = {
+    'upper right':  1,
+    'upper left':   2,
+    'lower left':   3,
+    'lower right':  4,
+    'right':        5,
+    'center left':  6,
+    'center right': 7,
+    'lower center': 8,
+    'upper center': 9,
+    'center':      10,
+}
 
 
 def legend(loc='upper right'):
@@ -1284,31 +1493,58 @@ def draw_sift(desc, kp=None):
     ax.add_collection(arw_collection)
 
 
-def feat_scores_to_color(fs, cmap_='hot'):
-    assert len(fs.shape) == 1, 'score must be 1d'
+def scores_to_color(score_list, cmap_='hot', logscale=False):
+    assert len(score_list.shape) == 1, 'score must be 1d'
+    if logscale:
+        score_list = np.log2(np.log2(score_list + 2) + 1)
     cmap = plt.get_cmap(cmap_)
-    mins = fs.min()
-    rnge = fs.max() - mins
+    mins = score_list.min()
+    rnge = score_list.max() - mins
     if rnge == 0:
-        return [cmap(.5) for fx in xrange(len(fs))]
-    score2_01 = lambda score: .1 + .9 * (float(score) - mins) / (rnge)
-    colors    = [cmap(score2_01(score)) for score in fs]
-    return colors
+        return [cmap(.5) for fx in xrange(len(score_list))]
+    else:
+        if logscale:
+            score2_01 = lambda score: np.log2(1.1 + .9 * (float(score) - mins) / (rnge))
+            score_list = np.array(score_list)
+            #rank_multiplier = score_list.argsort() / len(score_list)
+            #normscore = np.array(map(score2_01, score_list)) * rank_multiplier
+            normscore = np.array(map(score2_01, score_list))
+            colors =  map(cmap, normscore)
+        else:
+            score2_01 = lambda score: .1 + .9 * (float(score) - mins) / (rnge)
+        colors    = [cmap(score2_01(score)) for score in score_list]
+        return colors
+
+
+def scores_to_cmap(scores, colors=None, cmap_='hot'):
+    if colors is None:
+        colors = scores_to_color(scores, cmap_=cmap_)
+    sorted_colors = [x for (y, x) in sorted(zip(scores, colors))]
+    # Make a listed colormap and mappable object
+    listed_cmap = mpl.colors.ListedColormap(sorted_colors)
+    return listed_cmap
 
 
 def colorbar(scalars, colors):
     'adds a color bar next to the axes'
+    # Parameters
+    xy, width, height = _axis_xy_width_height()
     orientation = ['vertical', 'horizontal'][0]
     TICK_FONTSIZE = 8
-    # Put colors and scalars in correct order
+    #
+    listed_cmap = scores_to_cmap(scalars, colors)
+    # Create scalar mappable with cmap
     sorted_scalars = sorted(scalars)
-    sorted_colors = [x for (y, x) in sorted(zip(scalars, colors))]
-    # Make a listed colormap and mappable object
-    listed_cmap = mpl.colors.ListedColormap(sorted_colors)
     sm = plt.cm.ScalarMappable(cmap=listed_cmap)
     sm.set_array(sorted_scalars)
     # Use mapable object to create the colorbar
-    cb = plt.colorbar(sm, orientation=orientation)
+    COLORBAR_SHRINK = .42  # 1
+    COLORBAR_PAD = .01  # 1
+    COLORBAR_ASPECT = np.abs(20 * height / (width))  # 1
+    printDBG('[df] COLORBAR_ASPECT = %r' % COLORBAR_ASPECT)
+
+    cb = plt.colorbar(sm, orientation=orientation, shrink=COLORBAR_SHRINK,
+                      pad=COLORBAR_PAD, aspect=COLORBAR_ASPECT)
     # Add the colorbar to the correct label
     axis = cb.ax.xaxis if orientation == 'horizontal' else cb.ax.yaxis
     position = 'bottom' if orientation == 'horizontal' else 'right'
@@ -1318,7 +1554,11 @@ def colorbar(scalars, colors):
 
 
 def draw_lines2(kpts1, kpts2, fm=None, fs=None, kpts2_offset=(0, 0),
-                color_list=None, **kwargs):
+                color_list=None, scale_factor=1, **kwargs):
+    printDBG('-------------')
+    printDBG('draw_lines2()')
+    printDBG(' * len(fm) = %r' % len(fm))
+    printDBG(' * scale_factor = %r' % scale_factor)
     if not DISTINCT_COLORS:
         color_list = None
     # input data
@@ -1333,15 +1573,15 @@ def draw_lines2(kpts1, kpts2, fm=None, fs=None, kpts2_offset=(0, 0),
     # Draw line collection
     kpts1_m = kpts1[fm[:, 0]].T
     kpts2_m = kpts2[fm[:, 1]].T
-    xxyy_iter = iter(zip(kpts1_m[0],
-                         kpts2_m[0] + woff,
-                         kpts1_m[1],
-                         kpts2_m[1] + hoff))
+    xxyy_iter = iter(zip(kpts1_m[0] * scale_factor,
+                         kpts2_m[0] * scale_factor + woff,
+                         kpts1_m[1] * scale_factor,
+                         kpts2_m[1] * scale_factor + hoff))
     if color_list is None:
         if fs is None:  # Draw with solid color
             color_list    = [ LINE_COLOR for fx in xrange(len(fm))]
         else:  # Draw with colors proportional to score difference
-            color_list = feat_scores_to_color(fs)
+            color_list = scores_to_color(fs)
     segments  = [((x1, y1), (x2, y2)) for (x1, x2, y1, y2) in xxyy_iter]
     linewidth = [LINE_WIDTH for fx in xrange(len(fm))]
     line_alpha = LINE_ALPHA
@@ -1361,10 +1601,14 @@ def draw_kpts(kpts, *args, **kwargs):
 def draw_kpts2(kpts, offset=(0, 0), ell=SHOW_ELLS, pts=False, pts_color=ORANGE,
                pts_size=POINT_SIZE, ell_alpha=ELL_ALPHA,
                ell_linewidth=ELL_LINEWIDTH, ell_color=ELL_COLOR,
-               color_list=None, rect=None, arrow=False, **kwargs):
+               color_list=None, rect=None, arrow=False, scale_factor=1, **kwargs):
     if not DISTINCT_COLORS:
         color_list = None
-    printDBG('drawkpts2: Drawing Keypoints! ell=%r pts=%r' % (ell, pts))
+    printDBG('-------------')
+    printDBG('draw_kpts2():')
+    printDBG(' * ell=%r pts=%r' % (ell, pts))
+    printDBG(' * scale_factor=%r' % (scale_factor,))
+    printDBG(' * offset=%r' % (offset,))
     # get matplotlib info
     ax = gca()
     pltTrans = ax.transData
@@ -1372,23 +1616,20 @@ def draw_kpts2(kpts, offset=(0, 0), ell=SHOW_ELLS, pts=False, pts_color=ORANGE,
     # data
     kpts = np.array(kpts)
     kptsT = kpts.T
-    x = kptsT[0, :] + offset[0]
-    y = kptsT[1, :] + offset[1]
-    printDBG('[df2] draw_kpts()----------')
-    printDBG('[df2] draw_kpts() ell=%r pts=%r' % (ell, pts))
-    printDBG('[df2] draw_kpts() drawing kpts.shape=%r' % (kpts.shape,))
+    x = kptsT[0, :] * scale_factor + offset[0]
+    y = kptsT[1, :] * scale_factor + offset[1]
+    printDBG(' * drawing kpts.shape=%r' % (kpts.shape,))
     if rect is None:
         rect = ell
         rect = False
         if pts is True:
             rect = False
     if ell or rect:
-        printDBG('[df2] draw_kpts() drawing ell kptsT.shape=%r' % (kptsT.shape,))
         # We have the transformation from unit circle to ellipse here. (inv(A))
-        a = kptsT[2]
+        a = kptsT[2] * scale_factor
         b = np.zeros(len(a))
-        c = kptsT[3]
-        d = kptsT[4]
+        c = kptsT[3] * scale_factor
+        d = kptsT[4] * scale_factor
 
         kpts_iter = izip(x, y, a, b, c, d)
         aff_list = [Affine2D([( a_, b_, x_),
@@ -1422,7 +1663,6 @@ def draw_kpts2(kpts, offset=(0, 0), ell=SHOW_ELLS, pts=False, pts_color=ORANGE,
         ellipse_collection.set_edgecolor(ell_color)
         ax.add_collection(ellipse_collection)
     if pts:
-        printDBG('[df2] draw_kpts() drawing pts x.shape=%r y.shape=%r' % (x.shape, y.shape))
         if color_list is None:
             color_list = [pts_color for _ in xrange(len(x))]
         ax.autoscale(enable=False)
@@ -1433,12 +1673,12 @@ def draw_kpts2(kpts, offset=(0, 0), ell=SHOW_ELLS, pts=False, pts_color=ORANGE,
 
 # ---- CHIP DISPLAY COMMANDS ----
 def imshow(img, fnum=None, title=None, figtitle=None, pnum=None,
-           interpolation='nearest', **kwargs):
+           interpolation='nearest', cmap=None, heatmap=False, **kwargs):
     'other interpolations = nearest, bicubic, bilinear'
     #printDBG('[df2] ----- IMSHOW ------ ')
     #printDBG('[***df2.imshow] fnum=%r pnum=%r title=%r *** ' % (fnum, pnum, title))
     #printDBG('[***df2.imshow] img.shape = %r ' % (img.shape,))
-    #printDBG('[***df2.imshow] img.stats = %r ' % (helpers.printable_mystats(img),))
+    #printDBG('[***df2.imshow] img.stats = %r ' % (util.printable_mystats(img),))
     fig = figure(fnum=fnum, pnum=pnum, title=title, figtitle=figtitle, **kwargs)
     ax = gca()
     if not DARKEN is None:
@@ -1449,30 +1689,52 @@ def imshow(img, fnum=None, title=None, figtitle=None, pnum=None,
     plt_imshow_kwargs = {
         'interpolation': interpolation,
         #'cmap': plt.get_cmap('gray'),
-        'vmin': 0,
-        'vmax': 255,
     }
+    if cmap is None and not heatmap:
+        plt_imshow_kwargs['vmin'] = 0
+        plt_imshow_kwargs['vmax'] = 255
+    if heatmap:
+        cmap = 'hot'
     try:
         if len(img.shape) == 3 and img.shape[2] == 3:
             # img is in a color format
             imgBGR = img
             if imgBGR.dtype == np.float64:
                 if imgBGR.max() <= 1:
+                    printDBG('Drawing Float Color Image < 1')
                     imgBGR = np.array(imgBGR, dtype=np.float32)
                 else:
+                    printDBG('Drawing Float Color Image > 1')
                     imgBGR = np.array(imgBGR, dtype=np.uint8)
             imgRGB = cv2.cvtColor(imgBGR, cv2.COLOR_BGR2RGB)
             ax.imshow(imgRGB, **plt_imshow_kwargs)
         elif len(img.shape) == 2:
             # img is in grayscale
             imgGRAY = img
-            ax.imshow(imgGRAY, cmap=plt.get_cmap('gray'), **plt_imshow_kwargs)
+            if cmap is None:
+                cmap = plt.get_cmap('gray')
+            if isinstance(cmap, str):
+                cmap = plt.get_cmap(cmap)
+            if imgGRAY.dtype == np.float32 and False:
+                if imgGRAY.max() <= 1:
+                    printDBG('Drawing Float Grey Image < 1')
+                    imgGRAY = np.array(np.round(imgGRAY * 255), dtype=np.uint8)
+                else:
+                    printDBG('Drawing Float Grey Image > 1')
+                    imgGRAY = np.array(np.round(imgGRAY), dtype=np.uint8)
+            ax.imshow(imgGRAY, cmap=cmap, **plt_imshow_kwargs)
         else:
             raise Exception('unknown image format')
     except TypeError as te:
-        print('[df2] imshow ERROR %r' % te)
+        print('[df2] imshow ERROR %r' % (te,))
         raise
     except Exception as ex:
+        print('!!!!!!!!!!!!!!WARNING!!!!!!!!!!!')
+        print('[df2] type(img) = %r' % type(img))
+        if not isinstance(img, np.ndarray):
+            print('!!!!!!!!!!!!!!ERRROR!!!!!!!!!!!')
+            pass
+            #print('img = %r' % (img,))
         print('[df2] img.dtype = %r' % (img.dtype,))
         print('[df2] type(img) = %r' % (type(img),))
         print('[df2] img.shape = %r' % (img.shape,))
@@ -1504,6 +1766,43 @@ def get_num_channels(img):
     return nChannels
 
 
+def stack_image_list(img_list, **kwargs):
+    if len(img_list) == 0:
+        return None
+    imgB = img_list[0]
+    offset_list = []
+    for count, img2 in enumerate(img_list):
+        if count == 0:
+            continue
+        imgB, woff, hoff = stack_images(imgB, img2, **kwargs)
+        offset_list.append((woff, hoff))
+    return imgB
+
+
+def stack_image_recurse(img_list1, img_list2=None, vert=True):
+    if img_list2 is None:
+        # Initialization and error checking
+        if len(img_list1) == 0:
+            return None
+        if len(img_list1) == 1:
+            return img_list1[0]
+        return stack_image_recurse(img_list1[0::2], img_list1[1::2], vert=vert)
+    if len(img_list1) == 1:
+        # Left base case
+        img1 = img_list1[0]
+    else:
+        # Left recurse
+        img1 = stack_image_recurse(img_list1[0::2], img_list1[1::2], vert=not vert)
+    if len(img_list2) == 1:
+        # Right base case
+        img2 = img_list2[0]
+    else:
+        # Right Recurse
+        img2 = stack_image_recurse(img_list2[0::2], img_list2[1::2], vert=not vert)
+    imgB, woff, hoff = stack_images(img1, img2, vert=vert)
+    return imgB
+
+
 def stack_images(img1, img2, vert=None):
     nChannels = get_num_channels(img1)
     nChannels2 = get_num_channels(img2)
@@ -1525,19 +1824,21 @@ def stack_images(img1, img2, vert=None):
         wB, hB = horiz_wh
         woff = w1
     # concatentate images
+    dtype = img1.dtype
+    assert img1.dtype == img2.dtype
     if nChannels == 3:
-        imgB = np.zeros((hB, wB, 3), np.uint8)
+        imgB = np.zeros((hB, wB, 3), dtype)
         imgB[0:h1, 0:w1, :] = img1
         imgB[hoff:(hoff + h2), woff:(woff + w2), :] = img2
     elif nChannels == 1:
-        imgB = np.zeros((hB, wB), np.uint8)
+        imgB = np.zeros((hB, wB), dtype)
         imgB[0:h1, 0:w1] = img1
         imgB[hoff:(hoff + h2), woff:(woff + w2)] = img2
     return imgB, woff, hoff
 
 
 def show_chipmatch2(rchip1, rchip2, kpts1, kpts2, fm=None, fs=None, title=None,
-                    vert=None, fnum=None, pnum=None, **kwargs):
+                    vert=None, fnum=None, pnum=None, heatmap=False, **kwargs):
     '''Draws two chips and the feature matches between them. feature matches
     kpts1 and kpts2 use the (x,y,a,c,d)
     '''
@@ -1550,7 +1851,7 @@ def show_chipmatch2(rchip1, rchip2, kpts1, kpts2, fm=None, fs=None, title=None,
     xywh1 = (0, 0, w1, h1)
     xywh2 = (woff, hoff, w2, h2)
     # Show the stacked chips
-    fig, ax = imshow(match_img, title=title, fnum=fnum, pnum=pnum)
+    fig, ax = imshow(match_img, title=title, fnum=fnum, pnum=pnum, heatmap=heatmap)
     # Overlay feature match nnotations
     draw_fmatch(xywh1, xywh2, kpts1, kpts2, fm, fs, **kwargs)
     return ax, xywh1, xywh2
@@ -1594,7 +1895,7 @@ def draw_fmatch(xywh1, xywh2, kpts1, kpts2, fm, fs=None, lbl1=None, lbl2=None,
     if nMatch > 0:
         colors = [kwargs['colors']] * nMatch if 'colors' in kwargs else distinct_colors(nMatch)
         if fs is not None:
-            colors = feat_scores_to_color(fs, 'hot')
+            colors = scores_to_color(fs, 'hot')
 
         acols = add_alpha(colors)
 
@@ -1610,7 +1911,7 @@ def draw_fmatch(xywh1, xywh2, kpts1, kpts2, fm, fs=None, lbl1=None, lbl2=None,
             _kwargs.update(kwargs)
             draw_lines2(kpts1, kpts2, fm, fs, kpts2_offset=offset2, **_kwargs)
 
-        # User helpers
+        # User util
         if ell:
             _drawkpts(pts=False, ell=True, color_list=colors)
         if pts:

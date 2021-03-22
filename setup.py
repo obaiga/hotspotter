@@ -3,8 +3,9 @@ from __future__ import division, print_function
 from os.path import dirname, realpath, join, exists, normpath, expanduser, splitext
 import os
 import sys
+import fnmatch
 # Hotspotter
-from hscom import helpers
+from hscom import helpers as util
 
 HOME = os.path.expanduser('~')
 # Allows other python modules (like hesaff) to find hotspotter modules
@@ -148,47 +149,125 @@ else:
     buildscript_fmt = 'unix_%s_build.sh'
 
 
-def build_pyinstaller():
-    cwd = normpath(realpath(dirname(__file__)))
+def clean():
+    cwd = get_setup_dpath()
     print('[setup] Current working directory: %r' % cwd)
-    build_dir = join(cwd, 'build')
-    dist_dir = join(cwd, 'dist')
-    helpers.delete(dist_dir)
-    assert exists('setup.py'), 'must be run in hotspotter source directory'
-    assert exists('../hotspotter/setup.py'), 'must be run in hotspotter source directory'
-    assert exists('../hotspotter/hotspotter'), 'must be run in hotspotter source directory'
-    assert exists('_setup'), 'must be run in hotspotter source directory'
-    # Remove old files
-    for rmdir in [build_dir, dist_dir]:
-        if exists(rmdir):
-            helpers.remove_file(rmdir)
+    # Remove python compiled files
+    util.remove_files_in_dir(cwd, '*.pyc', recursive=True)
+    util.remove_files_in_dir(cwd, '*.pyo', recursive=True)
+    # Remove profile outputs
+    util.remove_files_in_dir(cwd, '*.prof', recursive=True)
+    util.remove_files_in_dir(cwd, '*.prof.txt', recursive=True)
+    util.remove_files_in_dir(cwd, '*.lprof', recursive=True)
+    # Remove cython generated c files carefully
+    hsmod_list = ['hotspotter', 'hsgui', 'hsviz', 'hscom']
+    for hsmod in hsmod_list:
+        util.remove_files_in_dir(join(cwd, hsmod), '*.so', recursive=False)
+        util.remove_files_in_dir(join(cwd, hsmod), '*.c', recursive=False)
+        util.remove_files_in_dir(join(cwd, hsmod), '*.pyx', recursive=False)
+    # Remove pyinstaller temp files
+    clean_pyinstaller()
+    # Remove latex temp files
+    util.remove_files_in_dir(join(cwd, '_doc/user-guide-latex'), '*.synctex')
+    util.remove_files_in_dir(join(cwd, '_doc/user-guide-latex'), '*.log')
+    util.remove_files_in_dir(join(cwd, '_doc/user-guide-latex'), '*.out')
+    util.remove_files_in_dir(join(cwd, '_doc/user-guide-latex'), '*.aux')
+    # Remove logs
+    util.remove_files_in_dir(join(cwd, 'logs'))
+    # Remove misc
+    util.delete(join(cwd, "'"))  # idk where this file comes from
+    util.remove_files_in_dir(cwd + '/hstpl/extern_feat', 'libopencv_*.dylib', recursive=False)
+
+
+def clean_pyinstaller():
+    cwd = get_setup_dpath()
+    util.remove_files_in_dir(cwd, 'HotSpotterApp.pkg', recursive=False)
+    util.delete(join(cwd, 'dist'))
+    util.delete(join(cwd, 'build'))
+
+
+def build_pyinstaller():
+    clean_pyinstaller()
     # Run the pyinstaller command (does all the work)
     _cmd('pyinstaller _setup/pyinstaller-hotspotter.spec')
     # Perform some post processing steps on the mac
     if sys.platform == 'darwin' and exists("dist/HotSpotter.app/Contents/"):
         copy_list = [
-            'hsicon.icns',
-            'Info.plist'
+            ('hsicon.icns', 'Resources/icon-windowed.icns'),
+            ('Info.plist', 'Info.plist'),
         ]
         srcdir = '_setup'
-        dstdir = 'dist/HotSpotter.app/Contents/Resources/'
+        dstdir = 'dist/HotSpotter.app/Contents/'
         for srcname, dstname in copy_list:
             src = join(srcdir, srcname)
             dst = join(dstdir, dstname)
-            helpers.copy(src, dst)
+            util.copy(src, dst)
+
+
+def build_mac_dmg():
+    _cmd('./_setup/mac_dmg_builder.sh')
+
+
+def get_setup_dpath():
+    assert exists('setup.py'), 'must be run in hotspotter directory'
+    assert exists('../hotspotter/setup.py'), 'must be run in hotspotter directory'
+    assert exists('../hotspotter/hotspotter'), 'must be run in hotspotter directory'
+    assert exists('_setup'), 'must be run in hotspotter directory'
+    cwd = normpath(realpath(dirname(__file__)))
+    return cwd
+
+
+def dbg_mac_otool():
+    print('[setup] dbg_mac_otool()')
+    import _setup.fix_lib_otool
+    dpath = join(get_setup_dpath(), 'hstpl', 'extern_feat')
+    filt_dylib = lambda path: fnmatch.fnmatch(path, '*.dylib')
+    join_dylib = lambda path: join(dpath, path)
+    dylib_list = map(join_dylib, filter(filt_dylib, os.listdir(dpath)))
+    print('\n')
+    for fpath in dylib_list:
+        print('-----')
+        _setup.fix_lib_otool.inspect_dylib(fpath)
+        print('\n')
+    print('\n')
+    print('[setup] dylib_list: ')
+    print(' * ' + '\n * '.join(dylib_list))
+
+
+def fix_mac_otool():
+    raise Exception('Error: do not use this. pyinstaller should take care of otool now')
+    print('[setup] fix_mac_otool()')
+    import _setup.fix_lib_otool
+    dpath = join(get_setup_dpath(), 'hstpl', 'extern_feat')
+    filt_dylib = lambda path: fnmatch.fnmatch(path, '*.dylib')
+    join_dylib = lambda path: join(dpath, path)
+    dylib_list = map(join_dylib, filter(filt_dylib, os.listdir(dpath)))
+    needs_recurse = False
+    for fpath in dylib_list:
+        print('-----')
+        if _setup.fix_lib_otool.make_distributable_dylib(fpath):
+            needs_recurse = True
+        print('\n')
+    if needs_recurse:
+        fix_mac_otool()
 
 
 def build_win32_inno_installer():
     inno_dir = r'C:\Program Files (x86)\Inno Setup 5'
     inno_fname = 'ISCC.exe'
     inno_fpath = join(inno_dir, inno_fname)
-    iss_script = join('hotspotter', '_setup', 'wininstallerscript.iss')
+    hsdir = get_setup_dpath()
+    iss_script = join(hsdir, '_setup', 'wininstallerscript.iss')
     if not exists(inno_fpath):
         msg = '[setup] Inno not found and is needed for the win32 installer'
         print(msg)
         raise Exception(msg)
     args = [inno_fpath, iss_script]
     _cmd(args)
+    import shutil
+    installer_src = join(hsdir, '_setup', 'Output', 'hotspotter-win32-setup.exe')
+    installer_dst = join(hsdir, 'dist', 'hotspotter-win32-setup.exe')
+    shutil.move(installer_src, installer_dst)
 
 
 def compile_ui():
@@ -196,32 +275,13 @@ def compile_ui():
     pyuic4_cmd = {'win32':  'C:\Python27\Lib\site-packages\PyQt4\pyuic4',
                   'linux2': 'pyuic4',
                   'darwin': 'pyuic4'}[sys.platform]
-    widget_dir = join(dirname(realpath(__file__)), 'hotspotter/_frontend')
+    widget_dir = join(dirname(realpath(__file__)), 'hsgui/_frontend')
     print('[setup] Compiling qt designer files in %r' % widget_dir)
-    for widget_ui in helpers.glob(widget_dir, '*.ui'):
+    for widget_ui in util.glob(widget_dir, '*.ui'):
         widget_py = os.path.splitext(widget_ui)[0] + '.py'
         cmd = ' '.join([pyuic4_cmd, '-x', widget_ui, '-o', widget_py])
         print('[setup] compile_ui()>' + cmd)
         os.system(cmd)
-
-
-def clean():
-    assert exists('setup.py'), 'must be run in hotspotter directory'
-    assert exists('../hotspotter/setup.py'), 'must be run in hotspotter directory'
-    assert exists('../hotspotter/hotspotter'), 'must be run in hotspotter directory'
-    assert exists('_setup'), 'must be run in hotspotter directory'
-    cwd = normpath(realpath(dirname(__file__)))
-    print('[setup] Current working directory: %r' % cwd)
-    helpers.remove_files_in_dir(cwd, '*.pyc', recursive=True)
-    helpers.remove_files_in_dir(cwd, '*.prof', recursive=True)
-    helpers.remove_files_in_dir(cwd, '*.prof.txt', recursive=True)
-    helpers.remove_files_in_dir(cwd, '*.lprof', recursive=True)
-    helpers.remove_files_in_dir(cwd, 'HotSpotterApp.*.pkg', recursive=False)
-    helpers.remove_files_in_dir(cwd + '/hotspotter', '*.so', recursive=False)
-    helpers.remove_files_in_dir(cwd + '/hotspotter', '*.c', recursive=False)
-    helpers.delete(join(cwd, 'dist'))
-    helpers.delete(join(cwd, 'build'))
-    helpers.delete(join(cwd, "'"))  # idk where this file comes from
 
 
 def fix_tpl_permissions():
@@ -250,6 +310,8 @@ def make_install_opencv():
 
 
 def inrepo(func):
+    # Decorator. I forgot what it does. Something with
+    # repository paths.
     def wrapper(repo, *args, **kwargs):
         repo_dpath = join(expanduser('~'), 'code', repo)
         cwd = os.getcwd()
@@ -262,15 +324,12 @@ def inrepo(func):
 
 
 @inrepo
-def pull(repo, branch=None):
+def pull(repo, branch=''):
     if repo == 'hotspotter':
-        _cmd('git pull origin')
-        _cmd('git pull github')
+        _cmd('git pull hyrule ' + branch)
+        _cmd('git pull github ' + branch)
     else:
-        _cmd('git pull')
-    if branch is not None:
-        _cmd('git checkout ' + branch)
-        _cmd('git pull')
+        _cmd('git pull ' + branch)
 
 
 @inrepo
@@ -284,8 +343,8 @@ def push(repo):
 
 @inrepo
 def status(repo):
-    print('[helpers] ---- status(%r) ----' % repo)
-    with helpers.Indenter('[%s]' % repo):
+    print('[setup] ---- status(%r) ----' % repo)
+    with util.Indenter('[%s]' % repo):
         _cmd('git status')
 
 
@@ -294,36 +353,116 @@ def compile_cython(fpath):
     gcc_flags = ' '.join(['-shared', '-pthread', '-fPIC', '-fwrapv', '-O2',
                           '-Wall', '-fno-strict-aliasing', pyinclude])
     fname, ext = splitext(fpath)
+    # Prefer pyx over py
+    if exists(fname + '.pyx'):
+        fpath = fname + '.pyx'
     fname_so = fname + '.so'
     fname_c  = fname + '.c'
-    _cmd('cython ' + fpath)
-    _cmd('gcc ' + gcc_flags + ' -o ' + fname_so + ' ' + fname_c)
+    out, err, ret = _cmd('cython ' + fpath)
+    if ret == 0:
+        out, err, ret = _cmd('gcc ' + gcc_flags + ' -o ' + fname_so + ' ' + fname_c)
+    return ret
+
+
+def inspect_cython_typness(fpath):
+    from hscom import cross_platform as cplat
+    _cmd('cython -a ' + fpath)
+    html_fpath = splitext(fpath)[0] + '.html'
+    cplat.startfile(html_fpath)
 
 
 def build_cython():
+    # Sorted roughly by importance (how slow the module is)
+    # Critical Section
     compile_cython('hotspotter/spatial_verification2.py')
-    compile_cython('hotspotter/matching_functions.py')
+    #compile_cython('hotspotter/matching_functions.py')
+    compile_cython('hotspotter/nn_filters.py')
+    compile_cython('hotspotter/algos.py')
+    #compile_cython('hotspotter/match_chips3.py')
 
+    # Cannot cython this file
+    #compile_cython('hstpl/extern_feat/pyhesaff.py')
+
+    #compile_cython('hsviz/draw_func2.py')
+    #compile_cython('hsviz/viz.py')
+    #compile_cython('hsviz/interact.py')
+
+    #
+    compile_cython('hscom/__common__.py')
+    compile_cython('hscom/Parallelize.py')
+    compile_cython('hscom/fileio.py')
+    compile_cython('hscom/tools.py')
+    compile_cython('hscom/Printable.py')
+    compile_cython('hscom/Preferences.py')
+
+    compile_cython('hotspotter/chip_compute2.py')
+    compile_cython('hotspotter/feature_compute2.py')
+    compile_cython('hotspotter/extern_feat.py')
+    compile_cython('hotspotter/load_data2.py')
+
+    compile_cython('hotspotter/Config.py')
+    compile_cython('hotspotter/QueryResult.py')
+    compile_cython('hotspotter/voting_rules2.py')
+    compile_cython('hotspotter/segmentation.py')
+    compile_cython('hotspotter/report_results2.py')
+
+    compile_cython('hotspotter/DataStructures.py')
+    compile_cython('hotspotter/HotSpotterAPI.py')
+
+
+def build_pyo():
+    _cmd('python -O -m compileall *.py')
+    _cmd('python -O -m compileall hotspotter/*.py')
+    _cmd('python -O -m compileall hsgui/*.py')
+    _cmd('python -O -m compileall hsviz/*.py')
+    _cmd('python -O -m compileall hscom/*.py')
+    _cmd('python -O -m compileall hstpl/extern_feat/*.py')
 
 if __name__ == '__main__':
     print('[setup] Entering HotSpotter setup')
     for cmd in iter(sys.argv[1:]):
+        # Clean up non-source files
         if cmd in ['clean']:
             clean()
             sys.exit(0)
+        # Build PyQt UI files
         if cmd in ['buildui', 'ui', 'compile_ui']:
             compile_ui()
             sys.exit(0)
+
+        # Build optimized files
+        if cmd in ['o', 'pyo']:
+            build_pyo()
+
+        if cmd in ['c', 'cython']:
+            build_cython()
+
+        # Build distributable executable
         if cmd in ['installer', 'pyinstaller', 'build_pyinstaller', 'build_installer']:
             build_pyinstaller()
+
+        # Package into windows installer
         if cmd in ['inno', 'win32inno']:
             build_win32_inno_installer()
+        # Package into mac installer
+        if cmd in ['dmg', 'macdmg']:
+            build_mac_dmg()
+
+        # Debug tools
+        if cmd in ['otool']:
+            fix_mac_otool()
+        if cmd in ['dbg-otool']:
+            dbg_mac_otool()
+
+        # Build depenencies
         if cmd in ['flann', 'pyflann']:
             make_install_pyflann()
         if cmd in ['hesaff', 'pyhesaff']:
             make_install_pyhesaff()
         if cmd in ['opencv']:
             make_install_opencv()
+
+        # Git commands
         if cmd in ['pull']:
             pull('opencv')
             pull('hesaff')
@@ -345,6 +484,3 @@ if __name__ == '__main__':
             pull('hesaff', 'hotspotter_hesaff')
             pull('flann', 'hotspotter_flann')
             pull('hotspotter', 'jon')
-
-        if cmd in ['cython']:
-            build_cython()

@@ -5,8 +5,8 @@ from hscom import __common__
 # Scientific
 import numpy as np
 # Hotspotter
-import draw_func2 as df2
-import viz
+from . import draw_func2 as df2
+from . import viz
 from hstpl import mask_creator
 
 
@@ -415,7 +415,7 @@ def interact_chipres(hs, res, cx=None, fnum=4, figtitle='Inspect Query Result',
 
     def query_last_feature():
         viz.show_nearest_descriptors(hs, qcx, last_state.last_fx, df2.next_fnum())
-        fig3 = df2.gca()
+        fig3 = df2.gcf()
         df2.connect_callback(fig3, 'button_press_event', _click_chipres_click)
         df2.update()
 

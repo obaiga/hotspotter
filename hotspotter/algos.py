@@ -1,10 +1,10 @@
 'hotspotter.algos contains algorithm poltpori'
-from __future__ import division, print_function
+
 from hscom import __common__
 (print, print_, print_on, print_off,
- rrr, profile) = __common__.init(__name__, '[algos]')
+ rrr, profile, printDBG) = __common__.init(__name__, '[algos]', DEBUG=False)
 # Python
-from itertools import izip
+
 from os.path import join
 import os
 import sys
@@ -12,7 +12,7 @@ import textwrap
 # Matplotlib
 #import matplotlib.pyplot as plt
 # Scientific
-from hstpl.extern_feat import pyflann
+import pyflann
 #import sklearn.decomposition
 #import sklearn.preprocessing
 #import sklearn
@@ -21,21 +21,27 @@ import scipy.sparse as spsparse
 # Hotspotter
 from hscom import fileio as io
 from hscom import helpers
+from hscom import helpers as util
 
 
 DIST_LIST = ['L1', 'L2']
 
 
 def compute_distances(hist1, hist2, dist_list=DIST_LIST):
+    dtype_ = np.float64
+    hist1 = np.array(hist1, dtype=dtype_)
+    hist2 = np.array(hist2, dtype=dtype_)
     return {type_: globals()[type_](hist1, hist2) for type_ in dist_list}
 
 
-@profile
 def L1(hist1, hist2):
     return (np.abs(hist1 - hist2)).sum(-1)
 
 
-@profile
+def L2_sqrd(hist1, hist2):
+    return (np.abs(hist1 - hist2) ** 2).sum(-1)
+
+
 def L2(hist1, hist2):
     return np.sqrt((np.abs(hist1 - hist2) ** 2).sum(-1))
 
@@ -92,7 +98,7 @@ def emd(hist1, hist2):
         emd_dist = emd_(a32, b32)
         return emd_dist
     else:
-        ab_list   = [(add_weight(a), add_weight(b)) for a, b in izip(hist1, hist2)]
+        ab_list   = [(add_weight(a), add_weight(b)) for a, b in zip(hist1, hist2)]
         ab32_list = [(convertCV32(a), convertCV32(b)) for a, b in ab_list]
         emd_dists = [emd_(a32, b32) for a32, b32, in ab32_list]
         return emd_dists
@@ -120,7 +126,7 @@ def xywh_to_tlbr(roi, img_wh):
 def localmax(signal1d):
     maxpos = []
     nsamp = len(signal1d)
-    for ix in xrange(nsamp):
+    for ix in range(nsamp):
         _prev = signal1d[max(0, ix - 1)]
         _item = signal1d[ix]
         _next = signal1d[min(nsamp - 1, ix + 1)]
@@ -135,7 +141,7 @@ def viz_localmax(signal1d):
     from hsviz import draw_func2 as df2
     signal1d = np.array(signal1d)
     maxpos = np.array(localmax(signal1d))
-    x_data = range(len(signal1d))
+    x_data = list(range(len(signal1d)))
     y_data = signal1d
     df2.figure('localmax vizualization')
     df2.plot(x_data, y_data)
@@ -389,12 +395,11 @@ def __akmeans_iterate(data,
     print('[algos] Running akmeans: data.shape=%r ; num_clusters=%r' %
           (data.shape, num_clusters))
     print('[algos] * max_iters = %r ' % max_iters)
-    #print('  * dtype = %r ' % params.__BOW_DTYPE__)
     print('[algos] * ave_unchanged_iterwin=%r ; ave_unchanged_thresh=%r' %
           (ave_unchanged_thresh, ave_unchanged_iterwin))
     print('[algos] Printing akmeans info in format:' +
           'time (iterx, ave(#changed), #unchanged)')
-    for xx in xrange(0, max_iters):
+    for xx in range(0, max_iters):
         # 1) Find each datapoints nearest cluster center
         tt = helpers.tic()
         helpers.print_('...tic')
@@ -408,8 +413,8 @@ def __akmeans_iterate(data,
         datax_sort    = datax2_clusterx.argsort()  # NOQA
         clusterx_sort = datax2_clusterx[datax_sort]
         _L = 0
-        clusterx2_dataLRx = [None for _ in xrange(num_clusters)]
-        for _R in xrange(len(datax_sort) + 1):  # Slide R
+        clusterx2_dataLRx = [None for _ in range(num_clusters)]
+        for _R in range(len(datax_sort) + 1):  # Slide R
             if _R == num_data or clusterx_sort[_L] != clusterx_sort[_R]:
                 clusterx2_dataLRx[clusterx_sort[_L]] = (_L, _R)
                 _L = _R
@@ -421,9 +426,9 @@ def __akmeans_iterate(data,
                 continue  # ON EMPTY CLUSTER
             (_L, _R) = dataLRx
             clusters[clusterx] = np.mean(data[datax_sort[_L:_R]], axis=0)
-            #if params.__BOW_DTYPE__ == np.uint8:
+            #if __BOW_DTYPE__ == np.uint8:
             #clusters[clusterx] = np.array(np.round(clusters[clusterx]),
-            # dtype=params.__BOW_DTYPE__)
+            # dtype=__BOW_DTYPE__)
             clusters[clusterx] = np.array(np.round(clusters[clusterx]),
                                           dtype=np.uint8)
         # 4) Check for convergence (no change of cluster id)
@@ -458,7 +463,7 @@ def akmeans(data, num_clusters, max_iters=5, flann_params=None,
     Repeat until convergence.'''
 
     # Setup iterations
-    #data   = np.array(data, params.__BOW_DTYPE__)
+    #data   = np.array(data, __BOW_DTYPE__)
     num_data = data.shape[0]
     # Initialize to random cluster clusters
     datax_rand = np.arange(0, num_data)
@@ -550,7 +555,7 @@ def precompute_flann(data, cache_dir=None, uid='', flann_params=None,
     print('[algos] precompute_flann(%r): ' % uid)
     cache_dir = '.' if cache_dir is None else cache_dir
     # Generate a unique filename for data and flann parameters
-    fparams_uid = helpers.remove_chars(str(flann_params.values()), ', \'[]')
+    fparams_uid = helpers.remove_chars(str(list(flann_params.values())), ', \'[]')
     data_uid = helpers.hashstr_arr(data, 'dID')  # flann is dependent on the data
     flann_suffix = '_' + fparams_uid + '_' + data_uid + '.flann'
     # Append any user labels

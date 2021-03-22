@@ -1,15 +1,14 @@
 '''Parameters module: DEPRICATE THIS
     stores a bunch of global variables used by the other modules
     It also reads from sys.argv'''
-from __future__ import division, print_function
-import __common__
+
+from . import __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[params]')
 # Python
+from os.path import exists, join
+from . import fileio as io
 import sys
-import helpers
-from os.path import exists, expanduser, join
-
 
 '''
 print(' * __name__ = %s' % __name__)
@@ -24,59 +23,124 @@ print(' * sys.prefix = %r' % sys.prefix)
 #=====================================================
 # DEV DATABASE GLOBALS
 #=====================================================
-def find_workdir():
-    workdir_list = [
-        'D:/data/work',
-        '/media/Store/data/work', ]
-    for workdir in workdir_list:
-        if exists(workdir):
-            return workdir
-    return join(expanduser('~'),  'data/work')
+#def find_workdir():
+    #workdir_list = [
+        #'D:/data/work',
+        #'/media/Store/data/work', ]
+    #for workdir in workdir_list:
+        #if exists(workdir):
+            #return workdir
+    #return join(expanduser('~'),  'data/work')
 
-WORK_DIR = find_workdir()
 
-#WORK_DIR2 = 'D:/data/work'
-#WORK_DIR  = '/media/SSD_Extra/work'
+WORKDIR_CACHEID = 'work_directory_cache_id'
+
+
+# TODO: workdir doesnt belong in params
+def get_workdir(allow_gui=True):
+    work_dir = io.global_cache_read(WORKDIR_CACHEID, default='.')
+    if work_dir is not '.' and exists(work_dir):
+        return work_dir
+    if allow_gui:
+        work_dir = set_workdir()
+    return None
+
+
+def set_workdir(work_dir=None, allow_gui=True):
+    if work_dir is None and allow_gui:
+        work_dir = guiselect_workdir()
+    if work_dir is None or not exists(work_dir):
+        raise AssertionError('invalid workdir=%r' % work_dir)
+    io.global_cache_write(WORKDIR_CACHEID, work_dir)
+    return work_dir
+
+
+def guiselect_workdir():
+    from hsgui import guitools
+    # Gui selection
+    work_dir = guitools.select_directory('Work dir not currently set.' +
+                                         'Select a work directory')
+    # Make sure selection is ok
+    if not exists(work_dir):
+        msg_try = 'Directory %r does not exist.' % work_dir
+        opt_try = ['Try Again']
+        try_again = guitools._user_option(None, msg_try, 'get work dir failed', opt_try, False)
+        if try_again == 'Try Again':
+            return guiselect_workdir()
+    return work_dir
 
 # Common databases I use
-dev_databases = {
-    'SONOGRAMS':       WORK_DIR + '/sonograms',
-    'NAUTS':           WORK_DIR + '/NAUT_Dan',
+dbalias_dict = {
+    'NAUTS':            'NAUT_Dan',
+    'WD':               'WD_Siva',
+    'LF':               'LF_all',
+    'GZ':               'GZ_ALL',
+    'MOTHERS':          'HSDB_zebra_with_mothers',
+    'FROGS':            'Frogs',
+    'TOADS':            'WY_Toads',
+    'SEALS':            'Seals',
 
-    'OXFORD':          WORK_DIR + '/Oxford_Buildings',
-    'PARIS':           WORK_DIR + '/Paris_Buildings',
+    'OXFORD':           'Oxford_Buildings',
+    'PARIS':            'Paris_Buildings',
 
-    'JAG_KELLY':       WORK_DIR + '/JAG_Kelly',
-    'JAG_KIERYN':      WORK_DIR + '/JAG_Kieryn',
-    'WILDEBEAST':      WORK_DIR + '/Wildebeast',
-    'WDOGS':           WORK_DIR + '/WD_Siva',
+    'JAG_KELLY':        'JAG_Kelly',
+    'JAG_KIERYN':       'JAG_Kieryn',
+    'WILDEBEAST':       'Wildebeast',
+    'WDOGS':            'WD_Siva',
 
-    'GZ':              WORK_DIR + '/GZ_ALL',
-    'MOTHERS':         WORK_DIR + '/HSDB_zebra_with_mothers',
+    'PZ':               'PZ_FlankHack',
+    'PZ2':              'PZ-Sweatwater',
+    'PZ_MARIANNE':      'PZ_Marianne',
+    'PZ_DANEXT_TEST':   'PZ_DanExt_Test',
+    'PZ_DANEXT_ALL':    'PZ_DanExt_All',
 
-    'PZ':              WORK_DIR + '/PZ_FlankHack',
-    'PZ2':             WORK_DIR + '/PZ-Sweatwater',
-    'PZ_MARIANNE':     WORK_DIR + '/PZ_Marianne',
-    'PZ_DANEXT_TEST':  WORK_DIR + '/PZ_DanExt_Test',
-    'PZ_DANEXT_ALL':   WORK_DIR + '/PZ_DanExt_All',
+    'LF_ALL':           'LF_all',
+    'WS_HARD':          'WS_hard',
+    'SONOGRAMS':        'sonograms',
 
-    'LF_ALL':          WORK_DIR + '/LF_all',
-    'WS_HARD':         WORK_DIR + '/WS_hard',
-
-    'FROGS':           WORK_DIR + '/Frogs',
-    'TOADS':           WORK_DIR + '/WY_Toads',
-    'SEALS':           WORK_DIR + '/Seals',
 }
-dev_databases['JAG'] = dev_databases['JAG_KELLY']
-#dev_databases['DEFAULT'] = dev_databases['NAUTS']
-dev_databases['DEFAULT'] = None
+dbalias_dict['JAG'] = dbalias_dict['JAG_KELLY']
+#dbalias_dict['DEFAULT'] = dbalias_dict['NAUTS']
+dbalias_dict['DEFAULT'] = None
 # Add values from the database dict as global vars
-for key, val in dev_databases.iteritems():
-    exec('%s = %r' % (key, val))
+#for key, val in dbalias_dict.iteritems():
+    #exec('%s = %r' % (key, val))
+#def inverse_dev_databases():
+    #return {val: key for (key, val) in dbalias_dict.iteritems()}
 
 
-def inverse_dev_databases():
-    return {val: key for (key, val) in dev_databases.iteritems()}
+def db_to_dbdir(db):
+    work_dir = get_workdir()
+    dbdir = join(work_dir, db)
+    if not exists(dbdir) and db in dbalias_dict:
+        dbdir = join(work_dir, dbalias_dict[db.upper()])
+    if not exists(dbdir):
+        import os
+        from . import helpers as util
+        print('!!!!!!!!!!!!!!!!!!!!!')
+        print('[params] WARNING: db=%r not found in work_dir=%r' %
+              (db, work_dir))
+        fname_list = os.listdir(work_dir)
+        lower_list = [fname.lower() for fname in fname_list]
+        index = util.listfind(lower_list, db.lower())
+        if index is not None:
+            print('[params] WARNING: db capitalization seems to be off')
+            if not '--strict' in sys.argv:
+                print('[params] attempting to fix it')
+                db = fname_list[index]
+                dbdir = join(work_dir, db)
+                print('[params] dbdir=%r' % dbdir)
+                print('[params] db=%r' % db)
+        if not exists(dbdir):
+            print('[params] Valid DBs:')
+            print('\n'.join(fname_list))
+            print('[params] dbdir=%r' % dbdir)
+            print('[params] db=%r' % db)
+            print('[params] work_dir=%r' % work_dir)
+
+            raise AssertionError('[params] FATAL ERROR. Cannot load database')
+        print('!!!!!!!!!!!!!!!!!!!!!')
+    return dbdir
 
 
 #=====================================================
@@ -100,17 +164,17 @@ mother_hesaff_tuned_params = {'algorithm':           'kmeans',
                               'cores':               0,
                               'eps':                 0.0,
                               'iterations':          5,
-                              'key_size_':           20L,
+                              'key_size_':           20,
                               'leaf_max_size':       4,
                               'log_level':           'warning',
                               'max_neighbors':       -1,
                               'memory_weight':       0.0,
-                              'multi_probe_level_':  2L,
+                              'multi_probe_level_':  2,
                               'random_seed':         94222758,
                               'sample_fraction':     0.10000000149011612,
                               'sorted':              1,
                               'speedup':             23.30769157409668,
-                              'table_number_':       12L,
+                              'table_number_':       12,
                               'target_precision':    0.8999999761581421,
                               'trees':               1}
 
@@ -131,148 +195,30 @@ RESAVE_QUERY   = False
 
 WHITEN_FEATS   = False
 
-#=====================================================
-# ALGO GLOBALS
-#=====================================================
-# Double __ means It is an algorithm varaible
-#---  CHIP COMPUTE ---
-__CHIP_SQRT_AREA__ = 750
-__GRABCUT__        = False
-__HISTEQ__         = False
-__REGION_NORM__    = False
-__RANK_EQ__        = False
-__LOCAL_EQ__       = False
-__MAXCONTRAST__    = False
-#--- FEATURE COMPUTE ---
-__FEAT_TYPE__    = 'HESAFF'    # Feature type to use
-#--- MATCH CHIPS ---
-__MATCH_TYPE__         = 'vsmany'  # Matching type
-__VSMANY_K__           = 5         # Number of matches for one-vs-many
-__USE_RECIPROCAL_NN__  = True      # Number of matches for one-vs-many
-__USE_SPATIAL_NN__     = True      # Number of matches for one-vs-many
-__VSMANY_SCORE_FN__    = 'LNBNN'  # LNRAT, LNBNN, RATIO, PL, BORDA
-__BOW_NUM_WORDS__      = long(5e4)  # Vocab size for bag of words
-__BOW_NDESC_PER_WORD__ = 14
-__VSONE_RATIO_THRESH__ = 1.5       # Thresholds for one-vs-one
-#---------------------
-# SPATIAL VERIFICATION
-__NUM_RERANK__   = 1000  # Number of top matches to spatially re-rank
-__XY_THRESH__    = .002  # % diaglen of keypoint extent
-__USE_CHIP_EXTENT__ = False  # use roi as threshold instead of kpts extent
-__SCALE_THRESH_HIGH__ = 2.0
-__SCALE_THRESH_LOW__  = 0.5
-#=====================================================
-# FUNCTIONS
-#=====================================================
+#BOW_NUM_WORDS      = long(5e4)  # Vocab size for bag of words
+#BOW_NDESC_PER_WORD = 14
 
 
-# -------------------
+#def OXFORD_defaults():
+    ## best scale params
+    #import params
+    #params.XY_THRESH         = 0.01
+    #params.SCALE_THRESH_HIGH = 8
+    #params.SCALE_THRESH_LOW  = 0.5
+    #params.CHIP_SQRT_AREA = None
+    #params.BOW_NUM_WORDS  = long(1e6)
 
 
-if '--histeq' in sys.argv:
-    #print('[params] with histogram equalization')
-    __HISTEQ__ = True
-if '--grabcut' in sys.argv:
-    __GRABCUT__ = True
-    #print('[params] with grabcut')
-if '--regnorm' in sys.argv:
-    __REGION_NORM__ = True
-if '--rankeq' in sys.argv:
-    __RANK_EQ__ = True
-if '--norankeq' in sys.argv:
-    __RANK_EQ__ = False
-if '--localeq' in sys.argv:
-    __LOCAL_EQ__ = True
-if '--maxcont' in sys.argv:
-    __MAXCONTRAST__ = True
+#def GZ_defaults():
+    #import params
+    #params.BOW_NUM_WORDS  = 87638
 
 
-if '--whiten' in sys.argv or '--white' in sys.argv:
-    #print('[params] with whitening')
-    WHITEN_FEATS = True
-
-if '--vsone' in sys.argv:
-    __MATCH_TYPE__ = 'vsone'
-if '--vsmany' in sys.argv:
-    __MATCH_TYPE__ = 'vsmany'
-if '--bagofwords' in sys.argv:
-    __MATCH_TYPE__ = 'bagofwords'
-
-if '--lnbnn' in sys.argv:
-    __VSMANY_SCORE_FN__ = 'LNBNN'
-if '--ratio' in sys.argv:
-    __VSMANY_SCORE_FN__ = 'RATIO'
-if '--lnrat' in sys.argv:
-    __VSMANY_SCORE_FN__ = 'LNRAT'
-
-if '--cache-query' in sys.argv:
-    CACHE_QUERY = True
-if '--nocache-query' in sys.argv:
-    CACHE_QUERY = False
+#def PZ_defaults():
+    #import params
+    #params.BOW_NUM_WORDS  = 139454
 
 
-if '--reverify' in sys.argv:
-    REVERIFY_QUERY = True
-
-if '--resave-query' in sys.argv:
-    RESAVE_QUERY = True  # 4H4X5
-
-if '--print-checks' in sys.argv:
-    helpers.PRINT_CHECKS = True
-
-
-def OXFORD_defaults():
-    # best scale params
-    import params
-    params.__XY_THRESH__         = 0.01
-    params.__SCALE_THRESH_HIGH__ = 8
-    params.__SCALE_THRESH_LOW__  = 0.5
-    params.__CHIP_SQRT_AREA__ = None
-    params.__BOW_NUM_WORDS__  = long(1e6)
-
-
-def GZ_defaults():
-    import params
-    params.__BOW_NUM_WORDS__  = 87638
-
-
-def PZ_defaults():
-    import params
-    params.__BOW_NUM_WORDS__  = 139454
-
-
-def MOTHERS_defaults():
-    import params
-    params.__BOW_NUM_WORDS__  = 16225
-
-if '--dbG' in sys.argv:
-    sys.argv += ['--db GZ']
-if '--dbM' in sys.argv:
-    sys.argv += ['--db MOTHERS']
-
-for argv in iter(sys.argv):
-    argv_u =  argv.upper()
-    """
-    if multiprocessing.current_process().name == 'MainProcess':
-        print('[params] argv: %r' % argv_u)
-    """
-    if argv_u in dev_databases.keys():
-        """
-        if multiprocessing.current_process().name == 'MainProcess':
-            print('\n'.join(['[params] Default Database set to:'+argv.upper(),
-                            '[params] Previously: '+str(DEFAULT)]))
-        """
-        DEFAULT = dev_databases[argv_u]
-        if argv_u == 'OXFORD' or argv_u == 'PHILBIN':
-            """
-            if multiprocessing.current_process().name == 'MainProcess':
-                print('[params] Overloading OXFORD parameters')
-            """
-            # dont resize oxford photos
-            OXFORD_defaults()
-        if argv_u == 'GZ':
-            GZ_defaults()
-        if argv_u == 'PZ':
-            PZ_defaults()
-        if argv_u == 'MOTHERS':
-            MOTHERS_defaults()
+#def MOTHERS_defaults():
+    #import params
+    #params.BOW_NUM_WORDS  = 16225

@@ -1,10 +1,10 @@
-from __future__ import division, print_function
+
 from hscom import __common__
 print, print_, print_on, print_off, rrr, profile, printDBG =\
     __common__.init(__name__, '[nnfilt]', DEBUG=False)
 import numpy as np
 from numpy import array
-from itertools import izip
+
 
 eps = 1E-8
 
@@ -18,7 +18,7 @@ def RATIO_fn(vdist, ndist):
 
 
 def LNBNN_fn(vdist, ndist):
-    return (ndist - vdist) #  / 1000.0
+    return (ndist - vdist)  # / 1000.0
 
 
 # normweight_fn = LNBNN_fn
@@ -71,19 +71,19 @@ def compare_matrix_to_rows(row_matrix, row_list, comp_op=np.equal, logic_op=np.l
     return output
 
 
-def _nn_normalized_weight(normweight_fn, hs, qcx2_nns, qdat):
-    from hscom import helpers
-    helpers.stash_testdata('qcx2_nns')
+def _nn_normalized_weight(normweight_fn, hs, qcx2_nns, qreq):
+    #from hscom import helpers as util
+    #util.stash_testdata('qcx2_nns')
     # Only valid for vsone
-    K = qdat.cfg.nn_cfg.K
-    Knorm = qdat.cfg.nn_cfg.Knorm
-    rule  = qdat.cfg.nn_cfg.normalizer_rule
-    qcx2_weight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    qcx2_selnorms = {qcx: None for qcx in qcx2_nns.iterkeys()}
+    K = qreq.cfg.nn_cfg.K
+    Knorm = qreq.cfg.nn_cfg.Knorm
+    rule  = qreq.cfg.nn_cfg.normalizer_rule
+    qcx2_weight = {qcx: None for qcx in qcx2_nns.keys()}
+    qcx2_selnorms = {qcx: None for qcx in qcx2_nns.keys()}
     # Database feature index to chip index
-    dx2_cx = qdat._data_index.ax2_cx
-    dx2_fx = qdat._data_index.ax2_fx
-    for qcx in qcx2_nns.iterkeys():
+    dx2_cx = qreq._data_index.ax2_cx
+    dx2_fx = qreq._data_index.ax2_fx
+    for qcx in qcx2_nns.keys():
         (qfx2_dx, qfx2_dist) = qcx2_nns[qcx]
         qfx2_nndist = qfx2_dist[:, 0:K]
         if rule == 'last':
@@ -104,11 +104,11 @@ def _nn_normalized_weight(normweight_fn, hs, qcx2_nns, qdat):
         else:
             raise NotImplementedError('[nn_filters] no rule=%r' % rule)
         qfx2_normdist = [dists[normk]
-                         for (dists, normk) in izip(qfx2_dist, qfx2_normk)]
+                         for (dists, normk) in zip(qfx2_dist, qfx2_normk)]
         qfx2_normdx   = [dxs[normk]
-                         for (dxs, normk)   in izip(qfx2_dx, qfx2_normk)]
+                         for (dxs, normk)   in zip(qfx2_dx, qfx2_normk)]
         qfx2_normmeta = [(dx2_cx[dx], dx2_fx[dx], normk)
-                         for (normk, dx) in izip(qfx2_normk, qfx2_normdx)]
+                         for (normk, dx) in zip(qfx2_normk, qfx2_normdx)]
         qfx2_normdist = array(qfx2_normdist)
         qfx2_normdx   = array(qfx2_normdx)
         qfx2_normmeta = array(qfx2_normmeta)
@@ -133,14 +133,14 @@ def nn_lnrat_weight(*args):
     return _nn_normalized_weight(LNRAT_fn, *args)
 
 
-def nn_bursty_weight(hs, qcx2_nns, qdat):
+def nn_bursty_weight(hs, qcx2_nns, qreq):
     'Filters matches to a feature which is matched > burst_thresh #times'
     # Half-generalized to vsmany
     # Assume the first nRows-1 rows are the matches (last row is normalizer)
-    K = qdat.cfg.nn_cfg.K
-    qcx2_bursty_weight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    qcx2_metaweight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    for qcx in qcx2_nns.iterkeys():
+    K = qreq.cfg.nn_cfg.K
+    qcx2_bursty_weight = {qcx: None for qcx in qcx2_nns.keys()}
+    qcx2_metaweight = {qcx: None for qcx in qcx2_nns.keys()}
+    for qcx in qcx2_nns.keys():
         (qfx2_dx, qfx2_dist) = qcx2_nns[qcx]
         qfx2_nn = qfx2_dx[:, 0:K]
         dx2_frequency  = np.bincount(qfx2_nn.flatten())
@@ -148,24 +148,18 @@ def nn_bursty_weight(hs, qcx2_nns, qdat):
         qcx2_bursty_weight[qcx] = qfx2_bursty
     return qcx2_bursty_weight, qcx2_metaweight
 
-'''
-%run dev.py
-qdat = mc3.prequery(hs)
-qcx2_nns = mf.nearest_neighbors(hs, qcxs, qdat)
-'''
 
-
-def nn_recip_weight(hs, qcx2_nns, qdat):
+def nn_recip_weight(hs, qcx2_nns, qreq):
     'Filters a nearest neighbor to only reciprocals'
-    data_index = qdat._data_index
-    K = qdat.cfg.nn_cfg.K
-    Krecip = qdat.cfg.filt_cfg.Krecip
-    checks = qdat.cfg.nn_cfg.checks
+    data_index = qreq._data_index
+    K = qreq.cfg.nn_cfg.K
+    Krecip = qreq.cfg.filt_cfg.Krecip
+    checks = qreq.cfg.nn_cfg.checks
     dx2_data = data_index.ax2_data
     data_flann = data_index.flann
-    qcx2_recip_weight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    qcx2_metaweight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    for qcx in qcx2_nns.iterkeys():
+    qcx2_recip_weight = {qcx: None for qcx in qcx2_nns.keys()}
+    qcx2_metaweight = {qcx: None for qcx in qcx2_nns.keys()}
+    for qcx in qcx2_nns.keys():
         (qfx2_dx, qfx2_dist) = qcx2_nns[qcx]
         nQuery = len(qfx2_dx)
         dim = dx2_data.shape[1]
@@ -184,16 +178,16 @@ def nn_recip_weight(hs, qcx2_nns, qdat):
     return qcx2_recip_weight, qcx2_metaweight
 
 
-def nn_roidist_weight(hs, qcx2_nns, qdat):
+def nn_roidist_weight(hs, qcx2_nns, qreq):
     'Filters a matches to those within roughly the same spatial arangement'
-    data_index = qdat._data_index
-    K = qdat.cfg.nn_cfg.K
+    data_index = qreq._data_index
+    K = qreq.cfg.nn_cfg.K
     cx2_rchip_size = hs.cpaths.cx2_rchip_size
     cx2_kpts = hs.feats.cx2_kpts
     dx2_cx = data_index.ax2_cx
     dx2_fx = data_index.ax2_fx
     cx2_roidist_weight = {}
-    for qcx in qcx2_nns.iterkeys():
+    for qcx in qcx2_nns.keys():
         (qfx2_dx, qfx2_dist) = qcx2_nns[qcx]
         qfx2_nn = qfx2_dx[:, 0:K]
         # Get matched chip sizes #.0300s
@@ -211,7 +205,7 @@ def nn_roidist_weight(hs, qcx2_nns, qdat):
         qfx2_xy1[:, 1] /= qdiag
         # Get database relative xy keypoints
         qfx2_xy2 = array([cx2_kpts[cx][fx, 0:2] for (cx, fx) in
-                          izip(qfx2_cx.flat, qfx2_fx.flat)], np.float)
+                          zip(qfx2_cx.flat, qfx2_fx.flat)], np.float)
         qfx2_xy2.shape = (nQuery, K, 2)
         qfx2_xy2[:, :, 0] /= qfx2_chipdiag2
         qfx2_xy2[:, :, 1] /= qfx2_chipdiag2
@@ -222,17 +216,17 @@ def nn_roidist_weight(hs, qcx2_nns, qdat):
     return cx2_roidist_weight
 
 
-def nn_scale_weight(hs, qcx2_nns, qdat):
+def nn_scale_weight(hs, qcx2_nns, qreq):
     # Filter by scale for funzies
-    K = qdat.cfg.nn_cfg.K
-    cx2_scale_weight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    qcx2_metaweight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    data_index = qdat._data_index
-    K = qdat.cfg.nn_cfg.K
+    K = qreq.cfg.nn_cfg.K
+    cx2_scale_weight = {qcx: None for qcx in qcx2_nns.keys()}
+    qcx2_metaweight = {qcx: None for qcx in qcx2_nns.keys()}
+    data_index = qreq._data_index
+    K = qreq.cfg.nn_cfg.K
     cx2_kpts = hs.feats.cx2_kpts
     dx2_cx = data_index.ax2_cx
     dx2_fx = data_index.ax2_fx
-    for qcx in qcx2_nns.iterkeys():
+    for qcx in qcx2_nns.keys():
         (qfx2_dx, qfx2_dist) = qcx2_nns[qcx]
         qfx2_kpts = cx2_kpts[qcx]
         qfx2_nn = qfx2_dx[:, 0:K]
@@ -243,7 +237,7 @@ def nn_scale_weight(hs, qcx2_nns, qdat):
         qfx2_det1 = np.sqrt(1.0 / qfx2_det1)
         qfx2_K_det1 = np.rollaxis(np.tile(qfx2_det1, (K, 1)), 1)
         qfx2_det2 = array([cx2_kpts[cx][fx, [2, 4]] for (cx, fx) in
-                           izip(qfx2_cx.flat, qfx2_fx.flat)], np.float).prod(1)
+                           zip(qfx2_cx.flat, qfx2_fx.flat)], np.float).prod(1)
         qfx2_det2.shape = (nQuery, K)
         qfx2_det2 = np.sqrt(1.0 / qfx2_det2)
         qfx2_scaledist = qfx2_det2 / qfx2_K_det1
