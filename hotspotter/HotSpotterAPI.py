@@ -1,4 +1,4 @@
-
+from __future__ import division, print_function
 from hscom import __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[hs]')
@@ -7,6 +7,7 @@ import sys
 import os
 from os.path import exists, join, split, relpath
 from itertools import chain
+from itertools import zip_longest as izip
 import shutil
 import datetime
 import functools
@@ -74,7 +75,7 @@ def _get_datatup_list(hs, tblname, index_list, header_order, extra_cols):
     unknown_header = lambda indexes: ['ERROR!' for gx in indexes]
     get_tup = lambda header: cols.get(header, unknown_header)(index_list)
     unziped_tups = [get_tup(header) for header in header_order]
-    datatup_list = [tup for tup in zip(*unziped_tups)]
+    datatup_list = [tup for tup in izip(*unziped_tups)]
     return datatup_list
 
 
@@ -103,14 +104,14 @@ def _datatup_cols(hs, tblname, cx2_score=None):
         cols = {
             'nx':    lambda nxs: nxs,
             'name':  lambda nxs: [nx2_name[nx] for nx in iter(nxs)],
-            'nCxs':  lambda nxs: list(map(len, hs.nx2_cxs(nxs))),
+            'nCxs':  lambda nxs: map(len, hs.nx2_cxs(nxs)),
         }
     elif tblname == 'gxs':
         cols = {
             'gx':    lambda gxs: gxs,
             'aif':   lambda gxs: [gx2_aif[gx] for gx in iter(gxs)],
             'gname': lambda gxs: [gx2_gname[gx] for gx in iter(gxs)],
-            'nCxs':  lambda gxs: list(map(len, hs.gx2_cxs(gxs))),
+            'nCxs':  lambda gxs: map(len, hs.gx2_cxs(gxs)),
             'exif':  lambda gxs: hs.gx2_exif(gxs),
             'exif.DateTime': lambda gxs: hs.gx2_exif(gxs, tag='DateTime'),
         }
@@ -144,7 +145,7 @@ def _datatup_cols(hs, tblname, cx2_score=None):
             cols[key] = functools.partial(_lazy_prop, key=key)
         if tblname == 'res':
             cols.update({
-                'rank':   lambda cxs:  list(range(1, len(cxs) + 1)),
+                'rank':   lambda cxs:  range(1, len(cxs) + 1),
             })
     else:
         cols = {}
@@ -192,7 +193,7 @@ def _cx2_unixtime(hs, cx_list):
 
 def _gx2_unixtime(hs, gx_list):
     datetime_list = hs.gx2_exif(gx_list, tag='DateTime')
-    unixtime_list = list(map(io.exiftime_to_unixtime, datetime_list))
+    unixtime_list = map(io.exiftime_to_unixtime, datetime_list)
     return unixtime_list
 
 
@@ -302,7 +303,7 @@ class HotSpotter(DynStruct):
         #printDBG(r'[/hs] Created HotSpotter API')
 
     def rrr(hs):
-        from . import HotSpotterAPI
+        import HotSpotterAPI
         HotSpotterAPI.rrr()
 
     def import_scripts(hs):
@@ -695,7 +696,7 @@ class HotSpotter(DynStruct):
         hs.tables.cx2_roi   = np.vstack((hs.tables.cx2_roi, [roi]))
         hs.tables.cx2_theta = np.concatenate((hs.tables.cx2_theta, [theta]))
         prop_dict = hs.tables.prop_dict
-        for key in prop_dict.keys():
+        for key in prop_dict.iterkeys():
             prop_dict[key].append(props.get(key, ''))
         #hs.num_cx += 1
         cx = len(hs.tables.cx2_cid) - 1
@@ -717,7 +718,7 @@ class HotSpotter(DynStruct):
         if move_images:
             # Build lists of where the new images will be
             fpath_list2 = [join(img_dir, split(fpath)[1]) for fpath in fpath_list]
-            copy_iter = zip(fpath_list, fpath_list2)
+            copy_iter = izip(fpath_list, fpath_list2)
             copy_list = [(src, dst) for src, dst in copy_iter if not exists(dst)]
             nExist = len(fpath_list2) - len(copy_list)
             print('[hs] copying %d images' % len(copy_list))
@@ -728,8 +729,6 @@ class HotSpotter(DynStruct):
             # disk writes, but it still might help.
             mark_progress, end_progress = util.progress_func(len(copy_list), lbl='Copying Image')
             for count, (src, dst) in enumerate(copy_list):
-                print('src = {!r}'.format(src))
-                print('dst = {!r}'.format(dst))
                 shutil.copy(src, dst)
                 mark_progress(count)
             end_progress()
@@ -815,7 +814,7 @@ class HotSpotter(DynStruct):
         if devmode:
             # Grab the dev name insetad
             dev_databases = params.dev_databases
-            db_tups = [(v, k) for k, v in dev_databases.items() if v is not None]
+            db_tups = [(v, k) for k, v in dev_databases.iteritems() if v is not None]
             #print('  \n'.join(map(str,db_tups)))
             dev_dbs = dict((split(v)[1], k) for v, k in db_tups)
             db_name = dev_dbs[db_name]
@@ -1062,7 +1061,7 @@ class HotSpotter(DynStruct):
             other_cx_ = np.where(cx2_nx == nx)[0]
             return other_cx_[other_cx_ != cx]
         others_list = [_2ocxs(cx, nx) if nx > 1 else np.array([], ds.X_DTYPE)
-                       for nx, cx in zip(nx_list, cx_input)]
+                       for nx, cx in izip(nx_list, cx_input)]
         return others_list
 
     @tools.class_iter_input

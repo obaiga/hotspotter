@@ -1,33 +1,28 @@
-
+from __future__ import division, print_function
 from hscom import __common__
 (print, print_, print_on, print_off,
  rrr, profile, printDBG) = __common__.init(__name__, '[front]', DEBUG=False)
 # Python
 import sys
 # Qt
-if 0:
-    from PyQt4 import QtGui, QtCore
-    from PyQt4.Qt import (QAbstractItemView, pyqtSignal, Qt)
-    from PyQt5.QtGui import QMainWindow
-    from PyQt5.QtGui import QTableWidgetItem
-    QtWidgets = QtGui
-else:
-    from matplotlib.backends import backend_qt5 as backend_qt
-    from PyQt5 import QtCore
-    from PyQt5 import QtGui
-    from PyQt5.QtCore import *
-    from PyQt5.QtGui import *
-    from PyQt5.QtWidgets import *
-    from PyQt5.QtWidgets import QMainWindow
-    from PyQt5.QtWidgets import QTableWidgetItem
-    from PyQt5 import QtWidgets
-    QtWidgets.QApplication.UnicodeUTF8 = -1
+# Qt
+from matplotlib.backends import backend_qt5 as backend_qt
+from PyQt5 import QtCore
+from PyQt5 import QtGui
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QTableWidgetItem
+from PyQt5 import QtWidgets
+QtWidgets.QApplication.UnicodeUTF8 = -1
+
 
 # HotSpotter
-from ._frontend.MainSkel import Ui_mainSkel
+from hsgui._frontend.MainSkel import Ui_mainSkel
 from . import guitools
-from .guitools import slot_
-from .guitools import frontblocking as blocking
+from hsgui.guitools import slot_
+from hsgui.guitools import frontblocking as blocking
 from hscom import tools
 
 #=================
@@ -56,7 +51,7 @@ def clicked(func):
             return
         front.prev_tbl_item = item
         return func(front, item, *args, **kwargs)
-    clicked_wrapper.__name__ = func.__name__
+    clicked_wrapper.func_name = func.__name__
     # Hacky decorator
     return clicked_wrapper
 
@@ -137,7 +132,7 @@ class StreamStealer(QtCore.QObject):
         #steam_holder.stdout
 
     def write_shared(self, msg):
-        msg_ = str(str(msg))
+        msg_ = unicode(str(msg))
         self.iostream.write(msg_)
         self.write_.emit(msg_)
 
@@ -270,7 +265,7 @@ def connect_experimental_signals(front):
 #def popup(front, pos):
     #for i in front.ui.gxs_TBL.selectionModel().selection().indexes():
         #front.print(repr((i.row(), i.column())))
-    #menu = QtWidgets.QMenu()
+    #menu = QtGui.QMenu()
     #action1 = menu.addAction("action1")
     #action2 = menu.addAction("action2")
     #action3 = menu.addAction("action2")
@@ -339,7 +334,7 @@ class MainWindowFrontend(QMainWindow):
 
     def __init__(front, back):
         super(MainWindowFrontend, front).__init__()
-        #print('[*front] creating frontend')
+        #print('[*front] creating frontend') 
         front.prev_tbl_item = None
         front.ostream = None
         front.gui_logging_handler = None
@@ -428,7 +423,7 @@ class MainWindowFrontend(QMainWindow):
         #front.printDBG('setEnabled(%r)' % flag)
         ui = front.ui
         # Enable or disable all actions
-        for uikey in list(ui.__dict__.keys()):
+        for uikey in ui.__dict__.keys():
             if uikey.find('action') == 0:
                 ui.__dict__[uikey].setEnabled(flag)
 
@@ -532,7 +527,7 @@ class MainWindowFrontend(QMainWindow):
         for row in iter(row_list):
             data_tup = datatup_list[row]
             for col, data in enumerate(data_tup):
-                item = QTableWidgetItem()
+                item = QtWidgets.QTableWidgetItem()
                 # RCOS TODO: Pass in datatype here.
                 # BOOLEAN DATA
                 if tools.is_bool(data) or data == 'True' or data == 'False':
@@ -555,7 +550,7 @@ class MainWindowFrontend(QMainWindow):
                 # Mark as editable or not
                 if col_editable[col]:
                     item.setFlags(item.flags() | Qt.ItemIsEditable)
-                    item.setBackground(QtWidgets.QColor(250, 240, 240))
+                    item.setBackground(QtGui.QColor(250, 240, 240))
                 else:
                     item.setFlags(item.flags() ^ Qt.ItemIsEditable)
                 item.setTextAlignment(Qt.AlignHCenter)

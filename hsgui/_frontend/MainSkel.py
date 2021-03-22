@@ -7,19 +7,15 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-if 0:
-    from PyQt4 import QtCore, QtGui
-    QtWidgets = QtGui
-    UnicodeUTF8 = UnicodeUTF8
-else:
-    from matplotlib.backends import backend_qt5 as backend_qt
-    from PyQt5 import QtCore
-    from PyQt5 import QtGui
-    from PyQt5.QtCore import *
-    from PyQt5.QtGui import *
-    from PyQt5.QtWidgets import *
-    from PyQt5 import QtWidgets
-    UnicodeUTF8 = -1
+
+from matplotlib.backends import backend_qt5 as backend_qt
+from PyQt5 import QtCore
+from PyQt5 import QtGui
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5 import QtWidgets
+UnicodeUTF8 = -1
 
 
 try:
@@ -441,4 +437,3 @@ if __name__ == "__main__":
     ui.setupUi(mainSkel)
     mainSkel.show()
     sys.exit(app.exec_())
-

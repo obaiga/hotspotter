@@ -11,7 +11,7 @@ from hscom import __common__
  printDBG) = __common__.init(__name__, '[df2]', DEBUG=False, initmpl=True)
 # Python
 # from itertools import izip
-izip = zip
+from itertools import zip_longest as izip
 from os.path import splitext, split, join, normpath, exists
 import colorsys
 import itertools
@@ -27,22 +27,16 @@ from matplotlib.collections import PatchCollection, LineCollection
 from matplotlib.font_manager import FontProperties
 from matplotlib.patches import Rectangle, Circle, FancyArrow
 from matplotlib.transforms import Affine2D
+from matplotlib.backends import backend_qt4
 import matplotlib.pyplot as plt
 # Qt
-if 0:
-    from matplotlib.backends import backend_qt4 as backend_qt
-    from PyQt4 import QtCore, QtGui
-    from PyQt4.QtCore import Qt
-    QtGui = QtWidgets
-else:
-    from matplotlib.backends import backend_qt5 as backend_qt
-    from PyQt5 import QtCore
-    from PyQt5 import QtGui
-    from PyQt5.QtCore import *
-    from PyQt5.QtGui import *
-    from PyQt5.QtWidgets import *
-    from PyQt5 import QtWidgets
-
+from matplotlib.backends import backend_qt5 as backend_qt
+from PyQt5 import QtCore
+from PyQt5 import QtGui
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5 import QtWidgets
 # Scientific
 import numpy as np
 import scipy.stats
@@ -233,7 +227,7 @@ def distinct_colors(N, brightness=.878):
     # http://blog.jianhuashao.com/2011/09/generate-n-distinct-colors.html
     sat = brightness
     val = brightness
-    HSV_tuples = [(x * 1.0 / N, sat, val) for x in xrange(N)]
+    HSV_tuples = [(x * 1.0 / N, sat, val) for x in range(N)]
     RGB_tuples = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
     deterministic_shuffle(RGB_tuples)
     return RGB_tuples
@@ -332,7 +326,8 @@ def get_geometry(fnum):
 
 
 def get_screen_info():
-    desktop = QtWidgets.QDesktopWidget()
+    from PyQt4 import Qt, QtGui  # NOQA
+    desktop = QtGui.QDesktopWidget()
     mask = desktop.mask()  # NOQA
     layout_direction = desktop.layoutDirection()  # NOQA
     screen_number = desktop.screenNumber()  # NOQA
@@ -340,7 +335,7 @@ def get_screen_info():
     num_screens = desktop.screenCount()  # NOQA
     avail_rect = desktop.availableGeometry()  # NOQA
     screen_rect = desktop.screenGeometry()  # NOQA
-    QtWidgets.QDesktopWidget().availableGeometry().center()  # NOQA
+    QtGui.QDesktopWidget().availableGeometry().center()  # NOQA
     normal_geometry = desktop.normalGeometry()  # NOQA
 
 
@@ -384,6 +379,7 @@ def ensure_app_is_running():
 
 
 def get_monitor_geom(monitor_num=0):
+    from PyQt5 import QtWidgets  # NOQA
     ensure_app_is_running()
     desktop = QtWidgets.QDesktopWidget()
     rect = desktop.availableGeometry(screen=monitor_num)
@@ -392,10 +388,11 @@ def get_monitor_geom(monitor_num=0):
 
 
 def get_monitor_geometries():
+    from PyQt5 import QtWidgets  # NOQA
     ensure_app_is_running()
     monitor_geometries = {}
     desktop = QtWidgets.QDesktopWidget()
-    for screenx in xrange(desktop.numScreens()):
+    for screenx in range(desktop.numScreens()):
         rect = desktop.availableGeometry(screen=screenx)
         geom = (rect.x(), rect.y(), rect.width(), rect.height())
         monitor_geometries[screenx] = geom
@@ -458,10 +455,10 @@ def all_figures_tile(num_rc=None, wh=400, xy_off=(0, 0), wh_off=(0, 0),
     #Windows 7
     if sys.platform.startswith('win32'):
         stdpxls = win7_sizes
-    elif sys.platform.startswith('linux'):
+    elif sys.platform.startswith('linux2'):
         stdpxls = gnome3_sizes
     else:
-        stdpxls = gnome3_sizes
+     stdpxls = gnome3_sizes
     x_off +=  0
     y_off +=  0
     w_off +=  stdpxls['win_border_x']
@@ -503,7 +500,7 @@ def all_figures_tile(num_rc=None, wh=400, xy_off=(0, 0), wh_off=(0, 0),
     printDBG('[df2]     nRows, nCols = %r' % ((nRows, nCols),))
 
     def position_window(ix, win):
-        isqt4_mpl = isinstance(win, backend_qt.MainWindow)
+        isqt4_mpl = isinstance(win, backend_qt4.MainWindow)
         isqt4_back = isinstance(win, QtWidgets.QMainWindow)
         if not isqt4_mpl and not isqt4_back:
             raise NotImplementedError('%r-th Backend %r is not a Qt Window' %
@@ -966,7 +963,7 @@ def convert_keypress_event_mpl_to_qt4(mevent):
     if sys.platform == 'darwin':
         mpl2qtkey.update({'super': Qt.Key_Control, 'control': Qt.Key_Meta, })
 
-    # Try to reconstruct QtWidgets.KeyEvent
+    # Try to reconstruct QtGui.KeyEvent
     type_ = QtCore.QEvent.Type(QtCore.QEvent.KeyPress)  # The type should always be KeyPress
     text = ''
     # Try to extract the original modifiers
@@ -1013,7 +1010,7 @@ def convert_keypress_event_mpl_to_qt4(mevent):
     print('[df2] autorep = %r' % autorep)
     print('[df2] count = %r ' % count)
     print('----------------')
-    qevent = QtWidgets.QKeyEvent(type_, key_, modifiers, text, autorep, count)
+    qevent = QtGui.QKeyEvent(type_, key_, modifiers, text, autorep, count)
     return qevent
 
 
@@ -1034,7 +1031,7 @@ def test_build_qkeyevent():
     #key_ = ord('A')  # Qt works with uppercase keys
     #autorep = False  # default false
     #count   = 1  # default 1
-    #qevent = QtWidgets.QKeyEvent(type_, key_, modifiers, text, autorep, count)
+    #qevent = QtGui.QKeyEvent(type_, key_, modifiers, text, autorep, count)
     return qevent
 
 
@@ -1050,7 +1047,7 @@ def on_key_press_event(event):
         print('[df2] attempting to send qevent to qtwin')
         app.sendEvent(qtwin, qevent)
         # TODO: FINISH ME
-        #PyQt4.QtWidgets.QKeyEvent
+        #PyQt4.QtGui.QKeyEvent
         #qtwin.keyPressEvent(event)
         #fig.canvas.manager.window.keyPressEvent()
 
@@ -1331,7 +1328,7 @@ def plot_bars(y_data, nColorSplits=1):
     ori_colors = distinct_colors(nColorSplits)
     x_data = np.arange(nDims)
     ax = gca()
-    for ix in xrange(nColorSplits):
+    for ix in range(nColorSplits):
         xs = np.arange(nGroup) + (nGroup * ix)
         color = ori_colors[ix]
         x_dat = x_data[xs]
@@ -1433,8 +1430,8 @@ def draw_sift(desc, kp=None):
     arm_ori = np.tile(discrete_ori, (NBINS, 1)).flatten()
     # The offset x,y's for each sift measurment
     arm_dxy = np.array(zip(*cirlce_rad2xy(arm_ori, arm_mag)))
-    yxt_gen = itertools.product(xrange(NY), xrange(NX), xrange(NORIENTS))
-    yx_gen  = itertools.product(xrange(NY), xrange(NX))
+    yxt_gen = itertools.product(range(NY), range(NX), range(NORIENTS))
+    yx_gen  = itertools.product(range(NY), range(NX))
     # Transform the drawing of the SIFT descriptor to the its elliptical patch
     axTrans = ax.transData
     kpTrans = None
@@ -1501,7 +1498,7 @@ def scores_to_color(score_list, cmap_='hot', logscale=False):
     mins = score_list.min()
     rnge = score_list.max() - mins
     if rnge == 0:
-        return [cmap(.5) for fx in xrange(len(score_list))]
+        return [cmap(.5) for fx in range(len(score_list))]
     else:
         if logscale:
             score2_01 = lambda score: np.log2(1.1 + .9 * (float(score) - mins) / (rnge))
@@ -1579,11 +1576,11 @@ def draw_lines2(kpts1, kpts2, fm=None, fs=None, kpts2_offset=(0, 0),
                          kpts2_m[1] * scale_factor + hoff))
     if color_list is None:
         if fs is None:  # Draw with solid color
-            color_list    = [ LINE_COLOR for fx in xrange(len(fm))]
+            color_list    = [ LINE_COLOR for fx in range(len(fm))]
         else:  # Draw with colors proportional to score difference
             color_list = scores_to_color(fs)
     segments  = [((x1, y1), (x2, y2)) for (x1, x2, y1, y2) in xxyy_iter]
-    linewidth = [LINE_WIDTH for fx in xrange(len(fm))]
+    linewidth = [LINE_WIDTH for fx in range(len(fm))]
     line_alpha = LINE_ALPHA
     if LINE_ALPHA_OVERRIDE is not None:
         line_alpha = LINE_ALPHA_OVERRIDE
@@ -1664,7 +1661,7 @@ def draw_kpts2(kpts, offset=(0, 0), ell=SHOW_ELLS, pts=False, pts_color=ORANGE,
         ax.add_collection(ellipse_collection)
     if pts:
         if color_list is None:
-            color_list = [pts_color for _ in xrange(len(x))]
+            color_list = [pts_color for _ in range(len(x))]
         ax.autoscale(enable=False)
         ax.scatter(x, y, c=color_list, s=2 * pts_size, marker='o', edgecolor='none')
         #ax.autoscale(enable=False)

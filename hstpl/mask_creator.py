@@ -6,7 +6,7 @@ Jan 9 2014: taken from: https://gist.github.com/tonysyu/3090704
 """
 from __future__ import division, print_function
 import matplotlib
-matplotlib.use('Qt5Agg')
+matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 # from matplotlib.mlab import dist_point_to_segment

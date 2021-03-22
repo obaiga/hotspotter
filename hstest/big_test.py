@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # TODO: ADD COPYRIGHT TAG
-
-import builtins
+from __future__ import print_function, division
+import __builtin__
 from hsdev import test_api
 import multiprocessing
 import sys
@@ -12,10 +12,10 @@ INTERACTIVE = '--interactive' in sys.argv or '-i' in sys.argv
 
 
 def print(msg):
-    builtins.print('\n=============================')
-    builtins.print(msg)
+    __builtin__.print('\n=============================')
+    __builtin__.print(msg)
     if INTERACTIVE:
-        input('press enter to continue')
+        raw_input('press enter to continue')
 
 
 if __name__ == '__main__':

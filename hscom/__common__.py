@@ -1,5 +1,6 @@
-
-import builtins
+from __future__ import division, print_function
+# import __builtin__
+import builtins as __builtin__
 from os.path import exists, join
 import logging
 import logging.config
@@ -46,10 +47,10 @@ while exists(log_fpath):
 try:
     profile  # NoQA
     if __DEBUG__:
-        builtins.print('[common] profiling with kernprof.')
+        __builtin__.print('[common] profiling with kernprof.')
 except NameError:
     if __DEBUG__:
-        builtins.print('[common] not profiling.')
+        __builtin__.print('[common] not profiling.')
     profile = lambda func: func
 
  #|  %(name)s            Name of the logger (logging channel)
@@ -79,8 +80,8 @@ except NameError:
 
 root_logger = None
 __STDOUT__ = sys.stdout
-HS_PRINT_FUNCTION = builtins.print
-HS_DBG_PRINT_FUNCTION = builtins.print
+HS_PRINT_FUNCTION = __builtin__.print
+HS_DBG_PRINT_FUNCTION = __builtin__.print
 HS_WRITE_FUNCTION = __STDOUT__.write
 HS_FLUSH_FUNCTION = __STDOUT__.flush
 
@@ -144,7 +145,7 @@ def init(module_name, module_prefix='[???]', DEBUG=None, initmpl=False):
         create_logger()
 
     if __DEBUG__:
-        builtins.print('[common] import %s  # %s' % (module_name, module_prefix))
+        __builtin__.print('[common] import %s  # %s' % (module_name, module_prefix))
 
     # Define reloading function
     def rrr():
@@ -153,7 +154,7 @@ def init(module_name, module_prefix='[???]', DEBUG=None, initmpl=False):
         import imp
         prev = __DEBUG__
         __DEBUG__ = False
-        builtins.print(module_prefix + ' reloading ' + module_name)
+        __builtin__.print(module_prefix + ' reloading ' + module_name)
         imp.reload(module)
         __DEBUG__ = prev
 
@@ -228,7 +229,7 @@ def init(module_name, module_prefix='[???]', DEBUG=None, initmpl=False):
                 toolbar = 'toolbar2'
             matplotlib.rcParams['toolbar'] = toolbar
             matplotlib.rc('text', usetex=False)
-            mpl_keypress_shortcuts = [key for key in list(matplotlib.rcParams.keys()) if key.find('keymap') == 0]
+            mpl_keypress_shortcuts = [key for key in matplotlib.rcParams.keys() if key.find('keymap') == 0]
             for key in mpl_keypress_shortcuts:
                 matplotlib.rcParams[key] = ''
             #matplotlib.rcParams['text'].usetex = False

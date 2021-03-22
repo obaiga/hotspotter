@@ -1,4 +1,4 @@
-
+from __future__ import division, print_function
 from . import __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[tools]')
@@ -10,22 +10,27 @@ import types
 import numpy as np
 
 # Very odd that I have to put in dtypes in two different ways.
+# VALID_INT_TYPES = (types.IntType,
+#                    types.LongType,
+#                    np.typeDict['int64'],
+#                    np.typeDict['int32'],
+#                    np.typeDict['uint8'],)
+
 VALID_INT_TYPES = (int,
                    int,
                    np.typeDict['int64'],
                    np.typeDict['int32'],
-                   np.typeDict['uint8'],
-                   np.dtype('int32'),
-                   np.dtype('uint8'),
-                   np.dtype('int64'),)
+                   np.typeDict['uint8'],)
+
+# VALID_FLOAT_TYPES = (types.FloatType,
+#                      np.typeDict['float64'],
+#                      np.typeDict['float32'],
+#                      np.typeDict['float16'],)
 
 VALID_FLOAT_TYPES = (float,
                      np.typeDict['float64'],
                      np.typeDict['float32'],
-                     np.typeDict['float16'],
-                     np.dtype('float64'),
-                     np.dtype('float32'),
-                     np.dtype('float16'),)
+                     np.typeDict['float16'],)
 
 DEBUG = False
 
@@ -47,7 +52,7 @@ def override_comparison(func):
         if not isinstance(other, self.__class__):
             return super(self.__class__, self) == other
 
-    cmp_wrapper.__name__ = func.__name__
+    cmp_wrapper.func_name = func.func_name
     return cmp_wrapper
 
 
@@ -83,7 +88,7 @@ def debug_exception(func):
         try:
             return func(*args, **kwargs)
         except Exception as ex:
-            print('[tools] ERROR: %s(%r, %r)' % (func.__name__, args, kwargs))
+            print('[tools] ERROR: %s(%r, %r)' % (func.func_name, args, kwargs))
             print('[tools] ERROR: %r' % ex)
             raise
     ex_wrapper.__name__ = func.__name__
@@ -95,27 +100,27 @@ class lru_cache(object):
     def __init__(cache, max_size=100):
         cache.max_size = max_size
         cache.cache_ = pylru.lrucache(max_size)
-        cache.__name__ = None
+        cache.func_name = None
 
     def clear_cache(cache):
-        printDBG('[tools.lru] clearing %r lru_cache' % (cache.__name__,))
+        printDBG('[tools.lru] clearing %r lru_cache' % (cache.func_name,))
         cache.cache_.clear()
 
     def __call__(cache, func):
         def wrapped(self, *args):  # wrap a class
             try:
                 value = cache.cache_[args]
-                printDBG(func.__name__ + '(%r) ...lrucache hit' % (args,))
+                printDBG(func.func_name + '(%r) ...lrucache hit' % (args,))
                 return value
             except KeyError:
-                printDBG(func.__name__ + '(%r) ...lrucache miss' % (args,))
+                printDBG(func.func_name + '(%r) ...lrucache miss' % (args,))
 
             value = func(self, *args)
             cache.cache_[args] = value
             return value
         cache.__name__ = func.__name__
         printDBG('[@tools.lru] wrapping %r with max_size=%r lru_cache' %
-                 (cache.__name__, cache.max_size))
+                 (cache.func_name, cache.max_size))
         wrapped.__name__ = func.__name__
         wrapped.clear_cache = cache.clear_cache
         return wrapped

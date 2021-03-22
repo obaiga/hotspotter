@@ -1,9 +1,10 @@
-
+from __future__ import division, print_function
 from hscom import __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[vr2]')
 # Python
-
+# from itertools import izip
+from itertools import zip_longest as izip
 # Scientific
 import numpy as np
 from numpy.linalg import svd
@@ -158,7 +159,7 @@ def _chipmatch2_utilities(hs, qcx, chipmatch, K):
     fss  = np.hstack(cx2_fs)
     fks  = np.hstack(cx2_fk)
     qfx2_utilities = [[] for _ in range(nQFeats)]
-    for cx, qfx, fk, fs in zip(cxs, qfxs, fks, fss):
+    for cx, qfx, fk, fs in izip(cxs, qfxs, fks, fss):
         nx = cx2_nx[cx]
         # Apply temporary uniquish name
         tnx = nx if nx >= 2 else -cx
@@ -222,12 +223,12 @@ def _utilities2_pairwise_breaking(qfx2_utilities):
         # pairwise winners and losers
         pw_winners = [porder[r:r + 1] for r in range(nReport)]
         pw_losers = [hstack((corder, porder[r + 1:])) for r in range(nReport)]
-        pw_iter = zip(pw_winners, pw_losers)
+        pw_iter = izip(pw_winners, pw_losers)
         pw_votes_ = [cartesian((winner, losers)) for winner, losers in pw_iter]
         pw_votes = np.vstack(pw_votes_)
         #pw_votes = [(w,l) for votes in pw_votes_ for w,l in votes if w != l]
-        list(map(sum_win,  iter(pw_votes)))
-        list(map(sum_loss, iter(pw_votes)))
+        map(sum_win,  iter(pw_votes))
+        map(sum_loss, iter(pw_votes))
         nVoters += 1
     #print('')
     PLmatrix = pairwise_mat / nVoters
@@ -313,7 +314,7 @@ def positional_scoring_rule(qfx2_utilities, rule, isWeighted):
         qfx2_worder = [np.array([util[2] for util in utils]) for utils in qfx2_utilities]
     else:
         qfx2_worder = [np.array([    1.0 for util in utils]) for utils in qfx2_utilities]
-    K = max(list(map(len, qfx2_utilities)))
+    K = max(map(len, qfx2_utilities))
     if rule == 'borda':
         score_vec = np.arange(0, K)[::-1] + 1
     if rule == 'plurality':

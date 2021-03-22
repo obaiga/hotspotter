@@ -1,9 +1,10 @@
-
+from __future__ import division, print_function
 from hscom import __common__
 print, print_, print_on, print_off, rrr, profile, printDBG =\
     __common__.init(__name__, '[cov]', DEBUG=False)
 # Standard
-
+# from itertools import izip
+from itertools import zip_longest as izip
 from itertools import product as iprod
 import math
 # Science
@@ -97,7 +98,7 @@ def warp_srcimg_to_kpts(fx2_kp, srcimg, chip_shape, fx2_score=None, **kwargs):
         fx2_score = np.ones(len(fx2_kp))
     scale_factor = kwargs.get('scale_Factor', SCALE_FACTOR_DEFAULT)
     # Build destination image
-    (h, w) = list(map(int, (chip_shape[0] * scale_factor, chip_shape[1] * scale_factor)))
+    (h, w) = map(int, (chip_shape[0] * scale_factor, chip_shape[1] * scale_factor))
     dstimg = np.zeros((h, w), dtype=np.float32)
     dst_copy = dstimg.copy()
     src_shape = srcimg.shape
@@ -115,7 +116,7 @@ def warp_srcimg_to_kpts(fx2_kp, srcimg, chip_shape, fx2_score=None, **kwargs):
     # For each keypoint warp a gaussian scaled by the feature score
     # into the image
     count = 0
-    for count, (M, score) in enumerate(zip(fx2_M, fx2_score)):
+    for count, (M, score) in enumerate(izip(fx2_M, fx2_score)):
         mark_progress(count)
         warped = cv2.warpAffine(srcimg * score, M, dsize,
                                 dst=dst_copy,

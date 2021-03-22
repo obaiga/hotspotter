@@ -1,7 +1,7 @@
 '''Parameters module: DEPRICATE THIS
     stores a bunch of global variables used by the other modules
     It also reads from sys.argv'''
-
+from __future__ import division, print_function
 from . import __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[params]')
@@ -116,7 +116,7 @@ def db_to_dbdir(db):
         dbdir = join(work_dir, dbalias_dict[db.upper()])
     if not exists(dbdir):
         import os
-        from . import helpers as util
+        import helpers as util
         print('!!!!!!!!!!!!!!!!!!!!!')
         print('[params] WARNING: db=%r not found in work_dir=%r' %
               (db, work_dir))

@@ -1,4 +1,4 @@
-
+from __future__ import division, print_function
 import multiprocessing
 import argparse
 from . import cross_platform
@@ -180,7 +180,7 @@ def cfg_argparse(parser2):
     _aggcfg = _qcfg.agg_cfg
     defcfg_list = [_fcfg, _ccfg, _filtcfg, _svcfg, _nncfg, _aggcfg, _dcfg]
     for cfg in defcfg_list:
-        for key, val in cfg.items():
+        for key, val in cfg.iteritems():
             if key.find('_') == 0:
                 continue
             elif isinstance(val, int):
@@ -268,8 +268,9 @@ def fix_args_with_cache(args):
 def parse_arguments(defaultdb=None, **kwargs):
     '''Defines the arguments for hotspotter'''
     global ARGS_
+    # parser2 = make_argparse2('HotSpotter - Individual Animal Recognition',
+    #                          version='???')
     parser2 = make_argparse2('HotSpotter - Individual Animal Recognition')
-                             # version='???')
     commands_argparse(parser2)
     database_argparse(parser2)
     dev_argparse(parser2)

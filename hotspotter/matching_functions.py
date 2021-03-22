@@ -1,9 +1,10 @@
-
+from __future__ import division, print_function
 from hscom import __common__
 print, print_, print_on, print_off, rrr, profile, printDBG =\
     __common__.init(__name__, '[mf]', DEBUG=False)
 # Python
-
+# from itertools import izip
+from itertools import zip_longest as izip
 import sys
 # Scientific
 import numpy as np
@@ -189,15 +190,15 @@ def filter_neighbors(hs, qcx2_nns, filt2_weights, qreq):
         # Get a numeric score score and valid flag for each feature match
         qfx2_score, qfx2_valid = _apply_filter_scores(qcx, qfx2_nn, filt2_weights, filt_cfg)
         qfx2_cx = dx2_cx[qfx2_nn]
-        printDBG('[mf] * %d assignments are invalid by thresh' % ((True - qfx2_valid).sum()))
+        printDBG('[mf] * %d assignments are invalid by thresh' % ((True ^ qfx2_valid).sum()))
         # Remove Impossible Votes:
         # dont vote for yourself or another chip in the same image
         qfx2_notsamechip = qfx2_cx != qcx
         cant_match_self = True
         if cant_match_self:
             ####DBG
-            nChip_all_invalid = ((True - qfx2_notsamechip)).sum()
-            nChip_new_invalid = (qfx2_valid * (True - qfx2_notsamechip)).sum()
+            nChip_all_invalid = ((True ^ qfx2_notsamechip)).sum()
+            nChip_new_invalid = (qfx2_valid * (True ^ qfx2_notsamechip)).sum()
             printDBG('[mf] * %d assignments are invalid by self' % nChip_all_invalid)
             printDBG('[mf] * %d are newly invalided by self' % nChip_new_invalid)
             ####
@@ -205,8 +206,8 @@ def filter_neighbors(hs, qcx2_nns, filt2_weights, qreq):
         if cant_match_sameimg:
             qfx2_notsameimg  = hs.tables.cx2_gx[qfx2_cx] != hs.tables.cx2_gx[qcx]
             ####DBG
-            nImg_all_invalid = ((True - qfx2_notsameimg)).sum()
-            nImg_new_invalid = (qfx2_valid * (True - qfx2_notsameimg)).sum()
+            nImg_all_invalid = ((True ^ qfx2_notsameimg)).sum()
+            nImg_new_invalid = (qfx2_valid * (True ^ qfx2_notsameimg)).sum()
             printDBG('[mf] * %d assignments are invalid by gx' % nImg_all_invalid)
             printDBG('[mf] * %d are newly invalided by gx' % nImg_new_invalid)
             ####
@@ -214,13 +215,13 @@ def filter_neighbors(hs, qcx2_nns, filt2_weights, qreq):
         if cant_match_samename:
             qfx2_notsamename = hs.tables.cx2_nx[qfx2_cx] != hs.tables.cx2_nx[qcx]
             ####DBG
-            nName_all_invalid = ((True - qfx2_notsamename)).sum()
-            nName_new_invalid = (qfx2_valid * (True - qfx2_notsamename)).sum()
+            nName_all_invalid = ((True ^ qfx2_notsamename)).sum()
+            nName_new_invalid = (qfx2_valid * (True ^ qfx2_notsamename)).sum()
             printDBG('[mf] * %d assignments are invalid by nx' % nName_all_invalid)
             printDBG('[mf] * %d are newly invalided by nx' % nName_new_invalid)
             ####
             qfx2_valid = np.logical_and(qfx2_valid, qfx2_notsamename)
-        printDBG('[mf] * Marking %d assignments as invalid' % ((True - qfx2_valid).sum()))
+        printDBG('[mf] * Marking %d assignments as invalid' % ((True ^ qfx2_valid).sum()))
         qcx2_nnfilter[qcx] = (qfx2_score, qfx2_valid)
     end_progress()
     return qcx2_nnfilter
@@ -282,7 +283,7 @@ def build_chipmatches(hs, qcx2_nns, qcx2_nnfilt, qreq):
         qfx2_qfx = np.tile(np.arange(nQuery), (K, 1)).T
         qfx2_k   = np.tile(np.arange(K), (nQuery, 1))
         # Pack feature matches into an interator
-        match_iter = zip(*[qfx2[qfx2_valid] for qfx2 in
+        match_iter = izip(*[qfx2[qfx2_valid] for qfx2 in
                             (qfx2_qfx, qfx2_cx, qfx2_fx, qfx2_fs, qfx2_k)])
         # Vsmany - Iterate over feature matches
         if not is_vsone:
@@ -492,7 +493,7 @@ def load_resdict(hs, qreq):
     uid = qreq.get_uid()
     ##IF DICT_COMPREHENSION
     qcx2_res = {qcx: qr.QueryResult(qcx, uid) for qcx in iter(qcxs)}
-    [res.load(hs) for res in qcx2_res.values()]
+    [res.load(hs) for res in qcx2_res.itervalues()]
     ##ELSE
     #qcx2_res = {}
     #for qcx in qcxs:
@@ -545,7 +546,7 @@ def score_chipmatch(hs, qcx, chipmatch, score_method, qreq=None):
         cx2_score = coverage.score_chipmatch_coverage(hs, qcx, chipmatch, qreq, method=method)
     else:
         raise Exception('[mf] unknown scoring method:' + score_method)
-    cx2_nMatch = np.array(list(map(len, cx2_fm)))
+    cx2_nMatch = np.array(map(len, cx2_fm))
     # Autoremove chips with no match support
     cx2_score *= (cx2_nMatch != 0)
     return cx2_score

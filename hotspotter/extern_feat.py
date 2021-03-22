@@ -94,11 +94,12 @@ except ImportError as ex:
 if OLD_HESAFF:
     detect_kpts = detect_kpts_old
     print('[extern_feat] using: old hessian affine')
+    
 else:
     detect_kpts = detect_kpts_new
     print('[extern_feat] using: new pyhesaff')
 
 
-
+#----
 def compute_hesaff(rchip_fpath, dict_args):
     return detect_kpts(rchip_fpath, dict_args)

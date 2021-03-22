@@ -168,7 +168,7 @@ def dump_gt_matches(allres):
     hs = allres.hs
     qcx2_res = allres.qcx2_res
     'Displays the matches to ground truth for all queries'
-    for qcx in xrange(0, len(qcx2_res)):
+    for qcx in range(0, len(qcx2_res)):
         res = qcx2_res[qcx]
         res.show_gt_matches(hs, fnum=FIGNUM)
         __dump_or_browse(allres.hs, 'gt_matches' + allres.title_suffix)

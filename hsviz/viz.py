@@ -3,10 +3,7 @@ from hscom import __common__
 (print, print_, print_on, print_off, rrr, profile, printDBG) = \
     __common__.init(__name__, '[viz]', DEBUG=False)
 import matplotlib
-if 0:
-    matplotlib.use('Qt4Agg')
-else:
-    matplotlib.use('Qt5Agg')
+matplotlib.use('Qt4Agg')
 #import re
 import warnings
 # Scientific

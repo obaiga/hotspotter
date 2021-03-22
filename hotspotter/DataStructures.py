@@ -1,9 +1,17 @@
-
+from __future__ import division, print_function
 from hscom import __common__
 (print, print_, print_on, print_off, rrr,
  profile, printDBG) = __common__.init(__name__, '[ds]', DEBUG=False)
 # Standard
 from itertools import chain
+
+from itertools import zip_longest as izip
+try:
+    from itertools import imap
+except ImportError:
+    # Python 3...
+    imap=map
+
 # Scientific
 import numpy as np
 # HotSpotter
@@ -86,18 +94,18 @@ class NNIndex(object):
         sample_uid = util.hashstr_arr(cx_list, 'dcxs')
         uid = '_' + sample_uid + feat_uid
         # Number of features per sample chip
-        nFeat_iter1 = map(lambda cx: len(cx2_desc[cx]), iter(cx_list))
-        nFeat_iter2 = map(lambda cx: len(cx2_desc[cx]), iter(cx_list))
-        nFeat_iter3 = map(lambda cx: len(cx2_desc[cx]), iter(cx_list))
+        nFeat_iter1 = imap(lambda cx: len(cx2_desc[cx]), iter(cx_list))
+        nFeat_iter2 = imap(lambda cx: len(cx2_desc[cx]), iter(cx_list))
+        nFeat_iter3 = imap(lambda cx: len(cx2_desc[cx]), iter(cx_list))
         # Inverted index from indexed descriptor to chipx and featx
-        _ax2_cx = ([cx] * nFeat for (cx, nFeat) in zip(cx_list, nFeat_iter1))
+        _ax2_cx = ([cx] * nFeat for (cx, nFeat) in izip(cx_list, nFeat_iter1))
         _ax2_fx = (range(nFeat) for nFeat in iter(nFeat_iter2))
         ax2_cx  = np.array(list(chain.from_iterable(_ax2_cx)))
         ax2_fx  = np.array(list(chain.from_iterable(_ax2_fx)))
         # Aggregate indexed descriptors into continuous structure
         try:
             # sanatize cx_list
-            cx_list = [cx for cx, nFeat in zip(iter(cx_list), nFeat_iter3) if nFeat > 0]
+            cx_list = [cx for cx, nFeat in izip(iter(cx_list), nFeat_iter3) if nFeat > 0]
             if isinstance(cx2_desc, list):
                 ax2_desc = np.vstack((cx2_desc[cx] for cx in cx_list))
             elif isinstance(cx2_desc, np.ndarray):

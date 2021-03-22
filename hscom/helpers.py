@@ -10,7 +10,7 @@ into a global set of helper functions.
 
 Wow, pylint is nice for cleaning.
 '''
-
+from __future__ import division, print_function
 from . import __common__
 (print, print_, print_on, print_off,
  rrr, profile, printDBG) = __common__.init(__name__, '[util]', DEBUG=False)
@@ -20,10 +20,19 @@ import numpy as np
 from collections import OrderedDict
 from itertools import product as iprod
 from itertools import chain, cycle
+
+from itertools import zip_longest as izip
+try:
+    from itertools import imap
+except ImportError:
+    # Python 3...
+    imap=map
+
 from os.path import (join, relpath, normpath, split, isdir, isfile, exists,
                      islink, ismount, expanduser)
-import pickle
-import io
+import pickle as cPickle
+# import cStringIO
+from io import StringIO as cStringIO
 import datetime
 import decimal
 import fnmatch
@@ -39,7 +48,7 @@ import types
 import warnings
 # HotSpotter
 from . import tools
-from .Printable import printableVal
+from hscom.Printable import printableVal
 #print('LOAD_MODULE: helpers.py')
 
 # --- Globals ---
@@ -297,7 +306,7 @@ def pstats(*args, **kwargs):
 
 def printable_mystats(_list, newlines=False):
     stat_dict = mystats(_list)
-    stat_strs = ['%r: %s' % (key, val) for key, val in stat_dict.items()]
+    stat_strs = ['%r: %s' % (key, val) for key, val in stat_dict.iteritems()]
     if newlines:
         indent = '    '
         head = '{\n' + indent
@@ -608,7 +617,7 @@ def symlink(source, link_name, noraise=False):
 # --- Convinience ----
 def vd(dname=None):
     'view directory'
-    from . import cross_platform
+    import cross_platform
     cross_platform.view_directory(dname)
 
 
@@ -912,7 +921,7 @@ def copy_list(src_list, dst_list, lbl='Copying'):
             return False
         mark_progress(count)
         return True
-    task_iter = zip(src_list, dst_list)
+    task_iter = izip(src_list, dst_list)
     mark_progress, end_progress = progress_func(len(src_list), lbl=lbl)
     success_list = [domove(src, dst, count) for count, (src, dst) in enumerate(task_iter)]
     end_progress()
@@ -928,7 +937,7 @@ def move_list(src_list, dst_list, lbl='Moving'):
             return False
         mark_progress(count)
         return True
-    task_iter = zip(src_list, dst_list)
+    task_iter = izip(src_list, dst_list)
     mark_progress, end_progress = progress_func(len(src_list), lbl=lbl)
     success_list = [domove(src, dst, count) for count, (src, dst) in enumerate(task_iter)]
     end_progress()
@@ -1029,12 +1038,12 @@ def write_to(fpath, to_write):
 
 def save_pkl(fpath, data):
     with open(fpath, 'wb') as file:
-        pickle.dump(data, file)
+        cPickle.dump(data, file)
 
 
 def load_pkl(fpath):
     with open(fpath, 'wb') as file:
-        return pickle.load(file)
+        return cPickle.load(file)
 
 
 def save_npz(fpath, *args, **kwargs):
@@ -1059,7 +1068,7 @@ def dict_union2(dict1, dict2):
 
 
 def dict_union(*args):
-    return dict([item for dict_ in iter(args) for item in dict_.items()])
+    return dict([item for dict_ in iter(args) for item in dict_.iteritems()])
 
 
 def hashstr_arr(arr, lbl='arr', **kwargs):
@@ -1166,7 +1175,7 @@ def load_cache_npz(input_data, uid='', cache_dir='.', is_sparse=False):
             sys.stdout.flush()
             if is_sparse:
                 with open(data_fpath, 'rb') as file_:
-                    data = pickle.load(file_)
+                    data = cPickle.load(file_)
             else:
                 npz = np.load(data_fpath)
                 data = npz['arr_0']
@@ -1189,7 +1198,7 @@ def save_cache_npz(input_data, data, uid='', cache_dir='.', is_sparse=False):
     sys.stdout.flush()
     if is_sparse:
         with open(data_fpath, 'wb') as outfile:
-            pickle.dump(data, outfile, pickle.HIGHEST_PROTOCOL)
+            cPickle.dump(data, outfile, cPickle.HIGHEST_PROTOCOL)
     else:
         np.savez(data_fpath, data)
     print('...success')
@@ -1266,7 +1275,7 @@ def toc(tt):
 class RedirectStdout(object):
     def __init__(self, lbl=None, autostart=False, show_on_exit=True):
         self._stdout_old = sys.stdout
-        self.stream = io.StringIO()
+        self.stream = cStringIO.StringIO()
         self.record = '<no record>'
         self.lbl = lbl
         self.show_on_exit = show_on_exit
@@ -1335,7 +1344,7 @@ class Indenter2(object):
                 print('AttributeError: ' + str(ex))
                 print('WARNING: module=%r is not managed by __common__' % mod)
 
-        for mod in list(self.old_prints.keys()):
+        for mod in self.old_prints.keys():
             indent_print = lambda msg: self.old_prints[mod](indent_msg(msg))
             mod.print = indent_print
             if self.INDENT_PRINT_:
@@ -1359,7 +1368,7 @@ Indent = Indenter2
 
 
 def rectify_wrapped_func(wrapper, func):
-    wrapper.__name__ = func.__name__
+    wrapper.func_name = func.__name__
 
 
 def indent_decor(lbl):
@@ -1481,12 +1490,12 @@ def execstr_dict(dict_, local_name, exclude_list=None):
         #exec('dict_ = local_name')
     if exclude_list is None:
         execstr = '\n'.join((key + ' = ' + local_name + '[' + repr(key) + ']'
-                            for (key, val) in dict_.items()))
+                            for (key, val) in dict_.iteritems()))
     else:
         if not isinstance(exclude_list, list):
             exclude_list = [exclude_list]
         exec_list = []
-        for (key, val) in dict_.items():
+        for (key, val) in dict_.iteritems():
             if not any((fnmatch.fnmatch(key, pat) for pat in iter(exclude_list))):
                 exec_list.append(key + ' = ' + local_name + '[' + repr(key) + ']')
         execstr = '\n'.join(exec_list)
@@ -1506,7 +1515,7 @@ def execstr_timeitsetup(dict_, exclude_list=[]):
     old_thresh =  np.get_printoptions()['threshold']
     np.set_printoptions(threshold=1000000000)
     matches = fnmatch.fnmatch
-    excl_valid_keys = [key for key in dict_.keys() if not any((matches(key, pat) for pat in iter(exclude_list)))]
+    excl_valid_keys = [key for key in dict_.iterkeys() if not any((matches(key, pat) for pat in iter(exclude_list)))]
     valid_types = set([np.ndarray, np.float32, np.float64, np.int64, int, float])
     type_valid_keys = [key for key in iter(excl_valid_keys) if type(dict_[key]) in valid_types]
     exec_list = []
@@ -1535,7 +1544,7 @@ def dict_execstr(dict_, local_name=None):
 
 
 def execstr_func(func):
-    print(' ! Getting executable source for: ' + func.__name__)
+    print(' ! Getting executable source for: ' + func.func_name)
     _src = inspect.getsource(func)
     execstr = textwrap.dedent(_src[_src.find(':') + 1:])
     # Remove return statments
@@ -1570,7 +1579,7 @@ def get_exec_src(func):
 
 # --- Profiling ---
 def unit_test(test_func):
-    test_name = test_func.__name__
+    test_name = test_func.func_name
 
     def __unit_test_wraper():
         print('Testing: ' + test_name)
@@ -1820,7 +1829,7 @@ class NpPrintOpts(object):
 
 
 def printvar(locals_, varname, attr='.shape'):
-    from . import tools
+    import tools
     npprintopts = np.get_printoptions()
     np.set_printoptions(threshold=5)
     dotpos = varname.find('.')
@@ -1975,7 +1984,7 @@ def npfind(arr):
 
 
 def all_dict_combinations(varied_dict):
-    viter = iter(varied_dict.items())
+    viter = varied_dict.iteritems()
     tups_list = [[(key, val) for val in val_list] for (key, val_list) in viter]
     dict_list = [{key: val for (key, val) in tups} for tups in iprod(*tups_list)]
     return dict_list
@@ -2009,11 +2018,11 @@ def import_testdata():
     from hscom import helpers as util
     import shelve
     shelf = shelve.open('test_data.shelf')
-    print('importing\n * ' + '\n * '.join(list(shelf.keys())))
+    print('importing\n * ' + '\n * '.join(shelf.keys()))
     shelf_exec = util.execstr_dict(shelf, 'shelf')
     exec(shelf_exec)
     shelf.close()
-    return import_testdata.__code__.co_code
+    return import_testdata.func_code.co_code
 
 
 def num2_sigfig(num):
@@ -2068,14 +2077,14 @@ def joins(string, list_, with_head=True, with_tail=False, tostrip='\n'):
 
 
 def interleave(args):
-    arg_iters = list(map(iter, args))
+    arg_iters = map(iter, args)
     cycle_iter = cycle(arg_iters)
     for iter_ in cycle_iter:
-        yield next(iter_)
+        yield iter_.next()
 
 
 def indent_list(indent, list_):
-    return map(lambda item: indent + str(item), list_)
+    return imap(lambda item: indent + str(item), list_)
 
 
 # --- Context ---
@@ -2105,7 +2114,7 @@ def print_frame(frame):
                           for _execstr in execstr_attr_list(obj_name, attr_list)]
     execstr = '\n'.join(execstr_print_list)
     exec(execstr)
-    local_varnames = pack_into('; '.join(list(frame.f_locals.keys())))
+    local_varnames = pack_into('; '.join(frame.f_locals.keys()))
     print(local_varnames)
     print('--- End Frame ---')
 
@@ -2115,7 +2124,7 @@ def search_stack_for_localvar(varname):
     print(' * Searching parent frames for: ' + str(varname))
     frame_no = 0
     while not curr_frame.f_back is None:
-        if varname in list(curr_frame.f_locals.keys()):
+        if varname in curr_frame.f_locals.keys():
             print(' * Found in frame: ' + str(frame_no))
             return curr_frame.f_locals[varname]
         frame_no += 1
@@ -2193,7 +2202,7 @@ def explore_module(module_, seen=None, maxdepth=2, nonmodules=False):
 
     def __explore_module(module, indent, seen, depth, maxdepth, nonmodules):
         valid_children = []
-        ret = ''
+        ret = u''
         modname = str(module.__name__)
         #modname = repr(module)
         for child, aname in __childiter(module):

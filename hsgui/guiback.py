@@ -1,21 +1,16 @@
-
 from hscom import __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[back]')
 # Python
 from os.path import split, exists, join
 # Qt
-if 0:
-    from matplotlib.backends import backend_qt4 as backend_qt
-    from PyQt4 import QtCore, QtGui
-    from PyQt4.QtCore import Qt
-else:
-    from matplotlib.backends import backend_qt5 as backend_qt
-    from PyQt5 import QtCore
-    from PyQt5 import QtGui
-    from PyQt5.QtCore import *
-    from PyQt5.QtGui import *
-    from PyQt5.QtWidgets import *
+
+from matplotlib.backends import backend_qt5 as backend_qt
+from PyQt5 import QtCore
+from PyQt5 import QtGui
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 # Science
 import numpy as np
 # Hotspotter

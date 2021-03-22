@@ -1,5 +1,5 @@
 #!/usr/env python
-
+from __future__ import division, print_function
 from hscom import __common__
 (print, print_, print_on, print_off, rrr, profile, printDBG) =\
     __common__.init(__name__, '[rr2]', DEBUG=False)
@@ -12,7 +12,8 @@ import sys
 import textwrap
 import fnmatch
 import warnings
-
+# from itertools import izip
+from itertools import zip_longest as izip
 from os.path import join, exists
 # Scientific imports
 import numpy as np
@@ -108,7 +109,7 @@ class OrganizedResult(DynStruct):
 
     def iter(self):
         'useful for plotting'
-        result_iter = zip(self.qcxs, self.cxs, self.scores, self.ranks)
+        result_iter = izip(self.qcxs, self.cxs, self.scores, self.ranks)
         for qcx, cx, score, rank in result_iter:
             yield qcx, cx, score, rank
 
@@ -241,13 +242,13 @@ def init_score_matrix(allres):
     #nx_list = hs.get_valid_nxs(unknown=False)
     cxs_list = hs.nx2_cxs(nx_list, aslist=True)
     # Sort names by number of chips
-    nx_size = list(map(len, cxs_list))
+    nx_size = map(len, cxs_list)
     # Build sorted chip list
-    nx_cxs_tuples = list(zip(nx_size, cxs_list))
+    nx_cxs_tuples = zip(nx_size, cxs_list)
     # Sort by name
     cx_sorted = [x for (y, x) in sorted(nx_cxs_tuples)]
     # Subsort by chip
-    cx_sorted = list(map(sorted, cx_sorted))
+    cx_sorted = map(sorted, cx_sorted)
     # Flattten
     from itertools import chain
     cx_sorted = list(chain.from_iterable(cx_sorted))  # very fast flatten
@@ -343,7 +344,7 @@ def build_matrix_str(allres):
          '# col_labels = ' + repr(col_label_gname)])
     row_strings = []
     for row in allres.score_matrix:
-        row_str = ['%5.2f' % x for x in row]
+        row_str = map(lambda x: '%5.2f' % x, row)
         row_strings.append(', '.join(row_str))
     body = '\n'.join(row_strings)
     matrix_str = '\n'.join([header, body])
@@ -471,8 +472,8 @@ def build_rankres_str(allres):
                    float, float, float, int, int, int, str, ]
     rankres_str = ld2.make_csv_table(column_labels, column_list, header, column_type)
     # Put some more data at the end
-    problem_true_pairs = list(zip(allres.problem_true.qcxs, allres.problem_true.cxs))
-    problem_false_pairs = list(zip(allres.problem_false.qcxs, allres.problem_false.cxs))
+    problem_true_pairs = zip(allres.problem_true.qcxs, allres.problem_true.cxs)
+    problem_false_pairs = zip(allres.problem_false.qcxs, allres.problem_false.cxs)
     problem_str = '\n'.join( [
         '#Problem Cases: ',
         '# problem_true_pairs = ' + repr(problem_true_pairs),
@@ -662,7 +663,7 @@ def dump_analysis(allres):
 
 
 def dump_all_queries2(hs):
-    from . import QueryResult as qr
+    import QueryResult as qr
     test_cxs = hs.test_sample_cx
     title_suffix = get_title_suffix(hs)
     print('[rr2] dumping all %r queries' % len(test_cxs))
@@ -805,8 +806,8 @@ def dump_feature_pair_analysis(allres):
             entropy1 = descriptor_entropy(desc1, bw_factor=1)
             entropy2 = descriptor_entropy(desc2, bw_factor=1)
             # Append to results
-            entropy_tup = np.array(list(zip(entropy1, entropy2)))
-            scale_tup   = np.array(list(zip(scale1_m, scale2_m)))
+            entropy_tup = np.array(zip(entropy1, entropy2))
+            scale_tup   = np.array(zip(scale1_m, scale2_m))
             entropy_tup = entropy_tup.reshape(len(entropy_tup), 2)
             scale_tup   = scale_tup.reshape(len(scale_tup), 2)
             entropy_list.append(entropy_tup)
@@ -814,7 +815,7 @@ def dump_feature_pair_analysis(allres):
             score_list.append(fs)
         print('Skipped %d total.' % (len(rank_skips) + len(gt_skips),))
         print('Skipped %d for rank > 5, %d for no gt' % (len(rank_skips), len(gt_skips),))
-        print(np.unique(list(map(len, entropy_list))))
+        print(np.unique(map(len, entropy_list)))
 
         def evstack(tup):
             return np.vstack(tup) if len(tup) > 0 else np.empty((0, 2))
@@ -1015,10 +1016,10 @@ def _get_orgres2_distances(allres, orgres_list=None):
 
 @profile
 def get_orgres_match_distances(allres, orgtype_='false'):
-    from . import algos
+    import algos
     qcxs = allres[orgtype_].qcxs
     cxs  = allres[orgtype_].cxs
-    match_list = list(zip(qcxs, cxs))
+    match_list = zip(qcxs, cxs)
     printDBG('[rr2] getting orgtype_=%r distances between sifts' % orgtype_)
     adesc1, adesc2 = get_matching_descriptors(allres, match_list)
     printDBG('[rr2]  * adesc1.shape = %r' % (adesc1.shape,))
@@ -1065,7 +1066,7 @@ def get_matching_descriptors(allres, match_list):
 
 def load_qcx2_res(hs, qcx_list, nocache=False):
     'Prefrosm / loads all queries'
-    from . import match_chips3 as mc3
+    import match_chips3 as mc3
     qreq = mc3.quickly_ensure_qreq(hs, qcxs=qcx_list)
     # Build query big cache uid
     query_uid = qreq.get_uid()

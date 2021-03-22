@@ -2,7 +2,7 @@
 This module tries to ensure that the system paths are correctly setup for
 hotspotter to run.
 '''
-
+from __future__ import print_function, division
 from . import __common__
 (print, print_, print_on, print_off,
  rrr, profile, printDBG) = __common__.init(__name__, '[cplat]', DEBUG=False)

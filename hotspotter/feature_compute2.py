@@ -1,5 +1,5 @@
 ''' Computes feature representations '''
-
+from __future__ import division, print_function
 from hscom import __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[fc2]')
@@ -16,7 +16,7 @@ from . import extern_feat
 
 
 def whiten_features(desc_list):
-    from . import algos
+    import algos
     print('[fc2] * Whitening features')
     ax2_desc = np.vstack(desc_list)
     ax2_desc_white = algos.scale_to_byte(algos.whiten(ax2_desc))

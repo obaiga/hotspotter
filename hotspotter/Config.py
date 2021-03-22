@@ -1,4 +1,4 @@
-
+from __future__ import division, print_function
 from hscom import __common__
 print, print_, print_on, print_off, rrr, profile, printDBG =\
     __common__.init(__name__, '[Config]', DEBUG=False)
@@ -351,7 +351,7 @@ class FeatureConfig(ConfigBase):
 class ChipConfig(ConfigBase):
     def __init__(cc_cfg, **kwargs):
         super(ChipConfig, cc_cfg).__init__(name='chip_cfg')
-        cc_cfg.chip_sqrt_area = 450
+        cc_cfg.chip_sqrt_area = 750
         cc_cfg.grabcut         = False
         cc_cfg.histeq          = False
         cc_cfg.adapteq         = False

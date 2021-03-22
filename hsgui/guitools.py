@@ -1,4 +1,4 @@
-
+from __future__ import division, print_function
 from hscom import __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[guitools]')
@@ -9,20 +9,14 @@ import sys
 # Science
 import numpy as np
 # Qt
-if 0:
-    from PyQt4 import QtCore, QtGui
-    from PyQt4.QtCore import Qt
-    from PyQt5.QtGui import QApplication
-    QtWidgets = QtGui
-else:
-    from matplotlib.backends import backend_qt5 as backend_qt
-    from PyQt5 import QtCore
-    from PyQt5 import QtGui
-    from PyQt5.QtCore import *
-    from PyQt5.QtGui import *
-    from PyQt5.QtWidgets import *
-    from PyQt5.QtWidgets import QApplication
-    from PyQt5 import QtWidgets
+from matplotlib.backends import backend_qt5 as backend_qt
+from PyQt5 import QtCore
+from PyQt5 import QtGui
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QApplication
+from PyQt5 import QtWidgets
 
 # HotSpotter
 from hscom import fileio as io
@@ -81,13 +75,13 @@ def slot_(*types, **kwargs_):  # This is called at wrap time to get args
     def pyqtSlotWrapper(func):
         func_name = func.__name__
         if initdbg:
-            print('[@guitools] Wrapping %r with slot_' % func.__name__)
+            print('[@guitools] Wrapping %r with slot_' % func.func_name)
 
         if rundbg:
-            @QtCore.pyqtSlot(*types, name=func.__name__)
+            @QtCore.pyqtSlot(*types, name=func.func_name)
             def slot_wrapper(self, *args, **kwargs):
-                argstr_list = list(map(str, args))
-                kwastr_list = ['%s=%s' % item for item in kwargs.items()]
+                argstr_list = map(str, args)
+                kwastr_list = ['%s=%s' % item for item in kwargs.iteritems()]
                 argstr = ', '.join(argstr_list + kwastr_list)
                 print('[**slot_.Begining] %s(%s)' % (func_name, argstr))
                 #with helpers.Indenter():
@@ -100,7 +94,7 @@ def slot_(*types, **kwargs_):  # This is called at wrap time to get args
                 result = func(self, *args, **kwargs)
                 return result
 
-        slot_wrapper.__name__ = func_name
+        slot_wrapper.__name__ = __name__
         return slot_wrapper
     return pyqtSlotWrapper
 
@@ -228,7 +222,7 @@ def select_roi():
         xM = max(x1, x2)
         ym = min(y1, y2)
         yM = max(y1, y2)
-        xywh = list(map(int, list(map(round, (xm, ym, xM - xm, yM - ym)))))
+        xywh = map(int, map(round, (xm, ym, xM - xm, yM - ym)))
         roi = np.array(xywh, dtype=np.int32)
         # Reconnect the old button press events
         df2.connect_callback(fig, 'button_press_event', oldcbfn)
@@ -240,7 +234,7 @@ def select_roi():
 
 
 def _addOptions(msgBox, options):
-    #msgBox.addButton(QtWidgets.QMessageBox.Close)
+    #msgBox.addButton(QtGui.QMessageBox.Close)
     for opt in options:
         role = QtWidgets.QMessageBox.ApplyRole
         msgBox.addButton(QtWidgets.QPushButton(opt), role)
@@ -268,7 +262,7 @@ def _newMsgBox(msg='', title='', parent=None, options=None, cache_reply=False):
 
 @profile
 def msgbox(msg, title='msgbox'):
-    'Make a non modal critical QtWidgets.QMessageBox.'
+    'Make a non modal critical QtGui.QMessageBox.'
     msgBox = QtWidgets.QMessageBox(None)
     msgBox.setAttribute(QtCore.Qt.WA_DeleteOnClose)
     msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
@@ -345,9 +339,7 @@ def getQtImageNameFilter():
 @profile
 def select_images(caption='Select images:', directory=None):
     name_filter = getQtImageNameFilter()
-    selected = select_files(caption, directory, name_filter)
-    print('selected = {!r}'.format(selected))
-    return selected
+    return select_files(caption, directory, name_filter)
 
 
 @profile
@@ -356,10 +348,9 @@ def select_files(caption='Select Files:', directory=None, name_filter=None):
     print(caption)
     if directory is None:
         directory = io.global_cache_read('select_directory')
-    qdlg = QtWidgets.QFileDialog()
+    qdlg = QtGui.QFileDialog()
     qfile_list = qdlg.getOpenFileNames(caption=caption, directory=directory, filter=name_filter)
-    print('qfile_list = {!r}'.format(qfile_list))
-    file_list = list(map(str, qfile_list))
+    file_list = map(str, qfile_list)
     print('Selected %d files' % len(file_list))
     io.global_cache_write('select_directory', directory)
     return file_list
@@ -370,8 +361,8 @@ def select_directory(caption='Select Directory', directory=None):
     print(caption)
     if directory is None:
         directory = io.global_cache_read('select_directory')
-    qdlg = QtWidgets.QFileDialog()
-    qopt = QtWidgets.QFileDialog.ShowDirsOnly
+    qdlg = QtGui.QFileDialog()
+    qopt = QtGui.QFileDialog.ShowDirsOnly
     qdlg_kwargs = dict(caption=caption, options=qopt, directory=directory)
     dpath = str(qdlg.getExistingDirectory(**qdlg_kwargs))
     print('Selected Directory: %r' % dpath)
@@ -382,14 +373,14 @@ def select_directory(caption='Select Directory', directory=None):
 @profile
 def show_open_db_dlg(parent=None):
     # OLD
-    from ._frontend import OpenDatabaseDialog
+    from _frontend import OpenDatabaseDialog
     if not '-nc' in sys.argv and not '--nocache' in sys.argv:
         db_dir = io.global_cache_read('db_dir')
         if db_dir == '.':
             db_dir = None
     print('[*guitools] cached db_dir=%r' % db_dir)
     if parent is None:
-        parent = QtWidgets.QDialog()
+        parent = QtGui.QDialog()
     opendb_ui = OpenDatabaseDialog.Ui_Dialog()
     opendb_ui.setupUi(parent)
     #opendb_ui.new_db_but.clicked.connect(create_new_database)
@@ -426,7 +417,7 @@ def init_qtapp():
 @profile
 def exit_application():
     print('[*guitools] exiting application')
-    QtWidgets.qApp.quit()
+    QtGui.qApp.quit()
 
 
 @util.indent_decor('[qt-main]')
@@ -504,10 +495,10 @@ def enfore_scope(qobj, scoped_obj, scope_title='_scope_list'):
 def popup_menu(widget, opt2_callback, parent=None):
     def popup_slot(pos):
         print(pos)
-        menu = QtWidgets.QMenu()
+        menu = QtGui.QMenu()
         actions = [menu.addAction(opt, func) for opt, func in
                    iter(opt2_callback)]
-        #pos=QtWidgets.QCursor.pos()
+        #pos=QtGui.QCursor.pos()
         selection = menu.exec_(widget.mapToGlobal(pos))
         return selection, actions
     if parent is not None:

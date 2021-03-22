@@ -1,9 +1,10 @@
-
+from __future__ import division, print_function
 from hscom import __common__
 (print, print_, print_on, print_off,
  rrr, profile, printDBG) = __common__.init(__name__, '[qr]', DEBUG=False)
 # Python
-
+# from itertools import izip
+from itertools import zip_longest as izip
 from os.path import exists, split, join
 from zipfile import error as BadZipFile  # Screwy naming convention.
 import os
@@ -170,10 +171,10 @@ class QueryResult(DynStruct):
         return res.cx2_fk
 
     def get_fmatch_iter(res):
-        fmfsfk_enum = enumerate(zip(res.cx2_fm, res.cx2_fs, res.cx2_fk))
+        fmfsfk_enum = enumerate(izip(res.cx2_fm, res.cx2_fs, res.cx2_fk))
         fmatch_iter = ((cx, fx_tup, score, rank)
                        for cx, (fm, fs, fk) in fmfsfk_enum
-                       for (fx_tup, score, rank) in zip(fm, fs, fk))
+                       for (fx_tup, score, rank) in izip(fm, fs, fk))
         return fmatch_iter
 
     def topN_cxs(res, hs, N=None, only_gt=False, only_nongt=False):
