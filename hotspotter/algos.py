@@ -571,7 +571,7 @@ def precompute_flann(data, cache_dir=None, uid='', flann_params=None,
         try:
             #print('[algos] precompute_flann():
                 #trying to load: %r ' % flann_fname)
-            flann.load_index(flann_fpath, data)
+            flann.load_index(flann_fpath.encode("utf-8"), data)
             print('[algos]...flann cache hit')
             load_success = True
         except Exception as ex:
