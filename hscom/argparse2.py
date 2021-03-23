@@ -97,18 +97,21 @@ def commands_argparse(parser2):
     parser2.add_str('--setcfg', help='standard config name')
     parser2.add_flag('--autoquery')
     parser2.add_intlist('--query', default=[], help='query chip-id to investigate')
-    parser2.add_intlist('--select-cid', default=[], help='chip indexes to view')
+    parser2.add_intlist('--select-cids', default=[], help='chip indexes to view')
     parser2.add_intlist('--selgxs', default=[], help='image indexes to view')
-    parser2.add_intlist('--selcxs', default=[], help='chip indexes to view')
+    parser2.add_intlist('--selcids', default=[], help='chip indexes to view')
     parser2.add_intlist('--selnxs', default=[], help='name indexes to view')
     parser2.add_intlist('--txs', default=[], help='investigate match to top x of querys')
+    parser2.add_intlist('--cids', default=[], help='investigate match cx')
+    parser2.add_intlist('--qfxs', default=[], help='investigate match to cx via qfxs')
     parser2.add_int('--qcid', help='query chip-id to investigate', nargs='*')
     parser2.add_intlist('--ocid', help='query chip-id to investigate')
     parser2.add_int('--histid', help='history id (hard cases)')
-    parser2.add_intlist(('--rows', '-r'), help='view row')
-    parser2.add_intlist(('--cols', '-c'), help='view col')
+    parser2.add_intlist(('--sel-rows', '-r'), help='view row')
+    parser2.add_intlist(('--sel-cols', '-c'), help='view col')
+    parser2.add_flag('--view-all', help='view all')
     parser2.add_flag('--nopresent')
-    parser2.add_flag('--save-figures')
+    parser2.add_flag(('--save-figures', '--dump'))
     parser2.add_flag('--noannote')
     parser2.add_flag('--quiet')
 
@@ -121,7 +124,6 @@ def dev_argparse(parser2):
     # Plotting Args
     parser2.add_flag('--noshow-query')
     parser2.add_flag('--noshow-gt')
-    parser2.add_flag('--printoff')
     parser2.add_flag('--horiz', True)
     parser2.add_flag('--darken')
     parser2.add_str(('--tests', '--test', '-t'),  [], 'integer or test name', nargs='*')
@@ -140,14 +142,14 @@ def database_argparse(parser2):
     parser2 = parser2.add_argument_group('Database')
     parser2.add_str('--db', 'DEFAULT', 'specifies the short name of the database to load')
     parser2.add_str('--dbdir', None, 'specifies the full path of the database to load')
-    parser2.add_flag('--dbM')
-    parser2.add_flag('--dbG')
 
 
 def behavior_argparse(parser2):
     # Program behavior
     parser2 = parser2.add_argument_group('Behavior')
-    num_cpus = multiprocessing.cpu_count()
+    # TODO UNFILTER THIS HERE AND CHANGE PARALLELIZE TO KNOW ABOUT
+    # MEMORY USAGE
+    num_cpus = max(min(6, multiprocessing.cpu_count()), 1)
     num_proc_help = 'default to number of cpus = %d' % (num_cpus)
     parser2.add_int('--num-procs', num_cpus, num_proc_help)
     parser2.add_flag('--serial', help='Forces num_procs=1')
@@ -159,6 +161,8 @@ def behavior_argparse(parser2):
     parser2.add_flag('--verbose-cache')
     parser2.add_flag('--verbose-load')
     parser2.add_flag('--aggroflush', help='Agressively flushes')
+    parser2.add_flag(('--nomemory', '--nomem'), help='runs tests without' +
+                     'keeping results in memory')
 
 
 def cfg_argparse(parser2):
@@ -218,10 +222,6 @@ def args_postprocess(args):
     if args.darken:
         import draw_func2 as df2
         df2.DARKEN = .5
-    if args.dbM:
-        args.db = 'MOTHERS'
-    if args.dbG:
-        args.db = 'GZ'
     if args.dbdir is not None:
         # The full path is specified
         args.dbdir = realpath(args.dbdir)
@@ -238,16 +238,7 @@ def fix_args_shortnames(args):
     #print('[argparse2] mapping %r to %r' % (args.db, args.dbdir))
     # The shortname is specified
     if (args.dbdir is None) and (args.db is not None):
-        try:
-            args.dbdir = params.dev_databases[args.db]
-        except KeyError:
-            pass
-    # Lookup shortname
-    try:
-        inverse_dev_databases = params.inverse_dev_databases()
-        args.db = inverse_dev_databases[args.dbdir]
-    except KeyError:
-        pass
+        args.dbdir = params.db_to_dbdir(args.db)
     #print('[argparse2] mapped %r to %r' % (args.db, args.dbdir))
     ARGS_ = args
     return args
@@ -263,6 +254,7 @@ def fix_args_with_cache(args):
         if args.dbdir in ['.', '', ' ']:
             args.dbdir = None
         print('[main] trying to read db_dir from cache: %r' % args.dbdir)
+    # --db has priority over --dbdir
     args = fix_args_shortnames(args)
     ARGS_ = args
     return args

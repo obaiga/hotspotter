@@ -1,1 +1,0 @@
-HotSpotter - Animal Instance Recognition

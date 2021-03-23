@@ -1,10 +1,29 @@
 from __future__ import division, print_function
+import __common__
+(print, print_, print_on, print_off,
+ rrr, profile) = __common__.init(__name__, '[latex]')
 # Python
 import re
 import helpers
 import textwrap
 # Science
 import numpy as np
+
+
+def render(text):
+    import pylab as plt
+    import matplotlib as mpl
+
+    #text = (r'\begin{document}' + '\n' +
+            #text + '\n' +
+            #r'\end{document}')
+    print(text)
+
+    mpl.rc('text', usetex=True)
+    mpl.rc('font', family='serif')
+    plt.figure()
+    plt.text(9, 3.4, text, size=12)
+    plt.show()
 
 
 def latex_multicolumn(data, ncol=2):
@@ -17,7 +36,7 @@ def latex_multirow(data, nrow=2):
 
 def latex_mystats(lbl, data):
     stats_ = helpers.mystats(data)
-    min_, max_, mean, std, shape = stats_.values()
+    min_, max_, mean, std, nMin, nMax, shape = stats_.values()
     fmttup1 = (int(min_), int(max_), float(mean), float(std))
     fmttup = tuple(map(helpers.num_fmt, fmttup1))
     lll = ' ' * len(lbl)
@@ -201,7 +220,8 @@ def make_score_tabular(row_lbls, col_lbls, scores, title=None,
     tabular_str = rowsep.join([tabular_head, tabular_body, tabular_tail])
 
     if not common_rowlbl is None:
-        tabular_str += escape_latex('\n\nThe following parameters were held fixed:\n' + common_rowlbl)
+        #tabular_str += escape_latex('\n\nThe following parameters were held fixed:\n' + common_rowlbl)
+        pass
     return tabular_str
 
 

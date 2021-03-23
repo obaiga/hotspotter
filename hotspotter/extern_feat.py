@@ -84,6 +84,7 @@ try:
         kpts, desc = pyhesaffexe.detect_kpts(rchip_fpath, **dict_args)
         return kpts, desc
     print('[extern_feat] old hessaff is available')
+#    OLD_HESAFF = True
 except ImportError as ex:
     print('[extern_feat] old hessaff is not available: %r' % ex)
     if '--strict' in sys.argv:

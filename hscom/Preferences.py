@@ -11,15 +11,15 @@ import traceback
 import warnings
 # Science
 import numpy as np
-
 # Qt
 from PyQt4 import QtCore, QtGui
+
 try:
     from PyQt4.QtCore import QString
 except ImportError:
-    # QtCore.Qstring can't be imported in Spyder since 2.3.1
+    # we are using Python3 so QString is not defined
     QString = str
-    
+
 from PyQt4.Qt import (QAbstractItemModel, QModelIndex, QVariant, QWidget,
                       Qt, QObject, pyqtSlot)
 # HotSpotter
@@ -281,6 +281,7 @@ class Pref(PrefNode):
             return self._tree.child_list[attrx]
         #print(self._internal.name)
         #print(self._tree)
+        print('[prefs!] !!! ERROR !!!')
         raise AttributeError('attribute: %s.%s not found' % (self._intern.name, name))
 
     def iteritems(self):
@@ -387,6 +388,7 @@ class Pref(PrefNode):
         self_keys = set(self.__dict__.keys())
         for key, val in kwargs.iteritems():
             if key in self_keys:
+                #print('update: key=%r, %r' % (key, val))
                 #if type(val) == types.ListType:
                     #val = val[0]
                 self.__setattr__(key, val)

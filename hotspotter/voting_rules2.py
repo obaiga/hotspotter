@@ -5,12 +5,12 @@ from hscom import __common__
 # Python
 from itertools import izip
 # Scientific
-import pandas as pd
 import numpy as np
 from numpy.linalg import svd
 #from numba import autojit
 # HotSpotter
 from hscom import helpers
+from hscom import helpers as util
 
 
 def score_chipmatch_csum(chipmatch):
@@ -19,11 +19,11 @@ def score_chipmatch_csum(chipmatch):
     return cx2_score
 
 
-def score_chipmatch_nsum(hs, qcx, chipmatch, qdat):
+def score_chipmatch_nsum(hs, qcx, chipmatch, qreq):
     raise NotImplementedError('nsum')
 
 
-def score_chipmatch_nunique(hs, qcx, chipmatch, qdat):
+def score_chipmatch_nunique(hs, qcx, chipmatch, qreq):
     raise NotImplementedError('nunique')
 
 
@@ -45,10 +45,10 @@ def enforce_one_name(hs, cx2_score, chipmatch=None, cx2_chipscore=None):
     return cx2_score
 
 
-def score_chipmatch_pos(hs, qcx, chipmatch, qdat, rule='borda'):
+def score_chipmatch_pos(hs, qcx, chipmatch, qreq, rule='borda'):
     (cx2_fm, cx2_fs, cx2_fk) = chipmatch
-    K = qdat.cfg.nn_cfg.K
-    isWeighted = qdat.cfg.agg_cfg.isWeighted
+    K = qreq.cfg.nn_cfg.K
+    isWeighted = qreq.cfg.agg_cfg.isWeighted
     # Create voting vectors of top K utilities
     qfx2_utilities = _chipmatch2_utilities(hs, qcx, chipmatch, K)
     # Run Positional Scoring Rule
@@ -61,10 +61,10 @@ def score_chipmatch_pos(hs, qcx, chipmatch, qdat, rule='borda'):
 
 
 # chipmatch = qcx2_chipmatch[qcx]
-def score_chipmatch_PL(hs, qcx, chipmatch, qdat):
-    K = qdat.cfg.nn_cfg.K
-    max_alts = qdat.cfg.agg_cfg.max_alts
-    isWeighted = qdat.cfg.agg_cfg.isWeighted
+def score_chipmatch_PL(hs, qcx, chipmatch, qreq):
+    K = qreq.cfg.nn_cfg.K
+    max_alts = qreq.cfg.agg_cfg.max_alts
+    isWeighted = qreq.cfg.agg_cfg.isWeighted
     # Create voting vectors of top K utilities
     qfx2_utilities = _chipmatch2_utilities(hs, qcx, chipmatch, K)
     qfx2_utilities = _filter_utilities(qfx2_utilities, max_alts)
@@ -121,7 +121,7 @@ def _PL_score(gamma):
 
 def get_scores_from_altx2_score(hs, qcx, altx2_prob, altx2_tnx):
     nx2_score = np.zeros(len(hs.tables.nx2_name))
-    cx2_score = np.zeros(len(hs.tables.cx2_cid) + 1)
+    cx2_score = np.zeros(len(hs.tables.cx2_cid))
     nx2_cxs = hs.get_nx2_cxs()
     for altx, prob in enumerate(altx2_prob):
         tnx = altx2_tnx[altx]
@@ -196,7 +196,7 @@ def _utilities2_pairwise_breaking(qfx2_utilities):
     hstack = np.hstack
     cartesian = helpers.cartesian
     tnxs = [util[1] for utils in qfx2_utilities for util in utils]
-    altx2_tnx = pd.unique(tnxs)
+    altx2_tnx = helpers.unique_keep_order(tnxs)
     tnx2_altx = {nx: altx for altx, nx in enumerate(altx2_tnx)}
     nUtilities = len(qfx2_utilities)
     nAlts   = len(altx2_tnx)
@@ -213,7 +213,7 @@ def _utilities2_pairwise_breaking(qfx2_utilities):
     nVoters = 0
     for qfx in xrange(nUtilities):
         # partial and compliment order over alternatives
-        porder = pd.unique(qfx2_porder[qfx])
+        porder = helpers.unique_keep_order(qfx2_porder[qfx])
         nReport = len(porder)
         if nReport == 0:
             continue
@@ -241,7 +241,7 @@ def _utilities2_pairwise_breaking(qfx2_utilities):
 def _get_alts_from_utilities(qfx2_utilities):
     # get temp name indexes
     tnxs = [util[1] for utils in qfx2_utilities for util in utils]
-    altx2_tnx = pd.unique(tnxs)
+    altx2_tnx = helpers.unique_keep_order(tnxs)
     tnx2_altx = {nx: altx for altx, nx in enumerate(altx2_tnx)}
     nUtilities = len(qfx2_utilities)
     nAlts   = len(altx2_tnx)

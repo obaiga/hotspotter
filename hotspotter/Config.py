@@ -1,80 +1,40 @@
 from __future__ import division, print_function
+from hscom import __common__
+print, print_, print_on, print_off, rrr, profile, printDBG =\
+    __common__.init(__name__, '[Config]', DEBUG=False)
 from hscom.Preferences import Pref
-from hscom import helpers
+from hscom import helpers as util
 
 ConfigBase = Pref
 #ConfigBase = DynStruct
 
-#=========================
-# CONFIG Classes
-#=========================
-#def udpate_dicts(dict1, dict2):
-    #dict1_keys = set(dict1.keys())
-    #if key, val in dict2.iteritems():
-        #if key in dict1_keys:
-            #dict1[key] = val
-DEBUG = False
 
-if DEBUG:
-    def printDBG(msg):
-        print('[DS.DBG] ' + msg)
-else:
-    def printDBG(msg):
-        pass
+def make_feasible(query_cfg):
+    '''
+    removes invalid parameter settings over all cfgs (move to QueryConfig)
+    '''
+    filt_cfg = query_cfg.filt_cfg
+    nn_cfg   = query_cfg.nn_cfg
 
+    # Ensure the list of on filters is valid given the weight and thresh
+    if filt_cfg.ratio_thresh <= 1:
+        filt_cfg.ratio_thresh = None
+    if filt_cfg.roidist_thresh >= 1:
+        filt_cfg.roidist_thresh = None
+    if filt_cfg.bursty_thresh   <= 1:
+        filt_cfg.bursty_thresh = None
 
-def dict_subset(dict_, keys):
-    'Returns the a subset of the dictionary'
-    keys_ = set(keys)
-    return {key: val for (key, val)
-            in dict_.iteritems() if key in keys_}
-
-
-def listrm(list_, item):
-    'Returns item from list_ if item exists'
-    try:
-        list_.remove(item)
-    except Exception:
-        pass
-
-
-def listrm_list(list_, items):
-    'Returns all items in item from list_ if item exists'
-    for item in items:
-        listrm(list_, item)
-
-
-#valid_filters = ['recip', 'roidist', 'frexquency', 'ratio', 'bursty', 'lnbnn']
-def any_inlist(list_, search_list):
-    set_ = set(list_)
-    return any([search in set_ for search in search_list])
-
-
-def signthreshweight_str(on_filters):
-    stw_list = []
-    for key, val in on_filters.iteritems():
-        ((sign, thresh), weight) = val
-        stw_str = key
-        if thresh is None and weight == 0:
-            continue
-        if thresh is not None:
-            sstr = ['<', '>'][sign == -1]  # actually <=, >=
-            stw_str += sstr + str(thresh)
-        if weight != 0:
-            stw_str += '_' + str(weight)
-        stw_list.append(stw_str)
-    return ','.join(stw_list)
-    #return helpers.remove_chars(str(dict_), [' ','\'','}','{',':'])
+    # normalizer rule depends on Knorm
+    if nn_cfg.Knorm == 1:
+        nn_cfg.normalizer_rule = 'last'
 
 
 class NNConfig(ConfigBase):
     def __init__(nn_cfg, **kwargs):
         super(NNConfig, nn_cfg).__init__()
-        # Core
         nn_cfg.K = 4
         nn_cfg.Knorm = 1
         nn_cfg.normalizer_rule = ['last', 'name'][0]
-        # Filters
         nn_cfg.checks  = 1024  # 512#128
         nn_cfg.update(**kwargs)
 
@@ -100,86 +60,80 @@ class FilterConfig(ConfigBase):
         filt_cfg.Krecip = 0  # 0 := off
         filt_cfg.can_match_sameimg = False
         filt_cfg.can_match_samename = True
-        filt_cfg._nnfilter_list = []
-        #
-        #filt_cfg._nnfilter_list = ['recip', 'roidist', 'lnbnn', 'ratio', 'lnrat']
         filt_cfg._valid_filters = []
-
-        def addfilt(sign, filt, thresh, weight):
+        def addfilt(sign, filt, thresh, weight, depends=None):
+            'dynamically adds filters'
             printDBG('[addfilt] %r %r %r %r' % (sign, filt, thresh, weight))
-            filt_cfg._nnfilter_list.append(filt)
-            filt_cfg._valid_filters.append((sign, filt))
+            filt_cfg._valid_filters.append(filt)
             filt_cfg[filt + '_thresh'] = thresh
             filt_cfg[filt + '_weight'] = weight
+            filt_cfg['_' + filt + '_depends'] = depends
+            filt_cfg['_' + filt + '_sign'] = sign
         #tuple(Sign, Filt, ValidSignThresh, ScoreMetaWeight)
         # thresh test is: sign * score <= sign * thresh
-        addfilt(+1, 'roidist', None, 0)  # Lower  scores are better
-        addfilt(-1, 'recip',     0, 0)  # Higher scores are better
-        addfilt(+1, 'bursty', None, 0)  # Lower  scores are better
-        addfilt(-1, 'ratio',  None, 0)  # Higher scores are better
-        addfilt(-1, 'lnbnn',  None, .01)  # Higher scores are better
-        addfilt(-1, 'lnrat',  None, 0)  # Higher scores are better
+        # sign +1 --> Lower scores are better
+        # sign -1 --> Higher scores are better
+        addfilt(+1, 'roidist',  None,   0)
+        addfilt(-1,   'recip',     0,   0, 'filt_cfg.Krecip > 0')
+        addfilt(+1,  'bursty',  None,   0)
+        addfilt(-1,   'ratio',  None,   0)
+        addfilt(-1,   'lnbnn',  None,   1)
+        addfilt(-1,   'lnrat',  None,   0)
         #addfilt(+1, 'scale' )
-        filt_cfg._filt2_tw = {}
         filt_cfg.update(**kwargs)
 
-    def make_feasible(filt_cfg, query_cfg):
-        '''
-        removes invalid parameter settings over all cfgs (move to QueryConfig)
-        '''
-        # Ensure the list of on filters is valid given the weight and thresh
-        if filt_cfg.ratio_thresh <= 1:
-            filt_cfg.ratio_thresh = None
-        if filt_cfg.roidist_thresh >= 1:
-            filt_cfg.roidist_thresh = None
-        if filt_cfg.bursty_thresh   <= 1:
-            filt_cfg.bursty_thresh = None
-        # FIXME: Non-Independent parameters.
-        # Need to explicitly model correlation somehow
-        if filt_cfg.Krecip == 0:
-            filt_cfg.recip_thresh = None
-        elif filt_cfg.recip_thresh is None:
-            filt_cfg.recip_thresh = 0
-        #print('[cfg]----')
-        #print(filt_cfg)
-        #print('[cfg]----')
+    def get_stw(filt_cfg, filt):
+        # stw = sign, thresh, weight
+        if not isinstance(filt, str):
+            raise AssertionError('Global cache seems corrupted')
+        sign   = filt_cfg['_' + filt + '_sign']
+        thresh = filt_cfg[filt + '_thresh']
+        weight = filt_cfg[filt + '_weight']
+        if weight == 1.0:
+            weight = 1
+        return sign, thresh, weight
 
-        def _ensure_filter(filt, sign):
-            '''ensure filter in the list if valid else remove
-            (also ensure the sign/thresh/weight dict)'''
-            thresh = filt_cfg[filt + '_thresh']
-            weight = filt_cfg[filt + '_weight']
-            stw = ((sign, thresh), weight)
-            filt_cfg._filt2_tw[filt] = stw
-            if thresh is None and weight == 0:
-                listrm(filt_cfg._nnfilter_list, filt)
-            elif not filt in filt_cfg._nnfilter_list:
-                filt_cfg._nnfilter_list += [filt]
-        for (sign, filt) in filt_cfg._valid_filters:
-            _ensure_filter(filt, sign)
-        # Set Knorm to 0 if there is no normalizing filter on.
-        if query_cfg is not None:
-            nn_cfg = query_cfg.nn_cfg
-            norm_depends = ['lnbnn', 'ratio', 'lnrat']
-            if nn_cfg.Knorm <= 0 and not any_inlist(filt_cfg._nnfilter_list, norm_depends):
-                #listrm_list(filt_cfg._nnfilter_list , norm_depends)
-                # FIXME: Knorm is not independent of the other parameters.
-                # Find a way to make it independent.
-                nn_cfg.Knorm = 0
+    def get_active_filters(filt_cfg):
+        active_filters = []
+        for filt in filt_cfg._valid_filters:
+            sign, thresh, weight = filt_cfg.get_stw(filt)
+            depends = filt_cfg['_' + filt + '_depends']
+            # Check to make sure dependencies are satisfied
+            # RCOS TODO FIXME: Possible security flaw.
+            # This eval needs to be removed.
+            # Need to find a better way of encoding dependencies
+            assert depends is None or depends.find('(') == -1, 'unsafe dependency'
+            depends_ok = depends is None or eval(depends)
+            conditions_ok = thresh is not None or weight != 0
+            if conditions_ok and depends_ok:
+                active_filters.append(filt)
+        return active_filters
 
     def get_uid_list(filt_cfg):
         if not filt_cfg.filt_on:
             return ['_FILT()']
-        on_filters = dict_subset(filt_cfg._filt2_tw,
-                                 filt_cfg._nnfilter_list)
+        on_filters = filt_cfg.get_active_filters()
         filt_uid = ['_FILT(']
-        twstr = signthreshweight_str(on_filters)
-        if filt_cfg.Krecip != 0 and 'recip' in filt_cfg._nnfilter_list:
+        stw_list = []
+        # Create a uid for each filter
+        for filt in on_filters:
+            sign, thresh, weight = filt_cfg.get_stw(filt)
+            stw_str = filt
+            if thresh is None and weight == 0:
+                continue
+            if thresh is not None:
+                sstr = '>' if sign == -1 else '<'  # actually <=, >=
+                stw_str += sstr + str(thresh)
+            if weight != 0:
+                stw_str += '_' + str(weight)
+            stw_list.append(stw_str)
+        stw_str = ','.join(stw_list)
+        if filt_cfg.Krecip != 0 and 'recip' in on_filters:
             filt_uid += ['Kr' + str(filt_cfg.Krecip)]
-            if len(twstr) > 0:
+            if len(stw_str) > 0:
                 filt_uid += [',']
-        if len(twstr) > 0:
-            filt_uid += [twstr]
+        if len(stw_str) > 0:
+            filt_uid += [stw_str]
         if filt_cfg.can_match_sameimg:
             filt_uid += 'same_img'
         if not filt_cfg.can_match_samename:
@@ -197,7 +151,7 @@ class SpatialVerifyConfig(ConfigBase):
         sv_cfg.scale_thresh_low = .5
         sv_cfg.scale_thresh_high = 2
         sv_cfg.xy_thresh = .01
-        sv_cfg.nShortlist = 1000
+        sv_cfg.nShortlist = 50
         sv_cfg.prescore_method = 'csum'
         sv_cfg.use_chip_extent = False
         sv_cfg.just_affine = False
@@ -212,7 +166,7 @@ class SpatialVerifyConfig(ConfigBase):
         sv_uid += [str(sv_cfg.nShortlist)]
         sv_uid += [',' + str(sv_cfg.xy_thresh)]
         scale_thresh = (sv_cfg.scale_thresh_low, sv_cfg.scale_thresh_high)
-        scale_str = helpers.remove_chars(str(scale_thresh), ' ()')
+        scale_str = util.remove_chars(str(scale_thresh), ' ()')
         sv_uid += [',' + scale_str.replace(',', '_')]
         sv_uid += [',cdl' * sv_cfg.use_chip_extent]  # chip diag len
         sv_uid += [',aff' * sv_cfg.just_affine]  # chip diag len
@@ -237,9 +191,10 @@ class AggregateConfig(ConfigBase):
             'placketluce': 'pl',
             'chipsum': 'csum',
             'namesum': 'nsum',
+            'coverage': 'coverage',
         }
         # For Placket-Luce
-        agg_cfg.max_alts = 1000
+        agg_cfg.max_alts = 50
         #-----
         # User update
         agg_cfg.update(**kwargs)
@@ -284,6 +239,8 @@ class QueryConfig(ConfigBase):
             query_cfg.update_cfg(**kwargs)
 
     def update_cfg(query_cfg, **kwargs):
+        # Each config paramater should be unique
+        # So updating them all should not cause conflicts
         query_cfg._feat_cfg.update(**kwargs)
         query_cfg._feat_cfg._chip_cfg.update(**kwargs)
         query_cfg.nn_cfg.update(**kwargs)
@@ -291,11 +248,23 @@ class QueryConfig(ConfigBase):
         query_cfg.sv_cfg.update(**kwargs)
         query_cfg.agg_cfg.update(**kwargs)
         query_cfg.update(**kwargs)
-        query_cfg.filt_cfg.make_feasible(query_cfg)
+        # Ensure feasibility of the configuration
+        make_feasible(query_cfg)
+
+    def deepcopy(query_cfg, **kwargs):
+        import copy
+        copy_ = copy.deepcopy(query_cfg)
+        copy_.update_cfg(**kwargs)
+        return copy_
 
     def get_uid_list(query_cfg, *args, **kwargs):
         if query_cfg._feat_cfg is None:
             raise Exception('Feat / chip config is required')
+
+        # Ensure feasibility of the configuration
+        make_feasible(query_cfg)
+
+        # Build uid
         uid_list = []
         if not 'noNN' in args:
             uid_list += query_cfg.nn_cfg.get_uid_list(**kwargs)
@@ -314,6 +283,28 @@ class QueryConfig(ConfigBase):
         uid = ''.join(uid_list)
         return uid
 
+    # Comparison operators for sorting and uniqueness
+    def __lt__(self, other):
+        return self.__hash__() < (other.__hash__())
+
+    def __le__(self, other):
+        return self.__hash__() <= (other.__hash__())
+
+    def __eq__(self, other):
+        return self.__hash__() == (other.__hash__())
+
+    def __ne__(self, other):
+        return self.__hash__() != (other.__hash__())
+
+    def __gt__(self, other):
+        return self.__hash__() > (other.__hash__())
+
+    def __ge__(self, other):
+        return self.__hash__() >= (other.__hash__())
+
+    def __hash__(self):
+        return hash(self.get_uid())
+
 
 class FeatureConfig(ConfigBase):
     def __init__(feat_cfg, hs=None, **kwargs):
@@ -323,10 +314,10 @@ class FeatureConfig(ConfigBase):
         feat_cfg.scale_min = 0  # 0  # 30 # TODO: Put in pref types here
         feat_cfg.scale_max = 9001  # 9001 # 80
         feat_cfg.use_adaptive_scale = False  # 9001 # 80
-        if hs is not None:
-            feat_cfg._chip_cfg = hs.prefs.chip_cfg  # Features depend on chips
-        else:
+        if hs is None:
             feat_cfg._chip_cfg = ChipConfig(**kwargs)  # creating without hs delays crash
+        else:
+            feat_cfg._chip_cfg = hs.prefs.chip_cfg  # Features depend on chips
         feat_cfg.update(**kwargs)
 
     def get_dict_args(feat_cfg):
@@ -356,35 +347,11 @@ class FeatureConfig(ConfigBase):
     def get_uid(feat_cfg):
         return ''.join(feat_cfg.get_uid_list())
 
-class AutochipConfig(ConfigBase):
-    def __init__(autochip_cfg,hs=None, **kwargs):
-        super(AutochipConfig, autochip_cfg).__init__(name='autochip_cfg')
-        
-        autochip_cfg.exclusion_factor   = float(0.75)
-        autochip_cfg.stopping_criterion = float(0.6)
-
-
-class AutoqueryConfig(ConfigBase):
-    def __init__(autoquery_cfg, hs=None, **kwargs):
-        super(AutoqueryConfig, autoquery_cfg).__init__(name='autoquery_cfg')
-        autoquery_cfg.self_loop_weight          = float(1)
-        autoquery_cfg.same_image_score          = float(0.9)
-        autoquery_cfg.same_set_boost            = float(0.8)
-        autoquery_cfg.maximum_time_delta        = 900
-        autoquery_cfg.minimum_same_set_weight   = float(0.25)
-
-class ClusterConfig(ConfigBase):
-    def __init__(cluster_cfg, hs=None, **kwargs):
-        super(ClusterConfig, cluster_cfg).__init__(name='cluster_cfg')
-        cluster_cfg.inflation_factor            = float(2)
-        cluster_cfg.maximum_iterations          = 2000
-        cluster_cfg.expansion_factor            = int(3)
-        cluster_cfg.multiplication_factor       = 2
 
 class ChipConfig(ConfigBase):
     def __init__(cc_cfg, **kwargs):
         super(ChipConfig, cc_cfg).__init__(name='chip_cfg')
-        cc_cfg.chip_sqrt_area = 750
+        cc_cfg.chip_sqrt_area = 450
         cc_cfg.grabcut         = False
         cc_cfg.histeq          = False
         cc_cfg.adapteq         = False
@@ -422,7 +389,7 @@ class DisplayConfig(ConfigBase):
         display_cfg.show_results_in_image = False  # None
 
 
-# Convenience
+# Convinience
 def __dict_default_func(dict_):
     # Sets keys only if they dont exist
     def set_key(key, val):
@@ -451,19 +418,6 @@ def default_vsmany_cfg(hs, **kwargs):
     query_cfg = QueryConfig(hs, **kwargs)
     return query_cfg
 
-def default_autochip_cfg(hs, **kwargs):
-    autochip_cfg = AutochipConfig(hs, **kwargs)
-    hs.prev_ac_exclFac = autochip_cfg.exclusion_factor
-    hs.prev_ac_stopCrit = autochip_cfg.stopping_criterion
-    return autochip_cfg
-
-def default_autoquery_cfg(hs, **kwargs):
-    autoquery_cfg = AutoqueryConfig(hs, *kwargs)
-    return autoquery_cfg
-
-def default_cluster_cfg(hs, **kwargs):
-    cluster_cfg = ClusterConfig(hs, **kwargs)
-    return cluster_cfg
 
 def default_vsone_cfg(hs, **kwargs):
     kwargs['query_type'] = 'vsone'

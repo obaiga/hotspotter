@@ -8,11 +8,11 @@ import numpy as np
 # python
 from os.path import join
 # hotspotter
-from hscom import helpers
+from hscom import helpers as util
+from hscom import params
 from hscom import fileio as io
 from hscom.Parallelize import parallel_compute
 import extern_feat
-import pdb
 
 
 def whiten_features(desc_list):
@@ -24,7 +24,7 @@ def whiten_features(desc_list):
     offset = 0
     for cx in xrange(len(desc_list)):
         old_desc = desc_list[cx]
-        print ('[fc2] * ' + helpers.info(old_desc, 'old_desc'))
+        print ('[fc2] * ' + util.info(old_desc, 'old_desc'))
         offset = len(old_desc)
         new_desc = ax2_desc_white[index:(index + offset)]
         desc_list[cx] = new_desc
@@ -63,13 +63,13 @@ def sequential_feat_load(feat_cfg, feat_fpath_list):
     try:
         nFeats = len(feat_fpath_list)
         prog_label = '[fc2] Loading feature: '
-        mark_progress, end_progress = helpers.progress_func(nFeats, prog_label)
+        mark_progress, end_progress = util.progress_func(nFeats, prog_label)
         for count, feat_path in enumerate(feat_fpath_list):
             try:
                 npz = np.load(feat_path, mmap_mode=None)
             except IOError:
                 print('\n')
-                helpers.checkpath(feat_path, verbose=True)
+                util.checkpath(feat_path, verbose=True)
                 print('IOError on feat_path=%r' % feat_path)
                 raise
             kpts = npz['arr_0']
@@ -100,7 +100,7 @@ feat_type2_precompute = {
 
 @profile
 def _load_features_individualy(hs, cx_list):
-    use_cache = not hs.args.nocache_feats
+    use_cache = not params.args.nocache_feats
     feat_cfg = hs.prefs.feat_cfg
     feat_dir = hs.dirs.feat_dir
     feat_uid = feat_cfg.get_uid()
@@ -109,15 +109,19 @@ def _load_features_individualy(hs, cx_list):
     rchip_fpath_list = [hs.cpaths.cx2_rchip_path[cx] for cx in iter(cx_list)]
     cid_list = hs.tables.cx2_cid[cx_list]
     feat_fname_fmt = ''.join(('cid%d', feat_uid, '.npz'))
-    feat_fpath_list = [join(feat_dir, feat_fname_fmt % cid) for cid in cid_list]
+    feat_fpath_fmt = join(feat_dir, feat_fname_fmt)
+    feat_fpath_list = [feat_fpath_fmt % cid for cid in cid_list]
+    #feat_fname_list = [feat_fname_fmt % cid for cid in cid_list]
     # Compute features in parallel, saving them to disk
     kwargs_list = [feat_cfg.get_dict_args()] * len(rchip_fpath_list)
-    precompute_args = [rchip_fpath_list, feat_fpath_list, kwargs_list]
-    pfc_kwargs = {'num_procs': hs.args.num_procs, 'lazy': use_cache}
-    precompute_fn = feat_type2_precompute[feat_cfg.feat_type]
-        
-    parallel_compute(precompute_fn, precompute_args, **pfc_kwargs)
-    # Load precomputed features sequentiallypdb.set_trace()
+    pfc_kwargs = {
+        'func': feat_type2_precompute[feat_cfg.feat_type],
+        'arg_list': [rchip_fpath_list, feat_fpath_list, kwargs_list],
+        'num_procs': params.args.num_procs,
+        'lazy': use_cache,
+    }
+    parallel_compute(**pfc_kwargs)
+    # Load precomputed features sequentially
     kpts_list, desc_list = sequential_feat_load(feat_cfg, feat_fpath_list)
     return kpts_list, desc_list
 
@@ -128,7 +132,7 @@ def _load_features_bigcache(hs, cx_list):
     feat_cfg = hs.prefs.feat_cfg
     feat_uid = feat_cfg.get_uid()
     cache_dir  = hs.dirs.cache_dir
-    sample_uid = helpers.hashstr_arr(cx_list, 'cids')
+    sample_uid = util.hashstr_arr(cx_list, 'cids')
     bigcache_uid = '_'.join((feat_uid, sample_uid))
     ext = '.npy'
     loaded = bigcache_feat_load(cache_dir, bigcache_uid, ext)
@@ -142,14 +146,16 @@ def _load_features_bigcache(hs, cx_list):
 
 
 @profile
+@util.indent_decor('[fc2]')
 def load_features(hs, cx_list=None, **kwargs):
-    print('\n=============================')
-    print('[fc2] Precomputing and loading features: %r' % hs.get_db_name())
+    # TODO: There needs to be a fast way to ensure that everything is
+    # already loaded. Same for cc2.
     print('=============================')
+    print('[fc2] Precomputing and loading features: %r' % hs.get_db_name())
     #----------------
     # COMPUTE SETUP
     #----------------
-    use_cache = not hs.args.nocache_feats
+    use_cache = not params.args.nocache_feats
     use_big_cache = use_cache and cx_list is None
     feat_cfg = hs.prefs.feat_cfg
     feat_uid = feat_cfg.get_uid()
@@ -164,6 +170,7 @@ def load_features(hs, cx_list=None, **kwargs):
     cx_list = hs.get_valid_cxs() if cx_list is None else cx_list
     if not np.iterable(cx_list):
         cx_list = [cx_list]
+    print('[cc2] len(cx_list) = %r' % len(cx_list))
     if len(cx_list) == 0:
         return  # HACK
     cx_list = np.array(cx_list)  # HACK
@@ -173,8 +180,8 @@ def load_features(hs, cx_list=None, **kwargs):
         kpts_list, desc_list = _load_features_individualy(hs, cx_list)
     # Extend the datastructure if needed
     list_size = max(cx_list) + 1
-    helpers.ensure_list_size(hs.feats.cx2_kpts, list_size)
-    helpers.ensure_list_size(hs.feats.cx2_desc, list_size)
+    util.ensure_list_size(hs.feats.cx2_kpts, list_size)
+    util.ensure_list_size(hs.feats.cx2_desc, list_size)
     # Copy the values into the ChipPaths object
     for lx, cx in enumerate(cx_list):
         hs.feats.cx2_kpts[cx] = kpts_list[lx]
@@ -190,6 +197,6 @@ def clear_feature_cache(hs):
     cache_dir = hs.dirs.cache_dir
     feat_uid = feat_cfg.get_uid()
     print('[fc2] clearing feature cache: %r' % feat_dir)
-    helpers.remove_files_in_dir(feat_dir, '*' + feat_uid + '*', verbose=True, dryrun=False)
-    helpers.remove_files_in_dir(cache_dir, '*' + feat_uid + '*', verbose=True, dryrun=False)
+    util.remove_files_in_dir(feat_dir, '*' + feat_uid + '*', verbose=True, dryrun=False)
+    util.remove_files_in_dir(cache_dir, '*' + feat_uid + '*', verbose=True, dryrun=False)
     pass
