@@ -11,10 +11,17 @@ import traceback
 import warnings
 # Science
 import numpy as np
+
 # Qt
 from PyQt4 import QtCore, QtGui
+try:
+    from PyQt4.QtCore import QString
+except ImportError:
+    # QtCore.Qstring can't be imported in Spyder since 2.3.1
+    QString = str
+    
 from PyQt4.Qt import (QAbstractItemModel, QModelIndex, QVariant, QWidget,
-                      QString, Qt, QObject, pyqtSlot)
+                      Qt, QObject, pyqtSlot)
 # HotSpotter
 from Printable import DynStruct
 
