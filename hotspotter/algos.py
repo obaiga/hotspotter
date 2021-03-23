@@ -129,7 +129,7 @@ def xywh_to_tlbr(roi, img_wh):
 def localmax(signal1d):
     maxpos = []
     nsamp = len(signal1d)
-    for ix in xrange(nsamp):
+    for ix in range(nsamp):
         _prev = signal1d[max(0, ix - 1)]
         _item = signal1d[ix]
         _next = signal1d[min(nsamp - 1, ix + 1)]
@@ -402,7 +402,7 @@ def __akmeans_iterate(data,
           (ave_unchanged_thresh, ave_unchanged_iterwin))
     print('[algos] Printing akmeans info in format:' +
           'time (iterx, ave(#changed), #unchanged)')
-    for xx in xrange(0, max_iters):
+    for xx in range(0, max_iters):
         # 1) Find each datapoints nearest cluster center
         tt = helpers.tic()
         helpers.print_('...tic')
@@ -416,8 +416,8 @@ def __akmeans_iterate(data,
         datax_sort    = datax2_clusterx.argsort()  # NOQA
         clusterx_sort = datax2_clusterx[datax_sort]
         _L = 0
-        clusterx2_dataLRx = [None for _ in xrange(num_clusters)]
-        for _R in xrange(len(datax_sort) + 1):  # Slide R
+        clusterx2_dataLRx = [None for _ in range(num_clusters)]
+        for _R in range(len(datax_sort) + 1):  # Slide R
             if _R == num_data or clusterx_sort[_L] != clusterx_sort[_R]:
                 clusterx2_dataLRx[clusterx_sort[_L]] = (_L, _R)
                 _L = _R

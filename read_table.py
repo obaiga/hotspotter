@@ -650,8 +650,5 @@ pcc_kwargs = {
 # Compute all chips with paramatarized filters
 parallel_compute(compute_chip, **pcc_kwargs)
 
-#%%
-
-# Aff = build_transform(244, 301, 554, 297, 549, 1024, 0)
 
     
