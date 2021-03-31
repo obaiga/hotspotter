@@ -3,7 +3,10 @@ from hscom import __common__
 (print, print_, print_on, print_off, rrr,
  profile) = __common__.init(__name__, '[ds]')
 # Standard
-from itertools import izip, chain
+# from itertools import izip, chain
+from itertools import zip_longest as izip
+from itertools import chain
+
 # Scientific
 import numpy as np
 # HotSpotter
@@ -59,7 +62,7 @@ class QueryData(DynStruct):
 class NNIndex(object):
     'Nearest Neighbor (FLANN) Index Class'
     def __init__(nn_index, hs, cx_list):
-        import algos
+        from hotspotter import algos
         cx2_desc  = hs.feats.cx2_desc
         # Make unique id for indexed descriptors
         feat_uid   = hs.prefs.feat_cfg.get_uid()
@@ -129,7 +132,7 @@ class HotspotterTables(DynStruct):
 class HotspotterDirs(DynStruct):
     def __init__(self, db_dir):
         super(HotspotterDirs, self).__init__()
-        import load_data2 as ld2
+        import hotspotter.load_data2 as ld2
         from os.path import join
         # Class variables
         self.db_dir       = db_dir

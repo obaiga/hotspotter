@@ -1,15 +1,16 @@
 # http://docs.python.org/2/library/multiprocessing.html
 from __future__ import print_function, division
-import __common__
+import hscom.__common__ as __common__
 (print, print_, print_on, print_off,
  rrr, profile, printDBG) = __common__.init(__name__, '[parallel]', DEBUG=False)
 # Python
-from itertools import izip
+# from itertools import izip
+from itertools import zip_longest as izip
 from os.path import exists
 import multiprocessing
 import sys
 # Hotspotter
-import helpers
+import hscom.helpers as helpers
 import pdb
 
 
@@ -44,14 +45,14 @@ def parallel_compute(func, arg_list, num_procs=1, lazy=True, args=None, common_a
     task_list = make_task_list(func, arg_list, lazy=lazy, common_args=common_args)
     nTasks = len(task_list)
     if nTasks == 0:
-        print('[parallel] ... No %s tasks left to compute!' % func.func_name)
+        print('[parallel] ... No %s tasks left to compute!' % func.__name__)
         return None
     # Do not execute small tasks in parallel
     if nTasks < num_procs / 2 or nTasks == 1:
         num_procs = 1
     #num_procs = min(num_procs, nTasks)
     num_procs=1
-    task_lbl = func.func_name + ': '
+    task_lbl = func.__name__ + ': '
     try:
         ret = parallelize_tasks(task_list, num_procs, task_lbl)
     except Exception as ex:
@@ -83,8 +84,8 @@ def make_task_list(func, arg_list, lazy=True, common_args=[]):
     # checks existance
     arg_list2 = [append_common(_args) for _args in izip(*arg_list) if not exists(_args[1])]
     task_list = [(func, _args) for _args in iter(arg_list2)]
-    nSkip = len(zip(*arg_list)) - len(arg_list2)
-    print('[parallel] Already computed %d %s tasks' % (nSkip, func.func_name))
+    nSkip = len(list(zip(*arg_list))) - len(arg_list2)
+    print('[parallel] Already computed %d %s tasks' % (nSkip, func.__name__))
     return task_list
 
 
@@ -142,7 +143,7 @@ def _compute_in_parallel(task_list, num_procs, task_lbl='', verbose=True):
         task_queue.put(task)
     # start processes
     proc_list = []
-    for i in xrange(num_procs):
+    for i in range(num_procs):
         printDBG('[parallel] creating process %r' % (i,))
         proc = multiprocessing.Process(target=_worker, args=(task_queue, done_queue))
         proc.start()
@@ -153,19 +154,19 @@ def _compute_in_parallel(task_list, num_procs, task_lbl='', verbose=True):
     result_list = []
     if verbose:
         mark_progress, end_prog = helpers.progress_func(nTasks, lbl=task_lbl, spacing=num_procs)
-        for count in xrange(len(task_list)):
+        for count in range(len(task_list)):
             mark_progress(count)
             printDBG('[parallel] done_queue.get()')
             result = done_queue.get()
             result_list.append(result)
         end_prog()
     else:
-        for i in xrange(nTasks):
+        for i in range(nTasks):
             done_queue.get()
         print('[parallel]  ... done')
     printDBG('[parallel] stopping children')
     # stop children processes
-    for i in xrange(num_procs):
+    for i in range(num_procs):
         task_queue.put('STOP')
     return result_list
     #import time

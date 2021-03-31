@@ -11,7 +11,7 @@ from collections import OrderedDict
 import numpy as np
 from PIL import Image
 # Hotspotter
-import load_data2 as ld2
+from . import load_data2 as ld2
 from hscom import helpers
 
 

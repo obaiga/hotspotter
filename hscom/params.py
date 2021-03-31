@@ -2,12 +2,12 @@
     stores a bunch of global variables used by the other modules
     It also reads from sys.argv'''
 from __future__ import division, print_function
-import __common__
+from . import __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[params]')
 # Python
 import sys
-import helpers
+from . import helpers
 from os.path import exists, expanduser, join
 
 
@@ -71,12 +71,12 @@ dev_databases['JAG'] = dev_databases['JAG_KELLY']
 #dev_databases['DEFAULT'] = dev_databases['NAUTS']
 dev_databases['DEFAULT'] = None
 # Add values from the database dict as global vars
-for key, val in dev_databases.iteritems():
+for key, val in dev_databases.items():
     exec('%s = %r' % (key, val))
 
 
 def inverse_dev_databases():
-    return {val: key for (key, val) in dev_databases.iteritems()}
+    return {val: key for (key, val) in dev_databases.items()}
 
 
 #=====================================================
@@ -100,17 +100,17 @@ mother_hesaff_tuned_params = {'algorithm':           'kmeans',
                               'cores':               0,
                               'eps':                 0.0,
                               'iterations':          5,
-                              'key_size_':           20L,
+                              'key_size_':           20,
                               'leaf_max_size':       4,
                               'log_level':           'warning',
                               'max_neighbors':       -1,
                               'memory_weight':       0.0,
-                              'multi_probe_level_':  2L,
+                              'multi_probe_level_':  2,
                               'random_seed':         94222758,
                               'sample_fraction':     0.10000000149011612,
                               'sorted':              1,
                               'speedup':             23.30769157409668,
-                              'table_number_':       12L,
+                              'table_number_':       12,
                               'target_precision':    0.8999999761581421,
                               'trees':               1}
 
@@ -151,7 +151,7 @@ __VSMANY_K__           = 5         # Number of matches for one-vs-many
 __USE_RECIPROCAL_NN__  = True      # Number of matches for one-vs-many
 __USE_SPATIAL_NN__     = True      # Number of matches for one-vs-many
 __VSMANY_SCORE_FN__    = 'LNBNN'  # LNRAT, LNBNN, RATIO, PL, BORDA
-__BOW_NUM_WORDS__      = long(5e4)  # Vocab size for bag of words
+__BOW_NUM_WORDS__      = 5e4  # Vocab size for bag of words
 __BOW_NDESC_PER_WORD__ = 14
 __VSONE_RATIO_THRESH__ = 1.5       # Thresholds for one-vs-one
 #---------------------
@@ -228,7 +228,7 @@ def OXFORD_defaults():
     params.__SCALE_THRESH_HIGH__ = 8
     params.__SCALE_THRESH_LOW__  = 0.5
     params.__CHIP_SQRT_AREA__ = None
-    params.__BOW_NUM_WORDS__  = long(1e6)
+    params.__BOW_NUM_WORDS__  = 1e6
 
 
 def GZ_defaults():

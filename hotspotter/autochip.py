@@ -173,7 +173,7 @@ def autochip(template, exclFac = 1, skip = 8, stopCrit = 1, crit = [0,0,1], minS
 
             # Cut out some part of template for next search
             templateMod[rmRow:rmRow+rmHeight+1,rmCol:rmCol+rmWidth+1] = 0;
-        print '[ac] {0:.1f}% of the template covered'.format(chipArea/templateArea*100)
+        print ('[ac] {0:.1f}% of the template covered'.format(chipArea/templateArea*100))
 
     # If we're running until we get a certain number of chips
     elif stopCrit > 1:
@@ -588,8 +588,8 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) == 2:
         chippedImages = doAutochipping(sys.argv[1])
-        print chippedImages
+        print (chippedImages)
     else:# len(sys.argv) == 3:
         template = getTemplate(sys.argv[1], sys.argv[2])
         C = autochip(template)
-        print C
+        print (C)

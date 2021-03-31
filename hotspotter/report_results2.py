@@ -12,7 +12,8 @@ import sys
 import textwrap
 import fnmatch
 import warnings
-from itertools import izip
+# from itertools import izip
+from itertools import zip_longest as izip
 from os.path import join, exists
 # Scientific imports
 import numpy as np

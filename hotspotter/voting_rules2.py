@@ -3,7 +3,8 @@ from hscom import __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[vr2]')
 # Python
-from itertools import izip
+# from itertools import izip
+from itertools import zip_longest as izip
 # Scientific
 import pandas as pd
 import numpy as np
@@ -112,7 +113,7 @@ def _PL_score(gamma):
     #print('[vote] computing probabilities')
     nAlts = len(gamma)
     altx2_prob = np.zeros(nAlts)
-    for ax in xrange(nAlts):
+    for ax in range(nAlts):
         altx2_prob[ax] = gamma[ax] / np.sum(gamma)
     #print('[vote] altx2_prob: '+str(altx2_prob))
     #print('[vote] sum(prob): '+str(sum(altx2_prob)))
@@ -150,21 +151,21 @@ def _chipmatch2_utilities(hs, qcx, chipmatch, K):
     nQFeats = len(hs.feats.cx2_kpts[qcx])
     # Stack the feature matches
     (cx2_fm, cx2_fs, cx2_fk) = chipmatch
-    cxs = np.hstack([[cx] * len(cx2_fm[cx]) for cx in xrange(len(cx2_fm))])
+    cxs = np.hstack([[cx] * len(cx2_fm[cx]) for cx in range(len(cx2_fm))])
     cxs = np.array(cxs, np.int)
     fms = np.vstack(cx2_fm)
     # Get the individual feature match lists
     qfxs = fms[:, 0]
     fss  = np.hstack(cx2_fs)
     fks  = np.hstack(cx2_fk)
-    qfx2_utilities = [[] for _ in xrange(nQFeats)]
+    qfx2_utilities = [[] for _ in range(nQFeats)]
     for cx, qfx, fk, fs in izip(cxs, qfxs, fks, fss):
         nx = cx2_nx[cx]
         # Apply temporary uniquish name
         tnx = nx if nx >= 2 else -cx
         utility = (cx, tnx, fs, fk)
         qfx2_utilities[qfx].append(utility)
-    for qfx in xrange(len(qfx2_utilities)):
+    for qfx in range(len(qfx2_utilities)):
         utilities = qfx2_utilities[qfx]
         utilities = sorted(utilities, key=lambda tup: tup[3])
         qfx2_utilities[qfx] = utilities
@@ -185,7 +186,7 @@ def _filter_utilities(qfx2_utilities, max_alts=200):
     if nRemove > 0:  # remove least frequent names
         most_freq_tnxs = tnx2_freq.argsort()[::-1] + tnxs_min
         keep_tnxs = set(most_freq_tnxs[0:max_alts].tolist())
-        for qfx in xrange(len(qfx2_utilities)):
+        for qfx in range(len(qfx2_utilities)):
             utils = qfx2_utilities[qfx]
             qfx2_utilities[qfx] = [util for util in utils if util[1] in keep_tnxs]
     return qfx2_utilities

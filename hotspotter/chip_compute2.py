@@ -442,7 +442,7 @@ def load_chips(hs, cx_list=None, **kwargs):
     # Chip Paths: where to write extracted chips to
     _cfname_fmt = 'cid%d' + chip_uid + '.png'
     _cfpath_fmt = join(hs.dirs.chip_dir, _cfname_fmt)
-    cfpath_list = [_cfpath_fmt  % cid for cid in iter(cid_list)]
+    cfpath_list = [_cfpath_fmt  % cid for cid in cid_list]
     # Normalized Chip Sizes: ensure chips have about sqrt_area squared pixels
     chipsz_list = compute_uniform_area_chip_sizes(roi_list, sqrt_area)
 
@@ -465,8 +465,8 @@ def load_chips(hs, cx_list=None, **kwargs):
     except IOError as ex:
         import gc
         gc.collect()
-        print('[cc] ex=%r' % ex)
-        print('path=%r' % path)
+        print('[cc] ex=%r'% ex)
+        print('path=%r'%path)
         if helpers.checkpath(path, verbose=True):
             import time
             time.sleep(1)  # delays for 1 seconds

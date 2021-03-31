@@ -1,5 +1,6 @@
 from __future__ import division, print_function
-import __builtin__
+# import __builtin__
+import builtins as __builtin__
 import sys
 
 try:
@@ -71,7 +72,7 @@ def init(module_name, module_prefix='[???]', DEBUG=None, initmpl=False):
             print('[common] ' + module_prefix + ' current backend is: %r' % backend)
             print('[common] ' + module_prefix + ' matplotlib.use(Qt4Agg)')
             if backend != 'Qt4Agg':
-                matplotlib.use('Qt4Agg', warn=True, force=True)
+                matplotlib.use('Qt5Agg', warn=True, force=True)
                 backend = matplotlib.get_backend()
                 print(module_prefix + ' current backend is: %r' % backend)
             matplotlib.rcParams['toolbar'] = 'toolbar2'

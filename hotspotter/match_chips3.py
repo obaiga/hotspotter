@@ -1,13 +1,48 @@
 from __future__ import division, print_function
 from hscom import __common__
 (print, print_, print_on, print_off,
- rrr, profile) = __common__.init(__name__, '[mc3]')
+ rrr, profile, printDBG) = __common__.init(__name__, '[mc3]', DEBUG=False)
 # Python
 import re
 # HotSpotter
 from hscom import helpers
-import DataStructures as ds
-import matching_functions as mf
+import hotspotter.DataStructures as ds
+import hotspotter.matching_functions as mf
+
+
+
+def prep_query_request(qreq=None, query_cfg=None, qcxs=None, dcxs=None, **kwargs):
+    print(' --- prep query request ---')
+    # Builds or modifies a query request object
+    def loggedif(msg, condition):
+        # helper function for logging if statment results
+        printDBG(msg + '... ' + ['no', 'yes'][condition])
+        return condition
+    if not loggedif('(1) given qreq?', qreq is not None):
+        qreq = ds.QueryRequest()
+    if loggedif('(2) given qcxs?', qcxs is not None):
+        qreq._qcxs = qcxs
+    if loggedif('(3) given dcxs?', dcxs is not None):
+        qreq._dcxs = dcxs
+    if not loggedif('(4) given qcfg?', query_cfg is not None):
+        query_cfg = qreq.cfg
+    if loggedif('(4) given kwargs?', len(kwargs) > 0):
+        query_cfg = query_cfg.deepcopy(**kwargs)
+    #
+    qreq.set_cfg(query_cfg)
+    #
+    assert (qreq is not None), ('invalid qeury request')
+    assert (qreq._qcxs is not None and len(qreq._qcxs) > 0), (
+        'query request has invalid query chip indexes')
+    assert (qreq._dcxs is not None and len(qreq._dcxs) > 0), (
+        'query request has invalid database chip indexes')
+    assert (qreq.cfg is not None), (
+        'query request has invalid query config')
+    return qreq
+
+
+
+
 
 
 @profile

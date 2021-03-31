@@ -1,5 +1,6 @@
 from __future__ import division, print_function
-import __common__
+# import __common__
+import hscom.__common__ as __common__ 
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[Printable]')
 # Standard

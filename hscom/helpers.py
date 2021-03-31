@@ -9,7 +9,8 @@ into a global set of helper functions.
 Wow, pylint is nice for cleaning.
 '''
 from __future__ import division, print_function
-import __common__
+# import __common__
+import hscom.__common__ as __common__ 
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[helpers]')
 # Scientific
@@ -19,8 +20,12 @@ from collections import OrderedDict
 from itertools import product as iprod
 from os.path import (join, relpath, normpath, split, isdir, isfile, exists,
                      islink, ismount, expanduser)
-import cPickle
-import cStringIO
+
+# import cPickle
+# import cStringIO
+import pickle as cPickle
+from io import StringIO as cStringIO
+
 import datetime
 import decimal
 import fnmatch
@@ -35,8 +40,8 @@ import time
 import types
 import warnings
 # HotSpotter
-import tools
-from Printable import printableVal
+import hscom.tools as tools
+from hscom.Printable import printableVal
 #print('LOAD_MODULE: helpers.py')
 
 # --- Globals ---
@@ -106,7 +111,7 @@ def horiz_string(str_list):
     '''
     all_lines = []
     hpos = 0
-    for sx in xrange(len(str_list)):
+    for sx in range(len(str_list)):
         str_ = str(str_list[sx])
         lines = str_.split('\n')
         line_diff = len(lines) - len(all_lines)
@@ -118,7 +123,7 @@ def horiz_string(str_list):
             all_lines[lx] += line
             hpos = max(hpos, len(all_lines[lx]))
         # Horizontal padding
-        for lx in xrange(len(all_lines)):
+        for lx in range(len(all_lines)):
             hpos_diff = hpos - len(all_lines[lx])
             if hpos_diff > 0:
                 all_lines[lx] += ' ' * hpos_diff
@@ -452,14 +457,14 @@ def explore_module(module_, seen=None, maxdepth=2, nonmodules=False):
 # --- Util ---
 def alloc_lists(num_alloc):
     'allocates space for a numpy array of lists'
-    return [[] for _ in xrange(num_alloc)]
+    return [[] for _ in range(num_alloc)]
 
 
 def ensure_list_size(list_, size_):
     'extend list to max_cx'
     lendiff = (size_) - len(list_)
     if lendiff > 0:
-        extension = [None for _ in xrange(lendiff)]
+        extension = [None for _ in range(lendiff)]
         list_.extend(extension)
 
 
@@ -849,7 +854,7 @@ def longest_existing_path(_path):
 
 def path_ndir_split(path, n):
     path, ndirs = split(path)
-    for i in xrange(n - 1):
+    for i in range(n - 1):
         path, name = split(path)
         ndirs = name + os.path.sep + ndirs
     return ndirs
@@ -1019,7 +1024,7 @@ def grep(string, pattern):
 
 
 def correct_zeros(M):
-    index_gen = iprod(*[xrange(_) for _ in M.shape])
+    index_gen = iprod(*[range(_) for _ in M.shape])
     for index in index_gen:
         if M[index] < 1E-18:
             M[index] = 0
@@ -1146,10 +1151,16 @@ def hashstr_arr(arr, lbl='arr', **kwargs):
 
 
 def hashstr(data, trunc_pos=8):
+    # import ubelt as ub
+    # hashstr = ub.hash_data(data, base='abc')[:trunc_pos]
+    # return hashstr
     if isinstance(data, tuple):
         data = repr(data)
     # Get a 128 character hex string
-    hashstr = hashlib.sha512(data).hexdigest()
+    if isinstance(data,str):
+        hashstr = hashlib.sha512((data).encode('utf-8')).hexdigest()
+    else:
+        hashstr = hashlib.sha512(data).hexdigest()
     # Convert to base 57
     hashstr2 = hex2_base57(hashstr)
     # Truncate
@@ -1484,7 +1495,7 @@ def execstr_timeitsetup(dict_, exclude_list=[]):
     old_thresh =  np.get_printoptions()['threshold']
     np.set_printoptions(threshold=1000000000)
     matches = fnmatch.fnmatch
-    excl_valid_keys = [key for key in dict_.iterkeys() if not any((matches(key, pat) for pat in iter(exclude_list)))]
+    excl_valid_keys = [key for key in dict_.keys() if not any((matches(key, pat) for pat in iter(exclude_list)))]
     valid_types = set([np.ndarray, np.float32, np.float64, np.int64, int, float])
     type_valid_keys = [key for key in iter(excl_valid_keys) if type(dict_[key]) in valid_types]
     exec_list = []
@@ -1877,7 +1888,7 @@ def cartesian(arrays, out=None):
     out[:, 0] = np.repeat(arrays[0], m)
     if arrays[1:]:
         cartesian(arrays[1:], out=out[0:m, 1:])
-        for j in xrange(1, arrays[0].size):
+        for j in range(1, arrays[0].size):
             out[j * m:(j + 1) * m, 1:] = out[0:m, 1:]
     return out
 
@@ -1954,13 +1965,18 @@ def all_dict_combinations(varied_dict):
     return dict_list
 
 
-def stash_testdata(*args):
+def stash_testdata(*args):    ##save
     import shelve
-    shelf = shelve.open('test_data.shelf')
+    
+    if os.path.isfile("test_data.shelf"):
+        os.remove("test_data.shelf")
+        
+    shelf=shelve.open("test_data.shelf")
     locals_ = get_parent_locals()
     for key in args:
         print('Stashing key=%r' % key)
         shelf[key] = locals_[key]
+         
     shelf.close()
 
 

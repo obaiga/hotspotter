@@ -10,7 +10,8 @@ from hscom import __common__
 (print, print_, print_on, print_off, rrr, profile,
  printDBG) = __common__.init(__name__, '[df2]', DEBUG=False, initmpl=True)
 # Python
-from itertools import izip
+# from itertools import izip
+from itertools import zip_longest as izip
 from os.path import splitext, split, join, normpath, exists
 import colorsys
 import itertools
@@ -29,8 +30,8 @@ from matplotlib.transforms import Affine2D
 from matplotlib.backends import backend_qt4
 import matplotlib.pyplot as plt
 # Qt
-from PyQt4 import QtCore, QtGui
-from PyQt4.QtCore import Qt
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtCore import Qt
 # Scientific
 import numpy as np
 import scipy.stats

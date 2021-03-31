@@ -27,7 +27,7 @@ def dict_subset(dict_, keys):
     'Returns the a subset of the dictionary'
     keys_ = set(keys)
     return {key: val for (key, val)
-            in dict_.iteritems() if key in keys_}
+            in dict_.items() if key in keys_}
 
 
 def listrm(list_, item):
@@ -52,7 +52,7 @@ def any_inlist(list_, search_list):
 
 def signthreshweight_str(on_filters):
     stw_list = []
-    for key, val in on_filters.iteritems():
+    for key, val in on_filters.items():
         ((sign, thresh), weight) = val
         stw_str = key
         if thresh is None and weight == 0:
@@ -128,11 +128,11 @@ class FilterConfig(ConfigBase):
         removes invalid parameter settings over all cfgs (move to QueryConfig)
         '''
         # Ensure the list of on filters is valid given the weight and thresh
-        if filt_cfg.ratio_thresh <= 1:
+        if filt_cfg.ratio_thresh is None or filt_cfg.ratio_thresh <= 1:
             filt_cfg.ratio_thresh = None
-        if filt_cfg.roidist_thresh >= 1:
+        if filt_cfg.roidist_thresh is None or filt_cfg.roidist_thresh >= 1:
             filt_cfg.roidist_thresh = None
-        if filt_cfg.bursty_thresh   <= 1:
+        if filt_cfg.bursty_thresh is None or filt_cfg.bursty_thresh   <= 1:
             filt_cfg.bursty_thresh = None
         # FIXME: Non-Independent parameters.
         # Need to explicitly model correlation somehow
@@ -227,7 +227,7 @@ class SpatialVerifyConfig(ConfigBase):
 class AggregateConfig(ConfigBase):
     def __init__(agg_cfg, **kwargs):
         super(AggregateConfig, agg_cfg).__init__(name='agg_cfg')
-        agg_cfg.query_type   = 'vsmany'
+        agg_cfg.query_type   = 'vsone'
         # chipsum, namesum, placketluce
         agg_cfg.isWeighted = False  # nsum, pl
         agg_cfg.score_method = 'csum'  # nsum, pl

@@ -1,12 +1,13 @@
 from __future__ import division, print_function
-import __common__
+# import __common__
+from hscom import __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[io]')
 # Python
 import os
 import fnmatch
-import pickle
-import cPickle
+import pickle 
+# import cPickle
 from os.path import normpath, exists, realpath, join, expanduser, dirname
 import datetime
 import time
@@ -16,7 +17,8 @@ import cv2
 from PIL import Image
 from PIL.ExifTags import TAGS
 # Hotspotter
-import helpers
+# import helpers
+import hscom.helpers as helpers
 #import skimage
 #import shelve
 #import datetime
@@ -38,7 +40,8 @@ def save_npz(fpath, data):
 
 def save_cPkl(fpath, data):
     with open(fpath, 'wb') as file:
-        cPickle.dump(data, file, cPickle.HIGHEST_PROTOCOL)
+        # cPickle.dump(data, file, cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(data, file, pickle.HIGHEST_PROTOCOL)
 
 
 def save_pkl(fpath, data):
@@ -71,7 +74,7 @@ def load_npy(fpath):
 
 def load_cPkl(fpath):
     with open(fpath, 'rb') as file:
-        data = cPickle.load(file)
+        data = pickle.load(file)
     return data
 
 
@@ -405,7 +408,6 @@ def splash_img_fpath():
 # --- Global Cache ---
 # TODO: This doesnt belong here
 HOME = expanduser('~')
-#GLOBAL_CACHE_DIR = realpath('.hotspotter/global_cache')
 GLOBAL_CACHE_DIR = join(HOME, '.hotspotter/global_cache')
 helpers.ensuredir(GLOBAL_CACHE_DIR)
 

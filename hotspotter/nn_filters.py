@@ -4,8 +4,8 @@ print, print_, print_on, print_off, rrr, profile, printDBG =\
     __common__.init(__name__, '[nnfilt]', DEBUG=False)
 import numpy as np
 from numpy import array
-from itertools import izip
-
+# from itertools import izip
+from itertools import zip_longest as izip
 eps = 1E-8
 
 
@@ -78,12 +78,12 @@ def _nn_normalized_weight(normweight_fn, hs, qcx2_nns, qdat):
     K = qdat.cfg.nn_cfg.K
     Knorm = qdat.cfg.nn_cfg.Knorm
     rule  = qdat.cfg.nn_cfg.normalizer_rule
-    qcx2_weight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    qcx2_selnorms = {qcx: None for qcx in qcx2_nns.iterkeys()}
+    qcx2_weight = {qcx: None for qcx in qcx2_nns.keys()}
+    qcx2_selnorms = {qcx: None for qcx in qcx2_nns.keys()}
     # Database feature index to chip index
     dx2_cx = qdat._data_index.ax2_cx
     dx2_fx = qdat._data_index.ax2_fx
-    for qcx in qcx2_nns.iterkeys():
+    for qcx in qcx2_nns.keys():
         (qfx2_dx, qfx2_dist) = qcx2_nns[qcx]
         qfx2_nndist = qfx2_dist[:, 0:K]
         if rule == 'last':
@@ -138,9 +138,9 @@ def nn_bursty_weight(hs, qcx2_nns, qdat):
     # Half-generalized to vsmany
     # Assume the first nRows-1 rows are the matches (last row is normalizer)
     K = qdat.cfg.nn_cfg.K
-    qcx2_bursty_weight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    qcx2_metaweight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    for qcx in qcx2_nns.iterkeys():
+    qcx2_bursty_weight = {qcx: None for qcx in qcx2_nns.keys()}
+    qcx2_metaweight = {qcx: None for qcx in qcx2_nns.keys()}
+    for qcx in qcx2_nns.keys():
         (qfx2_dx, qfx2_dist) = qcx2_nns[qcx]
         qfx2_nn = qfx2_dx[:, 0:K]
         dx2_frequency  = np.bincount(qfx2_nn.flatten())
@@ -163,9 +163,9 @@ def nn_recip_weight(hs, qcx2_nns, qdat):
     checks = qdat.cfg.nn_cfg.checks
     dx2_data = data_index.ax2_data
     data_flann = data_index.flann
-    qcx2_recip_weight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    qcx2_metaweight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    for qcx in qcx2_nns.iterkeys():
+    qcx2_recip_weight = {qcx: None for qcx in qcx2_nns.keys()}
+    qcx2_metaweight = {qcx: None for qcx in qcx2_nns.keys()}
+    for qcx in qcx2_nns.keys():
         (qfx2_dx, qfx2_dist) = qcx2_nns[qcx]
         nQuery = len(qfx2_dx)
         dim = dx2_data.shape[1]
@@ -193,7 +193,7 @@ def nn_roidist_weight(hs, qcx2_nns, qdat):
     dx2_cx = data_index.ax2_cx
     dx2_fx = data_index.ax2_fx
     cx2_roidist_weight = {}
-    for qcx in qcx2_nns.iterkeys():
+    for qcx in qcx2_nns.keys():
         (qfx2_dx, qfx2_dist) = qcx2_nns[qcx]
         qfx2_nn = qfx2_dx[:, 0:K]
         # Get matched chip sizes #.0300s
@@ -225,14 +225,14 @@ def nn_roidist_weight(hs, qcx2_nns, qdat):
 def nn_scale_weight(hs, qcx2_nns, qdat):
     # Filter by scale for funzies
     K = qdat.cfg.nn_cfg.K
-    cx2_scale_weight = {qcx: None for qcx in qcx2_nns.iterkeys()}
-    qcx2_metaweight = {qcx: None for qcx in qcx2_nns.iterkeys()}
+    cx2_scale_weight = {qcx: None for qcx in qcx2_nns.keys()}
+    qcx2_metaweight = {qcx: None for qcx in qcx2_nns.keys()}
     data_index = qdat._data_index
     K = qdat.cfg.nn_cfg.K
     cx2_kpts = hs.feats.cx2_kpts
     dx2_cx = data_index.ax2_cx
     dx2_fx = data_index.ax2_fx
-    for qcx in qcx2_nns.iterkeys():
+    for qcx in qcx2_nns.keys():
         (qfx2_dx, qfx2_dist) = qcx2_nns[qcx]
         qfx2_kpts = cx2_kpts[qcx]
         qfx2_nn = qfx2_dx[:, 0:K]

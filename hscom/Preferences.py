@@ -1,29 +1,37 @@
 from __future__ import division, print_function
-import __common__
+# import __common__
+import hscom.__common__ as __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[pref]')
 # Python
-import cPickle
+# import cPickle
+import pickle as cPickle
 import os.path
 import sys
-import tools
+# import toolssudo apt-get install python3-pyqt4
+import hscom.tools as tools
 import traceback
 import warnings
 # Science
 import numpy as np
 
 # Qt
-from PyQt4 import QtCore, QtGui
+# from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui
 try:
     from PyQt4.QtCore import QString
 except ImportError:
     # QtCore.Qstring can't be imported in Spyder since 2.3.1
     QString = str
     
-from PyQt4.Qt import (QAbstractItemModel, QModelIndex, QVariant, QWidget,
+# from PyQt4.Qt import (QAbstractItemModel, QModelIndex, QVariant, QWidget,
+#                       Qt, QObject, pyqtSlot)
+from PyQt5.Qt import (QAbstractItemModel, QModelIndex, QVariant, QWidget,
                       Qt, QObject, pyqtSlot)
+
 # HotSpotter
-from Printable import DynStruct
+# from Printable import DynStruct
+from hscom.Printable import DynStruct
 
 # ---
 # GLOBALS
@@ -284,7 +292,7 @@ class Pref(PrefNode):
         raise AttributeError('attribute: %s.%s not found' % (self._intern.name, name))
 
     def iteritems(self):
-        for (key, val) in self.__dict__.iteritems():
+        for (key, val) in self.__dict__.items():
             if key in self._printable_exclude:
                 continue
             yield (key, val)
@@ -296,7 +304,7 @@ class Pref(PrefNode):
         Children Pref can be optionally separated'''
         pref_dict = {}
         struct_dict = {}
-        for (key, val) in self.iteritems():
+        for (key, val) in self.items():
             if split_structs_bit and isinstance(val, Pref):
                 struct_dict[key] = val
                 continue
@@ -385,7 +393,7 @@ class Pref(PrefNode):
     def update(self, **kwargs):
         #print('Updating Preference: kwargs = %r' % (kwargs))
         self_keys = set(self.__dict__.keys())
-        for key, val in kwargs.iteritems():
+        for key, val in kwargs.items():
             if key in self_keys:
                 #if type(val) == types.ListType:
                     #val = val[0]

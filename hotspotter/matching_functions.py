@@ -3,14 +3,15 @@ from hscom import __common__
 print, print_, print_on, print_off, rrr, profile, printDBG =\
     __common__.init(__name__, '[mf]', DEBUG=False)
 # Python
-from itertools import izip
+# from itertools import izip
+from itertools import zip_longest as izip
 # Scientific
 import numpy as np
 # Hotspotter
-import QueryResult as qr
-import nn_filters
-import spatial_verification2 as sv2
-import voting_rules2 as vr2
+import hotspotter.QueryResult as qr
+import hotspotter.nn_filters as nn_filters
+import hotspotter.spatial_verification2 as sv2
+import hotspotter.voting_rules2 as vr2
 from hscom import helpers
 
 
@@ -60,7 +61,7 @@ NN_FILTER_FUNC_DICT = {
     'lnbnn':   nn_filters.nn_lnbnn_weight,
     'ratio':   nn_filters.nn_ratio_weight,
 }
-MARK_AFTER = 40
+MARK_AFTER = 40   ##jon:2
 
 #=================
 # Helpers
@@ -106,9 +107,9 @@ def nearest_neighbors(hs, qcxs, qdat):
     # Output
     qcx2_nns = {}
     nNN, nDesc = 0, 0
-    mark_progress, end_progress = progress_func(len(qcxs))
+    mark_progress, end_progress = progress_func(len(qcxs))   ## by obaiga
     for count, qcx in enumerate(qcxs):
-        mark_progress(count)
+        mark_progress(count)                                ## by obaiga
         qfx2_desc = cx2_desc[qcx]
         # Check that we can query this chip
         if len(qfx2_desc) == 0:
@@ -120,7 +121,7 @@ def nearest_neighbors(hs, qcxs, qdat):
         # record number of query and result desc
         nNN += qfx2_dx.size
         nDesc += len(qfx2_desc)
-    end_progress()
+    end_progress()                                        ## by obaiga
     print('[mf] * assigned %d desc from %d chips to %r nearest neighbors' %
           (nDesc, len(qcxs), nNN))
     return qcx2_nns
@@ -170,7 +171,7 @@ def filter_neighbors(hs, qcx2_nns, filt2_weights, qdat):
     dx2_cx = qdat._data_index.ax2_cx
     # Filter matches based on config and weights
     mark_progress, end_progress = progress_func(len(qcx2_nns))
-    for count, qcx in enumerate(qcx2_nns.iterkeys()):
+    for count, qcx in enumerate(qcx2_nns.keys()):
         mark_progress(count)
         (qfx2_dx, _) = qcx2_nns[qcx]
         qfx2_nn = qfx2_dx[:, 0:K]
@@ -257,7 +258,7 @@ def build_chipmatches(hs, qcx2_nns, qcx2_nnfilt, qdat):
 
     # Iterate over chips with nearest neighbors
     mark_progress, end_progress = progress_func(len(qcx2_nns))
-    for count, qcx in enumerate(qcx2_nns.iterkeys()):
+    for count, qcx in enumerate(qcx2_nns.keys()):
         mark_progress(count)
         #print('[mf] * scoring q' + hs.cidstr(qcx))
         (qfx2_dx, _) = qcx2_nns[qcx]
@@ -324,7 +325,7 @@ def spatial_verification(hs, qcx2_chipmatch, qdat):
     dcxs_ = set(qdat._dcxs)
     USE_1_to_2 = True
     # Find a transform from chip2 to chip1 (the old way was 1 to 2)
-    for qcx in qcx2_chipmatch.iterkeys():
+    for qcx in qcx2_chipmatch.keys():
         #printDBG('[mf] verify qcx=%r' % qcx)
         chipmatch = qcx2_chipmatch[qcx]
         cx2_prescore = score_chipmatch(hs, qcx, chipmatch, prescore_method, qdat)
@@ -342,7 +343,7 @@ def spatial_verification(hs, qcx2_chipmatch, qdat):
                                                       use_chip_extent,
                                                       USE_1_to_2)
         # spatially verify the top __NUM_RERANK__ results
-        for topx in xrange(nRerank):
+        for topx in range(nRerank):
             cx = topx2_cx[topx]
             fm = cx2_fm[cx]
             #printDBG('[mf] vs topcx=%r, score=%r' % (cx, cx2_prescore[cx]))
@@ -422,7 +423,7 @@ def _fix_fmfsfk(cx2_fm, cx2_fs, cx2_fk):
     cx2_fs = [np.array(fs, fs_dtype_) for fs in iter(cx2_fs)]
     cx2_fk = [np.array(fk, fk_dtype_) for fk in iter(cx2_fk)]
     # Ensure shape
-    for cx in xrange(len(cx2_fm)):
+    for cx in range(len(cx2_fm)):
         cx2_fm[cx].shape = (cx2_fm[cx].size // 2, 2)
     # Cast lists
     cx2_fm = np.array(cx2_fm, list)
@@ -434,9 +435,9 @@ def _fix_fmfsfk(cx2_fm, cx2_fs, cx2_fk):
 
 def new_fmfsfk(hs):
     num_chips = hs.get_num_chips()
-    cx2_fm = [[] for _ in xrange(num_chips)]
-    cx2_fs = [[] for _ in xrange(num_chips)]
-    cx2_fk = [[] for _ in xrange(num_chips)]
+    cx2_fm = [[] for _ in range(num_chips)]
+    cx2_fs = [[] for _ in range(num_chips)]
+    cx2_fk = [[] for _ in range(num_chips)]
     return cx2_fm, cx2_fs, cx2_fk
 
 
@@ -452,16 +453,19 @@ def chipmatch_to_resdict(hs, qcx2_chipmatch, filt2_meta, qdat, aug=''):
     score_method = qdat.cfg.agg_cfg.score_method
     # Create the result structures for each query.
     qcx2_res = {}
-    for qcx in qcx2_chipmatch.iterkeys():
+    for qcx in qcx2_chipmatch.keys():
+        # For each query's chipmatch
         chipmatch = qcx2_chipmatch[qcx]
+        # Perform final scoring
         cx2_score = score_chipmatch(hs, qcx, chipmatch, score_method, qdat)
+        # Create a query result structure
         res = qr.QueryResult(qcx, real_uid, qdat)
         res.cx2_score = cx2_score
         (res.cx2_fm, res.cx2_fs, res.cx2_fk) = chipmatch
         res.title = (title_uid + ' ' + aug).strip(' ')
-        res.filt2_meta = {}
+        res.filt2_meta = {} # dbgstats
         for filt, qcx2_meta in filt2_meta.iteritems():
-            res.filt2_meta[filt] = qcx2_meta[qcx]
+            res.filt2_meta[filt] = qcx2_meta[qcx]  # things like k+1th
         qcx2_res[qcx] = res
     # Retain original score method
     return qcx2_res

@@ -18,7 +18,7 @@ import sys
 import numpy as np
 from PIL import Image
 # Hotspotter
-import DataStructures as ds
+import hotspotter.DataStructures as ds
 from hscom import helpers
 from hscom import tools
 
@@ -281,7 +281,7 @@ def load_csv_tables(db_dir, allow_new_dir=True):
             print('[ld2] * %r were already specified in the table' % nDirImgsAlready)
             print('[ld2] * Loaded %r images' % len(gx2_gname))
             print('[ld2] * Done loading images')
-    except IOError:
+    except IOError as ex:
         print('IOError: %r' % ex)
         print('[ld2.img] loading without image table')
         #raise
@@ -619,14 +619,14 @@ def make_chip_csv(hs):
         cx2_roi = np.array([])
     cx2_theta = hs.tables.cx2_theta[valid_cx]
     prop_dict = {propkey: [cx2_propval[cx] for cx in iter(valid_cx)]
-                 for (propkey, cx2_propval) in hs.tables.prop_dict.iteritems()}
+                 for (propkey, cx2_propval) in hs.tables.prop_dict.items()}
     # Turn the chip indexes into a DOCUMENTED csv table
     header = '# chip table'
     column_labels = ['ChipID', 'ImgID', 'NameID', 'roi[tl_x  tl_y  w  h]', 'theta']
     column_list   = [cx2_cid, cx2_gx, cx2_nx, cx2_roi, cx2_theta]
     column_type   = [int, int, int, list, float]
     if not prop_dict is None:
-        for key, val in prop_dict.iteritems():
+        for key, val in prop_dict.items():
             column_labels.append(key)
             column_list.append(val)
             column_type.append(str)

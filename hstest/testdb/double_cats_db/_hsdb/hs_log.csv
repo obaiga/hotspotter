@@ -1,3 +1,0 @@
-exclusion_factor,stopping_criterion,self_loop_weight,same_image_score,same_set_boost,maximum_time_delta,minimum_same_set_weight,inflation_factor,maximum_iterations,expansion_factor,multiplication_factor,autochip_runtime,autoquery_runtime,clustering_runtime,Date/Time
-[1.0],[0.6000000238418579],[0],[0.9],[0.8],[90],[0.25],[1.23],[2000],[3],[2],[1078.0185289382935],[58.53393483161926],[0.3127150535583496],['2018-04-07 17:50:49.914432']
-[2.0],[0.6000000238418579],[0],[0.9],[0.8],[90],[0.25],[1.23],[2000],[3],[2],[1223.9555671215057],[57.18534302711487],[0.21121811866760254],['2018-04-07 23:41:55.076932']

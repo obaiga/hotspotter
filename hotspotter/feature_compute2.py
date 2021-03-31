@@ -11,7 +11,7 @@ from os.path import join
 from hscom import helpers
 from hscom import fileio as io
 from hscom.Parallelize import parallel_compute
-import extern_feat
+import hotspotter.extern_feat as extern_feat
 import pdb
 
 
@@ -22,7 +22,7 @@ def whiten_features(desc_list):
     ax2_desc_white = algos.scale_to_byte(algos.whiten(ax2_desc))
     index = 0
     offset = 0
-    for cx in xrange(len(desc_list)):
+    for cx in range(len(desc_list)):
         old_desc = desc_list[cx]
         print ('[fc2] * ' + helpers.info(old_desc, 'old_desc'))
         offset = len(old_desc)
@@ -106,7 +106,7 @@ def _load_features_individualy(hs, cx_list):
     feat_uid = feat_cfg.get_uid()
     print('[fc2]  Loading ' + feat_uid + ' individually')
     # Build feature paths
-    rchip_fpath_list = [hs.cpaths.cx2_rchip_path[cx] for cx in iter(cx_list)]
+    rchip_fpath_list = [hs.cpaths.cx2_rchip_path[cx] for cx in cx_list]
     cid_list = hs.tables.cx2_cid[cx_list]
     feat_fname_fmt = ''.join(('cid%d', feat_uid, '.npz'))
     feat_fpath_list = [join(feat_dir, feat_fname_fmt % cid) for cid in cid_list]

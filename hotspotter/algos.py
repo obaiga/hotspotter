@@ -4,7 +4,8 @@ from hscom import __common__
 (print, print_, print_on, print_off,
  rrr, profile) = __common__.init(__name__, '[algos]')
 # Python
-from itertools import izip
+# from itertools import izip
+from itertools import zip_longest as izip
 from os.path import join
 import os
 import sys
@@ -12,7 +13,8 @@ import textwrap
 # Matplotlib
 #import matplotlib.pyplot as plt
 # Scientific
-from hstpl.extern_feat import pyflann
+# from hstpl.extern_feat import pyflann
+import pyflann
 #import sklearn.decomposition
 #import sklearn.preprocessing
 #import sklearn
@@ -120,7 +122,7 @@ def xywh_to_tlbr(roi, img_wh):
 def localmax(signal1d):
     maxpos = []
     nsamp = len(signal1d)
-    for ix in xrange(nsamp):
+    for ix in range(nsamp):
         _prev = signal1d[max(0, ix - 1)]
         _item = signal1d[ix]
         _next = signal1d[min(nsamp - 1, ix + 1)]
@@ -394,7 +396,7 @@ def __akmeans_iterate(data,
           (ave_unchanged_thresh, ave_unchanged_iterwin))
     print('[algos] Printing akmeans info in format:' +
           'time (iterx, ave(#changed), #unchanged)')
-    for xx in xrange(0, max_iters):
+    for xx in range(0, max_iters):
         # 1) Find each datapoints nearest cluster center
         tt = helpers.tic()
         helpers.print_('...tic')
@@ -408,8 +410,8 @@ def __akmeans_iterate(data,
         datax_sort    = datax2_clusterx.argsort()  # NOQA
         clusterx_sort = datax2_clusterx[datax_sort]
         _L = 0
-        clusterx2_dataLRx = [None for _ in xrange(num_clusters)]
-        for _R in xrange(len(datax_sort) + 1):  # Slide R
+        clusterx2_dataLRx = [None for _ in range(num_clusters)]
+        for _R in range(len(datax_sort) + 1):  # Slide R
             if _R == num_data or clusterx_sort[_L] != clusterx_sort[_R]:
                 clusterx2_dataLRx[clusterx_sort[_L]] = (_L, _R)
                 _L = _R
@@ -563,7 +565,7 @@ def precompute_flann(data, cache_dir=None, uid='', flann_params=None,
         try:
             #print('[algos] precompute_flann():
                 #trying to load: %r ' % flann_fname)
-            flann.load_index(flann_fpath, data)
+            flann.load_index(flann_fpath.encode("utf-8"), data)
             print('[algos]...flann cache hit')
             load_success = True
         except Exception as ex:
@@ -574,5 +576,5 @@ def precompute_flann(data, cache_dir=None, uid='', flann_params=None,
         with helpers.Timer(msg='compute FLANN', newline=False):
             flann.build_index(data, **flann_params)
         print('[algos] precompute_flann(): save_index(%r)' % flann_fname)
-        flann.save_index(flann_fpath)
+        flann.save_index(flann_fpath.encode("utf-8"))
     return flann
