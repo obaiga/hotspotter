@@ -179,6 +179,71 @@ fancy_headers = {
 '''
 Important: [hotspotter]-[QueryResult]-Class: QueryResult
 '''
+# test_list = []
+def filter_neighbors(hs, qcx2_nns, filt2_weights, qdat):
+    qcx2_nnfilter = {}
+    # Configs
+    filt_cfg = qdat.cfg.filt_cfg
+    cant_match_sameimg = not filt_cfg.can_match_sameimg
+    cant_match_samename = not filt_cfg.can_match_samename
+    K = qdat.cfg.nn_cfg.K
+    filt2_tw = filt_cfg._filt2_tw
+    print('[mf] Step 3) Filter neighbors: ' + filt_cfg.get_uid())
+    # NNIndex
+    # Database feature index to chip index
+    dx2_cx = qdat._data_index.ax2_cx
+    # Filter matches based on config and weights
+    mark_progress, end_progress = mf.progress_func(len(qcx2_nns))
+    for count, qcx in enumerate(qcx2_nns.keys()):
+        mark_progress(count)
+        (qfx2_dx, _) = qcx2_nns[qcx]
+        qfx2_nn = qfx2_dx[:, 0:K]
+        # Get a numeric score score and valid flag for each feature match
+        qfx2_score, qfx2_valid = mf._apply_filter_scores(qcx, qfx2_nn, filt2_weights, filt2_tw)
+        qfx2_cx = dx2_cx[qfx2_nn]
+        print('[mf] * %d assignments are invalid by thresh' % ((True ^ qfx2_valid).sum()))
+        # Remove Impossible Votes:
+        # dont vote for yourself or another chip in the same image
+        qfx2_notsamechip = qfx2_cx != qcx
+        cant_match_self = True
+        if cant_match_self:
+            ####DBG
+            nChip_all_invalid = ((True ^ qfx2_notsamechip)).sum()
+            nChip_new_invalid = (qfx2_valid * (True ^ qfx2_notsamechip)).sum()
+            print('[mf] * %d assignments are invalid by self' % nChip_all_invalid)
+            print('[mf] * %d are newly invalided by self' % nChip_new_invalid)
+            ####
+            qfx2_valid = np.logical_and(qfx2_valid, qfx2_notsamechip)
+        if cant_match_sameimg:
+            qfx2_notsameimg  = hs.tables.cx2_gx[qfx2_cx] != hs.tables.cx2_gx[qcx]
+            ####DBG
+            nImg_all_invalid = ((True ^ qfx2_notsameimg)).sum()
+            nImg_new_invalid = (qfx2_valid * (True ^ qfx2_notsameimg)).sum()
+            print('[mf] * %d assignments are invalid by gx' % nImg_all_invalid)
+            print('[mf] * %d are newly invalided by gx' % nImg_new_invalid)
+            ####
+            qfx2_valid = np.logical_and(qfx2_valid, qfx2_notsameimg)
+        if cant_match_samename:
+            qfx2_notsamename = hs.tables.cx2_nx[qfx2_cx] != hs.tables.cx2_nx[qcx]
+            ####DBG
+            nName_all_invalid = ((True ^ qfx2_notsamename)).sum()
+            nName_new_invalid = (qfx2_valid * (True ^ qfx2_notsamename)).sum()
+            print('[mf] * %d assignments are invalid by nx' % nName_all_invalid)
+            print('[mf] * %d are newly invalided by nx' % nName_new_invalid)
+            ####
+            qfx2_valid = np.logical_and(qfx2_valid, qfx2_notsamename)
+        print('[mf] * Marking %d assignments as invalid' % ((True ^ qfx2_valid).sum()))
+        
+        # invalid_num = (True ^ qfx2_valid).sum()
+        # kp_num = len(qfx2_nn)
+        # print('[mf] * Total keypoints: %d, invalid: %d, valid: %d'
+        #       %(kp_num,invalid_num,(kp_num-invalid_num)))      ## comment by obaiga
+        # test_list.append([kp_num,invalid_num,(kp_num-invalid_num)])
+        
+        qcx2_nnfilter[qcx] = (qfx2_score, qfx2_valid)
+    end_progress()
+    return qcx2_nnfilter
+
 def load_resdict(hs, qcxs, qdat, aug=''):
     real_uid, title_uid = mf.special_uids(qdat, aug)
     # Load the result structures for each query.
@@ -271,7 +336,7 @@ def execute_query_safe(hs, qdat, qcxs, dcxs, use_cache=True):
     # Do the actually query
     result_list = execute_query_fast(hs, qdat, qcxs, dcxs)
     for qcx2_res in result_list:
-        for qcx, res in qcx2_res.iteritems():
+        for qcx, res in qcx2_res.items():
             res.save(hs)
     return result_list
 
@@ -282,7 +347,7 @@ def execute_query_fast(hs, qdat, qcxs, dcxs):
     # Nearest neighbors weighting and scoring
     weights, filt2_meta = mf.weight_neighbors(hs, neighbs, qdat)
     # Thresholding and weighting
-    nnfiltFILT = mf.filter_neighbors(hs, neighbs, weights, qdat)
+    nnfiltFILT = filter_neighbors(hs, neighbs, weights, qdat)
     # Nearest neighbors to chip matches
     matchesFILT = mf.build_chipmatches(hs, neighbs, nnfiltFILT, qdat)
     # Spatial verification
@@ -308,13 +373,13 @@ dcxs = hs.get_indexed_sample()   ## 0-(num-1)
 query_cfg=None 
 dochecks=True
 valid_cx = [0]
-#%%
+
 for qcx in valid_cx:
     try: 
 #        res = hs.query(qcx)
         #------function: hs.query()
 #        res = hs.query_database(qcx)
-        #-----function: hs.query_datbase()
+        #-----function: hs.query_database()
         'queries the entire (sampled) database'
         print('\n====================')
         print('[hs] query database')
@@ -335,14 +400,14 @@ for qcx in valid_cx:
             if dochecks:
                 prequery_checks(hs, qdat)
             result_list = execute_query_safe(hs, qdat, [qcx], dcxs)
-            res = result_list[0].values()[0]
+            res = list(result_list[0].values())[0]
             
         except mf.QueryException as ex:
             msg = '[hs] Query Failure: %r' % ex
             print(msg)
             if hs.args.strict:
                 raise
-        print(res)
+        # print(res)
         
     except Exception as ex:
         # TODO Catch actuall exceptions here

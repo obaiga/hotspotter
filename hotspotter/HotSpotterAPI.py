@@ -613,7 +613,7 @@ class HotSpotter(DynStruct):
             if hs.args.strict:
                 raise
             return msg
-        print(res)
+        # print(res)
         return res
 
     @profile

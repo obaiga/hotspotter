@@ -210,6 +210,10 @@ def filter_neighbors(hs, qcx2_nns, filt2_weights, qdat):
             ####
             qfx2_valid = np.logical_and(qfx2_valid, qfx2_notsamename)
         print('[mf] * Marking %d assignments as invalid' % ((True ^ qfx2_valid).sum()))
+        invalid_num = (True ^ qfx2_valid).sum()
+        kp_num = len(qfx2_nn)
+        print('[mf] * Total keypoints: %d, invalid: %d, valid: %d'
+              %(kp_num,invalid_num,(kp_num-invalid_num)))      ## comment by obaiga
         qcx2_nnfilter[qcx] = (qfx2_score, qfx2_valid)
     end_progress()
     return qcx2_nnfilter
@@ -219,7 +223,7 @@ def _apply_filter_scores(qcx, qfx2_nn, filt2_weights, filt2_tw):
     qfx2_score = np.ones(qfx2_nn.shape, dtype=qr.FS_DTYPE)
     qfx2_valid = np.ones(qfx2_nn.shape, dtype=np.bool)
     # Apply the filter weightings to determine feature validity and scores
-    for filt, cx2_weights in filt2_weights.iteritems():
+    for filt, cx2_weights in filt2_weights.items():
         qfx2_weights = cx2_weights[qcx]
         (sign, thresh), weight = filt2_tw[filt]
         if isinstance(thresh, (int, float)):
@@ -464,7 +468,7 @@ def chipmatch_to_resdict(hs, qcx2_chipmatch, filt2_meta, qdat, aug=''):
         (res.cx2_fm, res.cx2_fs, res.cx2_fk) = chipmatch
         res.title = (title_uid + ' ' + aug).strip(' ')
         res.filt2_meta = {} # dbgstats
-        for filt, qcx2_meta in filt2_meta.iteritems():
+        for filt, qcx2_meta in filt2_meta.items():
             res.filt2_meta[filt] = qcx2_meta[qcx]  # things like k+1th
         qcx2_res[qcx] = res
     # Retain original score method

@@ -1968,8 +1968,8 @@ def all_dict_combinations(varied_dict):
 def stash_testdata(*args):    ##save
     import shelve
     
-    if os.path.isfile("test_data.shelf"):
-        os.remove("test_data.shelf")
+    # if os.path.isfile("test_data.shelf"):
+    #     os.remove("test_data.shelf")
         
     shelf=shelve.open("test_data.shelf")
     locals_ = get_parent_locals()

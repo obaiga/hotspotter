@@ -102,7 +102,8 @@ def query_dcxs(hs, qcx, dcxs, qdat, dochecks=True):
     if dochecks:
         prequery_checks(hs, qdat)
     result_list = execute_query_safe(hs, qdat, [qcx], dcxs)
-    res = result_list[0].values()[0]
+    # res = result_list[0].values()[0]
+    res = list(result_list[0].values())[0]  ## by obaiga
     return res
 
 
@@ -172,7 +173,7 @@ def execute_query_safe(hs, qdat, qcxs, dcxs, use_cache=True):
     # Do the actually query
     result_list = execute_query_fast(hs, qdat, qcxs, dcxs)
     for qcx2_res in result_list:
-        for qcx, res in qcx2_res.iteritems():
+        for qcx, res in qcx2_res.items():
             res.save(hs)
     return result_list
 
