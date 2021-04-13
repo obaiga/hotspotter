@@ -1,0 +1,12 @@
+# image table
+# NumData 9
+#   gid,                                               gname,    aif
+      1,   01__Station05__Camera1__2012-6-14__5-38-10(4).JPG,  False
+      2,   01__Station14__Camera1__2012-8-30__16-8-14(9).JPG,  False
+      3,    02__Station06__Camera1__2012-7-10__3-23-4(1).JPG,  False
+      4,  02__Station09__Camera2__2012-9-16__18-51-14(6).JPG,  False
+      5,   02__Station13__Camera1__2012-7-18__6-47-40(4).JPG,  False
+      6,   02__Station13__Camera1__2012-9-13__2-21-40(9).JPG,  False
+      7,   02__Station19__Camera2__2012-6-21__1-34-46(7).JPG,  False
+      8,   02__Station26__Camera2__2012-8-27__4-35-18(8).JPG,  False
+      9,  02__Station37__Camera1__2012-9-25__18-23-54(1).JPG,  False

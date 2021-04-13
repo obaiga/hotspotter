@@ -102,7 +102,7 @@ FIGSIZE_SQUARE = (12, 12)
 FIGSIZE_BIGGER = (24, 12)
 FIGSIZE_HUGE = (32, 16)
 
-FIGSIZE = FIGSIZE_MED
+FIGSIZE = FIGSIZE_BIGGER
 # Quality drawings
 #FIGSIZE = FIGSIZE_SQUARE
 #DPI = 120
@@ -130,7 +130,7 @@ ELL_ALPHA_OVERRIDE = helpers.get_arg('--ell-alpha-override', type_=float, defaul
 ELL_COLOR  = BLUE
 
 LINE_COLOR = RED
-LINE_WIDTH = 1.4
+LINE_WIDTH = 2.5
 
 SHOW_LINES = True  # True
 SHOW_ELLS  = True
@@ -1623,6 +1623,8 @@ def draw_fmatch(xywh1, xywh2, kpts1, kpts2, fm, fs=None, lbl1=None, lbl2=None,
     if fs is not None and colorbar_ and 'colors' in vars() and colors is not None:
         colorbar(fs, colors)
     #legend()
+    print('[draw_fmatch] ell = %r, pts=%r, lines= %r' % (str(ell),str(pts),str(lines)))   ## comment by obaiga
+    
     return None
 
 

@@ -1,0 +1,9 @@
+# flat table
+# NumData 6
+#   ChipID,                                               Image,  Name,  roi[tl_x  tl_y  w  h],  theta
+         1,  02__Station12__Camera2__2012-6-14__11-53-34(5).JPG,  Cat1,      [320 466 924 564],    0.0
+         2,  02__Station13__Camera1__2012-8-16__23-48-36(3).JPG,  Cat1,  [   2   34 1917 1014],    0.0
+         3,  02__Station14__Camera1__2012-7-24__21-55-32(6).JPG,  Cat1,  [ 306  116 1372  794],    0.0
+         4,   02__Station32__Camera1__2012-8-10__21-8-14(5).JPG,  Cat1,  [ 450  119 1125  678],    0.0
+         5,   02__Station32__Camera1__2012-8-31__5-17-32(3).JPG,  Cat1,  [1126   82  794  874],    0.0
+         6,   02__Station32__Camera1__2012-9-16__0-48-28(5).JPG,  Cat1,      [423  32 792 787],    0.0

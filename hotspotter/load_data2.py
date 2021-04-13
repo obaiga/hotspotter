@@ -734,6 +734,8 @@ def write_score_matrix(hs, scoreMat, fileName=SCORE_MATRIX_FNAME): # TODO: don't
             fid.write(str(scoreMat[row][col+1])+"\n")
     fid.close()
 
+
+
 def write_csv_tables(hs):
     'Saves the tables to disk'
     print('[ld2] Writing csv tables')

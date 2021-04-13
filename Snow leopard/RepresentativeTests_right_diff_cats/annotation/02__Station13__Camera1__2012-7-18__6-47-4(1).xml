@@ -1,0 +1,19 @@
+<annotation>
+    <folder>RepresentativeTests_right_diff_cats</folder>
+    <filename>02__Station13__Camera1__2012-7-18__6-47-4(1).JPG</filename>
+    <size>
+        <width>1920</width>
+        <height>1080</height>
+        <depth>3</depth>
+    </size>
+    <object>
+        <name>Leopard</name>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>398</xmin>
+            <ymin>291</ymin>
+            <xmax>1723</xmax>
+            <ymax>1017</ymax>
+        </bndbox>
+    </object>
+</annotation>

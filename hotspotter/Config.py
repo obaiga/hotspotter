@@ -227,7 +227,7 @@ class SpatialVerifyConfig(ConfigBase):
 class AggregateConfig(ConfigBase):
     def __init__(agg_cfg, **kwargs):
         super(AggregateConfig, agg_cfg).__init__(name='agg_cfg')
-        agg_cfg.query_type   = 'vsmany'
+        agg_cfg.query_type   = 'vsone'
         # chipsum, namesum, placketluce
         agg_cfg.isWeighted = False  # nsum, pl
         agg_cfg.score_method = 'csum'  # nsum, pl
@@ -448,6 +448,7 @@ def default_feat_cfg(hs, **kwargs):
 
 def default_vsmany_cfg(hs, **kwargs):
     kwargs['query_type'] = 'vsmany'
+#    kwargs['query_type'] = 'vsone'
     query_cfg = QueryConfig(hs, **kwargs)
     return query_cfg
 

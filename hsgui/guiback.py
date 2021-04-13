@@ -722,6 +722,7 @@ class MainWindowBackend(QtCore.QObject):
         figtitle = 'Image View - Select ROI (click two points)'
         back.show_image(gx, figtitle=figtitle)
         roi = guitools.select_roi()
+        print('roi %r'%roi)   ### comment by obaiga
         if roi is None:
             print('[back*] roiselection failed. Not adding')
             return

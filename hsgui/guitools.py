@@ -286,6 +286,7 @@ def _user_option(parent, msg, title='options', options=['No', 'Yes'], use_cache=
     print('[*guitools] _user_option:\n %r: %s' + title + ': ' + msg)
     # Recall decision
     print('[*guitools] asking user: %r %r' % (msg, title))
+
     cache_id = helpers.hashstr(title + msg)
     if use_cache:
         reply = io.global_cache_read(cache_id, default=None)
@@ -302,6 +303,7 @@ def _user_option(parent, msg, title='options', options=['No', 'Yes'], use_cache=
         return None
     try:
         reply = options[optx]
+        print('option %r reply %r'%(optx,reply))
     except Exception as ex:
         print('[*guitools] USER OPTION EXCEPTION !')
         print('[*guitools] optx = %r' % optx)

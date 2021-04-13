@@ -502,14 +502,22 @@ def show_chipres(hs, res, cx, fnum=None, pnum=None, sel_fm=[], in_image=False, *
     return ax, xywh1, xywh2
 
 
+#def annotate_chipres(hs, res, cx, showTF=True, showScore=True, title_pref='',
+#                     title_suff='', show_gname=True, show_name=True,
+#                     time_appart=True, in_image=False, offset1=(0, 0),
+#                     offset2=(0, 0), show_query=True, xywh2=None, **kwargs):
 def annotate_chipres(hs, res, cx, showTF=True, showScore=True, title_pref='',
-                     title_suff='', show_gname=False, show_name=True,
+                     title_suff='', 
+                     show_2nd_gname=True, show_2nd_name=True, show_1st=True,
                      time_appart=True, in_image=False, offset1=(0, 0),
-                     offset2=(0, 0), show_query=True, xywh2=None, **kwargs):
+                     offset2=(0, 0), show_query=True, xywh2=None, **kwargs):    
+
     printDBG('[viz] annotate_chipres()')
     #print('Did not expect args: %r' % (kwargs.keys(),))
     qcx = res.qcx
     score = res.cx2_score[cx]
+    matched_kpts= np.float32(len(res.cx2_fs[cx]))
+#    print('matched_kpts= %r'%str(matched_kpts))
     # TODO Use this function when you clean show_chipres
     (truestr, falsestr, nonamestr) = ('TRUE', 'FALSE', '???')
     is_true, is_unknown = hs.is_true_match(qcx, cx)
@@ -520,15 +528,22 @@ def annotate_chipres(hs, res, cx, showTF=True, showScore=True, title_pref='',
     # Build title
     title = '*%s*' % isgt_str if showTF else ''
     if showScore:
-        score_str = (' score=' + helpers.num_fmt(score)) % (score)
+        score_str = (' score=' + helpers.num_fmt(score))% (score)
+        score_str +=('   matched_kpts='+ helpers.num_fmt(matched_kpts))% (matched_kpts)
         title += score_str
     title = title_pref + str(title) + title_suff
     # Build xlabel
     xlabel_ = []
-    if 'show_gname':
-        xlabel_.append('gname=%r' % hs.cx2_gname(cx))
-    if 'show_name':
-        xlabel_.append('name=%r' % hs.cx2_name(cx))
+    
+    if 'show_1st':
+        xlabel_.append('top_gname=%r'%hs.cx2_gname(qcx))
+        xlabel_.append('top_name=%r'%hs.cx2_name(qcx))
+
+    if 'show_2nd_gname':
+        xlabel_.append('\n below_gname=%r' % hs.cx2_gname(cx))
+    if 'show_2nd_name':
+        xlabel_.append('below_name=%r' % hs.cx2_name(cx))
+        
     if 'time_appart':
         xlabel_.append('\n' + hs.get_timedelta_str(qcx, cx))
     xlabel = ', '.join(xlabel_)

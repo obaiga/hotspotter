@@ -166,7 +166,7 @@ def cfg_argparse(parser2):
     # TODO: This line alone makes this module not belong in hscom
     # I dont know where it should go but fix it
     from hotspotter import Config
-    _qcfg = Config.default_vsmany_cfg(None)
+    _qcfg = Config.default_vsone_cfg(None)
     _fcfg = Config.default_feat_cfg(None)
     _ccfg = Config.default_chip_cfg()
     _dcfg = Config.default_display_cfg()

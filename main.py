@@ -10,7 +10,7 @@ many times. Less imports means less parallel overhead.
 from __future__ import division, print_function
 import multiprocessing
 
-#%%
+
 def dependencies_for_myprogram():
     # Let pyintaller find these modules
     from scipy.sparse.csgraph import _validation  # NOQA
@@ -32,8 +32,8 @@ def signal_reset():
 def signal_set():
     import signal
     signal.signal(signal.SIGINT, on_ctrl_c)
-    
-#%%
+
+
 def preload_args_process(args):
     from hscom import helpers
     import sys
@@ -47,7 +47,7 @@ def preload_args_process(args):
         args.nosteal = True
     return load_all, cids
 
-#%%
+
 def postload_args_process(hs, back):
     # --- Run Startup Commands ---
     # Autocompute all queries
@@ -78,7 +78,7 @@ def postload_args_process(hs, back):
 
     return res
 
-#%%
+
 def imports():
     pass
     # TODO: Rename this to something better
@@ -91,7 +91,7 @@ def imports():
     #guifront.print_off()
     #df2.print_off()
 
-#%%
+
 def main(defaultdb='NAUTS', usedbcache=False, default_load_all=True):
     import matplotlib
     matplotlib.use('Qt4Agg')
@@ -141,7 +141,7 @@ def main(defaultdb='NAUTS', usedbcache=False, default_load_all=True):
         if hs.args.strict:
             raise
     return hs
-#%%
+
 #==================
 # MAIN ENTRY POINT
 #==================
@@ -212,5 +212,3 @@ if __name__ == '__main__':
         guitools.run_main_loop(app, is_root, back, frequency=100)
 
     signal_reset()
-
-
